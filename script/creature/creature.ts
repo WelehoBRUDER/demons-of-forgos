@@ -50,6 +50,13 @@ const defaultAbilityScores: AbilityScores = {
 	wisdom: 10,
 	charisma: 10,
 };
+
+interface ArmorClass {
+	full: number; // Total AC including all modifiers
+	touch: number; // AC against attacks that ignore armor and natural armor
+	flatFooted: number; // AC against attacks when the creature is flat-footed (can't use dex bonus)
+}
+
 let creatureIndex = 0;
 class Creature implements CreatureInterface {
 	_id: number;
@@ -136,6 +143,32 @@ class Creature implements CreatureInterface {
 		return this.faction;
 	}
 
+	getAC(): ArmorClass {
+		let ac = 10;
+		let touchAC = 10;
+		let flatFootedAC = 10;
+		const sizeModifiers = this.getSizeModifiers();
+		for (const modifier of sizeModifiers) {
+			if (modifier.enabled === false) continue; // Skip disabled modifiers
+			if (modifier.target === "ac") {
+				if (modifier.operation === Operation.add) {
+					ac += modifier.value;
+					touchAC += modifier.value;
+					flatFootedAC += modifier.value;
+				}
+			}
+		}
+		const dexBonus = this.getAbilityScoreModifiers().dexterity;
+		ac += Math.min(dexBonus, this.dexToACLimit());
+		touchAC += Math.min(dexBonus, this.dexToACLimit());
+		// Future: Add armor, shields, natural armor, magical effects, etc.
+		return {
+			full: ac,
+			touch: touchAC,
+			flatFooted: flatFootedAC,
+		};
+	}
+
 	setPosition(x: number, y: number) {
 		this.x = x;
 		this.y = y;
@@ -151,6 +184,10 @@ class Creature implements CreatureInterface {
 	setY(y: number) {
 		this.y = y;
 		this.screenY = y * atlas.getTileSize();
+	}
+
+	dexToACLimit(): number {
+		return Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
 	}
 
 	// This function should only be called for testing.
@@ -185,6 +222,11 @@ class Creature implements CreatureInterface {
 
 	getSizeCategory(): number {
 		return sizeCategories[this.sizeCategory] || sizeCategories.medium;
+	}
+
+	getSizeModifiers(): Modifier[] {
+		const category = this.getSizeCategoryId();
+		return sizeCategoryModifiers[category] || [];
 	}
 
 	getOccupiedArea(): number[][] {

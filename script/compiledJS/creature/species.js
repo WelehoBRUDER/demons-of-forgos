@@ -45,4 +45,60 @@ class Species {
         return this.anchorPoints;
     }
 }
+const sizeCategoryModifiers = {
+    tiny: [
+        {
+            id: "tiny_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: 2,
+            type: ModifierType.size,
+        },
+    ],
+    small: [
+        {
+            id: "small_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: 1,
+            type: ModifierType.size,
+        },
+    ],
+    medium: [
+        {
+            id: "medium_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: 0,
+            type: ModifierType.size,
+        },
+    ],
+    large: [
+        {
+            id: "large_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: -1,
+            type: ModifierType.size,
+        },
+    ],
+    huge: [
+        {
+            id: "huge_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: -2,
+            type: ModifierType.size,
+        },
+    ],
+    gargantuan: [
+        {
+            id: "gargantuan_size_modifier",
+            target: "ac",
+            operation: Operation.add,
+            value: -4,
+            type: ModifierType.size,
+        },
+    ],
+};
 //# sourceMappingURL=species.js.map

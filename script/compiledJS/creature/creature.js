@@ -86,6 +86,32 @@ class Creature {
     getFaction() {
         return this.faction;
     }
+    getAC() {
+        let ac = 10;
+        let touchAC = 10;
+        let flatFootedAC = 10;
+        const sizeModifiers = this.getSizeModifiers();
+        for (const modifier of sizeModifiers) {
+            if (modifier.enabled === false)
+                continue; // Skip disabled modifiers
+            if (modifier.target === "ac") {
+                if (modifier.operation === Operation.add) {
+                    ac += modifier.value;
+                    touchAC += modifier.value;
+                    flatFootedAC += modifier.value;
+                }
+            }
+        }
+        const dexBonus = this.getAbilityScoreModifiers().dexterity;
+        ac += Math.min(dexBonus, this.dexToACLimit());
+        touchAC += Math.min(dexBonus, this.dexToACLimit());
+        // Future: Add armor, shields, natural armor, magical effects, etc.
+        return {
+            full: ac,
+            touch: touchAC,
+            flatFooted: flatFootedAC,
+        };
+    }
     setPosition(x, y) {
         this.x = x;
         this.y = y;
@@ -99,6 +125,9 @@ class Creature {
     setY(y) {
         this.y = y;
         this.screenY = y * atlas.getTileSize();
+    }
+    dexToACLimit() {
+        return Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
     }
     // This function should only be called for testing.
     // For actual gameplay, use a random wandering behavior or player-controlled movement instead.
@@ -131,6 +160,10 @@ class Creature {
     }
     getSizeCategory() {
         return sizeCategories[this.sizeCategory] || sizeCategories.medium;
+    }
+    getSizeModifiers() {
+        const category = this.getSizeCategoryId();
+        return sizeCategoryModifiers[category] || [];
     }
     getOccupiedArea() {
         const box = [];
