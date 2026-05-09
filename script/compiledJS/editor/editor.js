@@ -1,0 +1,395 @@
+"use strict";
+var EditorMode;
+(function (EditorMode) {
+    EditorMode["select"] = "select";
+    EditorMode["tile"] = "tile";
+    EditorMode["prop"] = "prop";
+    EditorMode["object"] = "object";
+    EditorMode["creature"] = "creature";
+})(EditorMode || (EditorMode = {}));
+class Editor {
+    MAX_BRUSH_SIZE = 7;
+    MIN_BRUSH_SIZE = 1;
+    brushSize = 1;
+    mode = EditorMode.select;
+    tileBrush = null; // If null, select mode is active
+    propBrush = null; // If null, select mode is active
+    objectBrush = null; // If null, select mode is active
+    creatureBrush = null; // If null, select mode is active
+    editorInfoPanel = document.querySelector(".editor-info-panel");
+    selectedObjects = [];
+    selectedCreature = null;
+    constructor() {
+        this.updateEditorInfoPanel();
+        this.setMode(EditorMode.select); // Start in select mode by default
+    }
+    getCurrentState() {
+        return {
+            objects: this.getMap().dynamicObjects,
+            creatures: entityManager.getCreaturesOnMap(this.getMap().id),
+            tiles: this.getMap().layers.base,
+            props: this.getMap().layers.props,
+            brushSize: this.brushSize,
+        };
+    }
+    setSelectedObjects(objects) {
+        this.selectedObjects = objects;
+    }
+    setBrushSize(size) {
+        this.brushSize = Math.min(Math.max(size, this.MIN_BRUSH_SIZE), this.MAX_BRUSH_SIZE);
+        brushSizeDisplay.textContent = this.brushSize.toString();
+    }
+    setTileBrush(tileId) {
+        this.resetBrushes({ dontUpdateButtons: true }); // Clear other brushes without updating buttons yet
+        this.tileBrush = tileId;
+        this.updateButtonStates();
+    }
+    setPropBrush(propId) {
+        this.resetBrushes({ dontUpdateButtons: true }); // Clear other brushes without updating buttons yet
+        this.propBrush = propId;
+        this.updateButtonStates();
+    }
+    setObjectBrush(objectId) {
+        this.resetBrushes({ dontUpdateButtons: true }); // Clear other brushes without updating buttons yet
+        this.objectBrush = objectId;
+        this.updateButtonStates();
+    }
+    setCreatureBrush(creatureId) {
+        this.resetBrushes({ dontUpdateButtons: true }); // Clear other brushes without updating buttons yet
+        this.creatureBrush = creatureId;
+        this.updateButtonStates();
+    }
+    resetBrushes(options) {
+        this.tileBrush = null;
+        this.propBrush = null;
+        this.objectBrush = null;
+        this.creatureBrush = null;
+        if (!options?.dontUpdateButtons) {
+            this.updateButtonStates();
+        }
+    }
+    getBrushes() {
+        return {
+            tileBrush: this.tileBrush,
+            propBrush: this.propBrush,
+            objectBrush: this.objectBrush,
+            creatureBrush: this.creatureBrush,
+        };
+    }
+    getMode() {
+        return this.mode;
+    }
+    getBrushSize() {
+        if (this.mode === EditorMode.object || this.mode === EditorMode.creature)
+            return 1; // Brush size does not apply to objects or creatures, they are placed one at a time
+        return this.brushSize;
+    }
+    getSelectedObjects() {
+        return this.selectedObjects;
+    }
+    getSelectedCreature() {
+        return this.selectedCreature;
+    }
+    updateButtonStates() {
+        if (!modeOptions)
+            return;
+        for (const button of modeButtons) {
+            button.classList.remove("active");
+            if (this.mode === EditorMode.select && button === selectModeButton) {
+                button.classList.add("active");
+            }
+            else if (this.mode === EditorMode.tile && button === brushModeButton) {
+                button.classList.add("active");
+            }
+            else if (this.mode === EditorMode.object && button === objectModeButton) {
+                button.classList.add("active");
+            }
+            else if (this.mode === EditorMode.creature && button === creatureModeButton) {
+                button.classList.add("active");
+            }
+        }
+        palette.populatePalette(); // Refresh palette to show selected item
+    }
+    saveMapToFile() {
+        const mapData = this.getEncodedMapData();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(mapData);
+        const downloadAnchorNode = document.createElement("a");
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${this.getMap().id}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+    printToConsole() {
+        console.log(this.getEncodedMapData());
+    }
+    getEncodedMapData() {
+        const mapData = this.getMap().getStrippedMapData();
+        mapData.layers.base = this.encodeLayer(mapData.layers.base);
+        mapData.layers.props = this.encodeLayer(mapData.layers.props);
+        return JSON.stringify(mapData);
+    }
+    encodeLayer(layer) {
+        return btoa(String.fromCharCode(...new Uint8Array(layer.buffer)));
+    }
+    decodeLayer(base64) {
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+        return new Uint16Array(bytes.buffer);
+    }
+    applyTileBrush(worldX, worldY, tileIndex = this.tileBrush, brushSize = this.brushSize) {
+        const map = this.getMap();
+        const halfBrush = Math.floor(brushSize / 2);
+        for (let dy = -halfBrush; dy <= halfBrush; dy++) {
+            for (let dx = -halfBrush; dx <= halfBrush; dx++) {
+                const x = worldX + dx;
+                const y = worldY + dy;
+                if (map.inBounds(x, y)) {
+                    map.layers.base[y * map.width + x] = tileIndex;
+                }
+            }
+        }
+        mapRenderer.renderVisibleMap(camera); // Re-render to show tile changes immediately
+    }
+    getBrushTiles(worldX, worldY, forTile, brushSize = this.brushSize) {
+        const tiles = [];
+        const halfBrush = Math.floor(brushSize / 2);
+        for (let dy = -halfBrush; dy <= halfBrush; dy++) {
+            for (let dx = -halfBrush; dx <= halfBrush; dx++) {
+                const x = worldX + dx;
+                const y = worldY + dy;
+                const tileId = this.getMap().layers.base[y * this.getMap().width + x];
+                // Only include tiles that are actually changed by the brush
+                if (this.getMap().inBounds(x, y) && tileId != forTile) {
+                    tiles.push({ x, y, before: tileId, after: forTile });
+                }
+            }
+        }
+        return tiles;
+    }
+    applyPropBrush(worldX, worldY, propIndex = this.propBrush, brushSize = this.brushSize) {
+        const map = this.getMap();
+        const halfBrush = Math.floor(brushSize / 2);
+        for (let dy = -halfBrush; dy <= halfBrush; dy++) {
+            for (let dx = -halfBrush; dx <= halfBrush; dx++) {
+                const x = worldX + dx;
+                const y = worldY + dy;
+                if (map.inBounds(x, y)) {
+                    map.layers.props[y * map.width + x] = propIndex;
+                }
+            }
+        }
+        mapRenderer.renderVisibleMap(camera); // Re-render to show tile changes immediately
+    }
+    handleClick() {
+        if (this.mode !== EditorMode.select)
+            return; // Only handle clicks for selection in select mode
+        const { tileX, tileY } = mapRenderer.getTileCordsByWorldPosition(game.getWorldMousePosition());
+        if (!this.getMap().inBounds(tileX, tileY))
+            return; // Ignore clicks outside map bounds
+        const { x, y } = mapRenderer.getHighlightedTile();
+        this.setSelectedObjects(this.getMap().getBoundingObjectsAt(x, y));
+        this.setSelectedCreature(entityManager.getCreaturesBoundingWithPosition(this.getMap().id, x, y)[0] || null); // Clear selected creature when clicking on map
+        this.updateEditorInfoPanel();
+    }
+    handleKeyUp(event) {
+        if (event.key === "r" || event.key === "R") {
+            // Rotate dynamic object if selected
+            const selectedObjects = this.getSelectedObjects();
+            if (selectedObjects.length > 0) {
+                selectedObjects.forEach((obj) => {
+                    obj.setRotation((obj.getRotation() + 90) % 360);
+                });
+            }
+            mapRenderer.renderObjects(camera); // Re-render to show rotation change
+        }
+        if (event.key === "Escape") {
+            this.resetBrushes();
+            this.setSelectedObjects([]);
+            this.updateEditorInfoPanel();
+            mapRenderer.setSelectedTile(-1, -1); // Clear tile highlight
+            mapRenderer.renderVisibleMap(camera); // Re-render to clear any highlights or previews
+            objectEditor.close(); // Close object editor if open
+        }
+    }
+    updateEditorInfoPanel() {
+        if (!this.editorInfoPanel)
+            return;
+        const selectedObjects = this.getSelectedObjects();
+        const selectedCreature = this.getSelectedCreature();
+        if (selectedCreature) {
+            this.editorInfoPanel.innerHTML = `<p>Selected Creature: ${selectedCreature.species}</p>`;
+            npcEditor.openForNPC(this.getSelectedCreature()); // Open NPC editor for the selected creature, if any
+            return;
+        }
+        if (selectedObjects.length === 0) {
+            this.editorInfoPanel.innerHTML = "<p>No object selected.</p>";
+            return;
+        }
+        objectEditor.openForObject(selectedObjects[0]); // Open object editor for the first selected object
+        this.editorInfoPanel.innerHTML = selectedObjects.map((obj) => `<div>${obj.getDetailedInfo()}</div>`).join("");
+    }
+    getMap() {
+        return mapRenderer.getMap();
+    }
+    getTileBrush() {
+        return this.tileBrush;
+    }
+    getPropBrush() {
+        return this.propBrush;
+    }
+    getObjectBrush() {
+        return this.objectBrush;
+    }
+    getCreatureBrush() {
+        return this.creatureBrush;
+    }
+    checkTilePaintDrag() {
+        const { tileX, tileY } = mapRenderer.getTileCordsByWorldPosition(game.getWorldMousePosition());
+        if (!this.getMap().inBounds(tileX, tileY))
+            return; // Ignore drags outside map bounds
+        if (this.tileBrush !== null) {
+            const brushTiles = this.getBrushTiles(tileX, tileY, this.tileBrush);
+            if (brushTiles.length > 0) {
+                this.dispatch(new TilePaintCommand(brushTiles));
+            }
+        }
+        else if (this.propBrush !== null) {
+            const brushTiles = this.getBrushTiles(tileX, tileY, this.propBrush);
+            if (brushTiles.length > 0) {
+                this.dispatch(new PropPaintCommand(brushTiles));
+            }
+        }
+        if (this.objectBrush !== null) {
+            const existingObjects = this.getMap().getBoundingObjectsAt(tileX, tileY);
+            if (existingObjects.length === 0) {
+                const command = new ObjectPlaceCommand({ i: this.objectBrush, x: tileX, y: tileY, u: null, r: 0 });
+                this.dispatch(command);
+                mapRenderer.renderObjects(camera); // Re-render to show new object immediately
+            }
+        }
+        if (this.creatureBrush !== null) {
+            const existingCreatures = entityManager.getCreaturesBoundingWithPosition(this.getMap().id, tileX, tileY);
+            if (existingCreatures.length === 0) {
+                // const command: EditorCommand = new NPCPlaceCommand({ i: this.creatureBrush, x: tileX, y: tileY, u: null });
+                // this.dispatch(command);
+                // mapRenderer.renderObjects(camera); // Re-render to show new object immediately
+                const creature = entityManager.getEnemyTemplateById(this.creatureBrush);
+                const addedCreature = entityManager.addCreature(creature, this.getMap().id, tileX, tileY);
+                if (addedCreature) {
+                    mapRenderer.renderCreatures(camera); // Re-render to show new creature immediately
+                }
+                else {
+                    const { x, y } = game.getMousePosition();
+                    effectManager.addEffect(new FloatingWarningText("No valid spawn position found for creature!", x, y));
+                }
+            }
+        }
+    }
+    dispatch(command) {
+        const currentState = this.getCurrentState();
+        editorHistory.execute(command, currentState);
+        this.updateEditorInfoPanel();
+    }
+    setMode(mode) {
+        if (!this.editorInfoPanel)
+            return;
+        this.mode = mode;
+        this.resetBrushes();
+        this.updateButtonStates();
+        modeOptions.style.display = "none";
+        brushOptions.style.display = "none";
+        brushTitle.style.display = "none";
+        if (mode != EditorMode.select) {
+            modeOptions.style.display = "block";
+            if (mode === EditorMode.tile || mode === EditorMode.prop) {
+                brushOptions.style.display = "block";
+                brushTitle.style.display = "block";
+            }
+            this.setSelectedObjects([]);
+            this.updateEditorInfoPanel();
+            palette.show();
+            palette.populatePalette();
+            objectEditor.close();
+        }
+        else {
+            palette.hide();
+        }
+    }
+    setBrushMode(mode) {
+        this.setMode(mode);
+        if (mode === EditorMode.tile) {
+            this.setTileBrush(0); // Default to first tile
+        }
+        else if (mode === EditorMode.prop) {
+            this.setPropBrush(0); // Default to first prop
+        }
+    }
+    setSelectedCreature(creature) {
+        this.selectedCreature = creature;
+    }
+}
+// Global editor instance
+const editorPanel = document.querySelector(".editor-panel");
+const selectModeButton = editorPanel?.querySelector(".select-mode");
+const modeOptions = editorPanel?.querySelector(".mode-options");
+// Brush elements
+const brushOptions = modeOptions?.querySelector(".options");
+const brushTitle = modeOptions?.querySelector(".brush-title");
+const brushModeButton = editorPanel?.querySelector(".brush-mode");
+const brushSizeUpButton = editorPanel?.querySelector(".brush-size-up");
+const brushSizeDownButton = editorPanel?.querySelector(".brush-size-down");
+const brushSizeDisplay = editorPanel?.querySelector(".brush-size-display");
+const brushSelect = editorPanel?.querySelector(".brush-type-select");
+// Object and creature mode buttons
+const objectModeButton = editorPanel?.querySelector(".object-mode");
+const creatureModeButton = editorPanel?.querySelector(".creature-mode");
+const modeButtons = [selectModeButton, brushModeButton, objectModeButton, creatureModeButton];
+selectModeButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setMode(EditorMode.select);
+});
+brushModeButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setMode(EditorMode.tile);
+});
+objectModeButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setMode(EditorMode.object);
+});
+creatureModeButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setMode(EditorMode.creature);
+});
+brushSelect?.addEventListener("change", (e) => {
+    e.preventDefault();
+    const selectedValue = brushSelect.value;
+    editor.setBrushMode(selectedValue);
+});
+document.querySelector(".save-to-file")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.saveMapToFile();
+});
+document.querySelector(".load-map")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    popUp.showMapLoadList();
+});
+document.querySelector(".new-map")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    popUp.showNewMapOptions();
+});
+brushSizeUpButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setBrushSize(editor.getBrushSize() + 2);
+});
+brushSizeDownButton?.addEventListener("click", (e) => {
+    e.preventDefault();
+    editor.setBrushSize(editor.getBrushSize() - 2);
+});
+window.addEventListener("keyup", (event) => {
+    if (!game.isInEditorMode())
+        return;
+    editor.handleKeyUp(event);
+});
+const editor = new Editor();
+//# sourceMappingURL=editor.js.map

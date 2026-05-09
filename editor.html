@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle Map Engine - Map Editor</title>
+  <link rel="stylesheet" href="style/main.css">
+  <link rel="stylesheet" href="style/editor.css">
+</head>
+
+<body>
+  <main class="game">
+    <p class="paused">--- PAUSED ---</p>
+    <div class="fps-counter">0</div>
+    <div class="dev-info">0</div>
+
+    <header class="editor-header">
+      <button class="save-to-file">Save</button>
+      <button class="load-map">Load</button>
+      <button class="new-map">New</button>
+      <button class="undo">Undo</button>
+      <button class="redo">Redo</button>
+    </header>
+
+    <div class="editor-popup hidden">
+      <button class="close" onclick="popUp.hide()">&times;</button>
+      <div class="content"></div>
+    </div>
+
+    <div class="editor-panel">
+      <button class="editor-button select-mode active">Select</button>
+      <button class="editor-button brush-mode">Brush</button>
+      <button class="editor-button object-mode">Object</button>
+      <button class="editor-button creature-mode">NPC</button>
+
+      <div class="mode-options">
+        <h3 class="brush-title">Brush Settings</h2>
+          <div class="brush options">
+            <div class="size option">
+              <p>Brush Size: </p>
+              <button class="brush-size-down">-</button>
+              <span class="brush-size-display">1</span>
+              <button class="brush-size-up">+</button>
+            </div>
+            <div class="type option">
+              <p>Brush Type:</p>
+              <select class="brush-type-select">
+                <option value="tile">Tile</option>
+                <option value="prop">Prop</option>
+              </select>
+            </div>
+          </div>
+          <h3 class="palette-title">Tiles</h3>
+          <div class="prop-tile-palette">
+            <div class="search">
+              <input type="text" class="palette-search" placeholder="Search tiles...">
+            </div>
+            <div class="palette-content"></div>
+          </div>
+      </div>
+      <div class="dynamic-edit"></div>
+
+    </div>
+    <div class="editor-info-panel"></div>
+    <div class="canvas-layers">
+      <canvas class="tile-layer base" width="800" height="600"></canvas>
+      <canvas class="prop-layer" width="800" height="600"></canvas>
+      <canvas class="object-layer" width="800" height="600"></canvas>
+      <canvas class="creature-layer" width="800" height="600"></canvas>
+      <canvas class="effect-layer" width="800" height="600"></canvas>
+      <canvas class="ui-layer" width="800" height="600"></canvas> <!-- Currently only for cursor highlight -->
+    </div>
+  </main>
+</body>
+
+
+</html>
+
+<!-- Dev -->
+<script src="script/compiledJS/game/dev.js" defer></script>
+
+<!-- Tiles -->
+<script src="script/compiledJS/map/tile.js" defer></script>
+<script src="script/compiledJS/map/tiles.js" defer></script>
+
+<!-- Props -->
+<script src="script/compiledJS/map/prop.js" defer></script>
+<script src="script/compiledJS/map/props.js" defer></script>
+
+<!-- Dynamic Objects -->
+<script src="script/compiledJS/map/dynamic_object.js" defer></script>
+<script src="script/compiledJS/map/dynamic_objects.js" defer></script>
+
+<!-- Items -->
+<script src="script/compiledJS/item/item.js" defer></script>
+<script src="script/compiledJS/item/equipment.js" defer></script>
+<script src="script/compiledJS/item/armor.js" defer></script>
+<script src="script/compiledJS/item/weapon.js" defer></script>
+<script src="script/compiledJS/item/lists/weapons.js" defer></script>
+<script src="script/compiledJS/item/lists/armors.js" defer></script>
+
+<!-- Creatures -->
+<script src="script/compiledJS/creature/species.js" defer></script>
+<script src="script/compiledJS/creature/species_list.js" defer></script>
+<script src="script/compiledJS/creature/creature.js" defer></script>
+<script src="script/compiledJS/creature/npc_creature.js" defer></script>
+<script src="script/compiledJS/creature/dynamic_creature.js" defer></script>
+<script src="script/compiledJS/creature/entity_manager.js" defer></script>
+<script src="script/compiledJS/creature/enemies.js" defer></script>
+
+<!-- Map & Atlas-->
+<script src="script/compiledJS/map/map.js" defer></script>
+<script src="script/compiledJS/map/maps.js" defer></script>
+<script src="script/compiledJS/map/load_maps.js" defer></script>
+<script src="script/compiledJS/atlas/atlas.js" defer></script>
+
+<!-- Render-->
+<script src="script/compiledJS/map/camera.js" defer></script>
+<script src="script/compiledJS/map/render.js" defer></script>
+
+<!-- Effects -->
+<script src="script/compiledJS/effects/effect.js" defer></script>
+<script src="script/compiledJS/effects/effect_manager.js" defer></script>
+<script src="script/compiledJS/effects/floating_warning_text.js" defer></script>
+
+<!-- Game -->
+<script src="script/compiledJS/game/pathfinding.js" defer></script>
+<script src="script/compiledJS/game/game.js" defer></script>
+
+<!-- Editor -->
+<script src="script/compiledJS/editor/palette.js" defer></script>
+<script src="script/compiledJS/editor/editor.js" defer></script>
+<script src="script/compiledJS/editor/history.js" defer></script>
+<!-- Editor Commands -->
+<script src="script/compiledJS/editor/commands/tile_paint_command.js" defer></script>
+<script src="script/compiledJS/editor/commands/prop_paint_command.js" defer></script>
+<script src="script/compiledJS/editor/commands/object_place_command.js" defer></script>
+<script src="script/compiledJS/editor/commands/object_remove_command.js" defer></script>
+<script src="script/compiledJS/editor/commands/npc_place_command.js" defer></script>
+
+<script src="script/compiledJS/editor/object_editor.js" defer></script>
+<script src="script/compiledJS/editor/npc_editor.js" defer></script>
+<script src="script/compiledJS/editor/popup.js" defer></script>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    mapRenderer.setMapData(generateEmptyMap(10, 10, 1));
+    editor.getMap().addDynamicObject(getDynamicObjectById("wooden_door"), 2, 2);
+    entityManager.clearAllEntities();
+    game.setControlledCreatureId(null);
+    game.setIsEditorMode(true);
+    editor.setMode(EditorMode.tile);
+    console.log("Editor mode initialized with empty map.");
+  });
+</script>

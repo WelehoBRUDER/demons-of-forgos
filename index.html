@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle Map Engine</title>
+  <link rel="stylesheet" href="style/main.css">
+</head>
+
+<body>
+  <main class="game">
+    <p class="paused">--- PAUSED ---</p>
+    <div class="fps-counter">0</div>
+    <div class="dev-info">0</div>
+    <div class="canvas-layers">
+      <canvas class="tile-layer base" width="800" height="600"></canvas>
+      <canvas class="prop-layer" width="800" height="600"></canvas>
+      <canvas class="object-layer" width="800" height="600"></canvas>
+      <canvas class="creature-layer" width="800" height="600"></canvas>
+      <canvas class="effect-layer" width="800" height="600"></canvas>
+      <canvas class="ui-layer" width="800" height="600"></canvas> <!-- Currently only for cursor highlight -->
+    </div>
+  </main>
+</body>
+
+
+</html>
+
+<!-- Dev -->
+<script src="script/compiledJS/game/dev.js" defer></script>
+
+<!-- Tiles -->
+<script src="script/compiledJS/map/tile.js" defer></script>
+<script src="script/compiledJS/map/tiles.js" defer></script>
+
+<!-- Props -->
+<script src="script/compiledJS/map/prop.js" defer></script>
+<script src="script/compiledJS/map/props.js" defer></script>
+
+<!-- Dynamic Objects -->
+<script src="script/compiledJS/map/dynamic_object.js" defer></script>
+<script src="script/compiledJS/map/dynamic_objects.js" defer></script>
+
+<!-- Items -->
+<script src="script/compiledJS/item/item.js" defer></script>
+<script src="script/compiledJS/item/equipment.js" defer></script>
+<script src="script/compiledJS/item/armor.js" defer></script>
+<script src="script/compiledJS/item/weapon.js" defer></script>
+<script src="script/compiledJS/item/lists/weapons.js" defer></script>
+<script src="script/compiledJS/item/lists/armors.js" defer></script>
+
+<!-- Creatures -->
+<script src="script/compiledJS/creature/species.js" defer></script>
+<script src="script/compiledJS/creature/species_list.js" defer></script>
+<script src="script/compiledJS/creature/creature.js" defer></script>
+<script src="script/compiledJS/creature/npc_creature.js" defer></script>
+<script src="script/compiledJS/creature/dynamic_creature.js" defer></script>
+<script src="script/compiledJS/creature/entity_manager.js" defer></script>
+<script src="script/compiledJS/creature/enemies.js" defer></script>
+
+<!-- Map & Atlas-->
+<script src="script/compiledJS/map/map.js" defer></script>
+<script src="script/compiledJS/map/maps.js" defer></script>
+<script src="script/compiledJS/map/load_maps.js" defer></script>
+<script src="script/compiledJS/atlas/atlas.js" defer></script>
+
+<!-- Render-->
+<script src="script/compiledJS/map/camera.js" defer></script>
+<script src="script/compiledJS/map/render.js" defer></script>
+
+<!-- Effects -->
+<script src="script/compiledJS/effects/effect.js" defer></script>
+<script src="script/compiledJS/effects/effect_manager.js" defer></script>
+<script src="script/compiledJS/effects/floating_warning_text.js" defer></script>
+
+<!-- Editor -->
+<script src="script/compiledJS/editor/editor.js" defer></script>
+<script src="script/compiledJS/editor/npc_editor.js" defer></script>
+<script src="script/compiledJS/editor/popup.js" defer></script>
+
+<!-- Game -->
+<script src="script/compiledJS/game/pathfinding.js" defer></script>
+<script src="script/compiledJS/game/game.js" defer></script>
