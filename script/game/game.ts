@@ -1,6 +1,14 @@
 let secondCounter = 0;
 let tilesChecked = 0;
+
+enum GameState {
+	FREE_ROAM,
+	COMBAT,
+	PAUSED,
+}
+
 class Game {
+	private state: GameState = GameState.FREE_ROAM;
 	private time: number = 0;
 	private lastTime: number = 0;
 	private mouseHeldDown: boolean = false;
@@ -203,20 +211,14 @@ class Game {
 			);
 
 			if (creature.screenX === targetScreenX && creature.screenY === targetScreenY) {
-				if (creature.lastMoved >= 1.5 && creature.getPath().length === 0 && !creature.isPlayerControlled()) {
-					//creature.moveRandomly();
-					const randomTile: { x: number; y: number } = {
-						x: creature.x + Math.floor(Math.random() * 12) - 6,
-						y: creature.y + Math.floor(Math.random() * 12) - 6,
-					};
-					// const occupiedArea = this.getControlledCreature()?.getOccupiedArea() || [];
-					// const occupation: { x: number; y: number }[] = [];
-					// for (const pos of occupiedArea) {
-					// 	occupation.push({ x: pos[0], y: pos[1] });
-					// }
-					this.requestPath({ x: creature.x, y: creature.y }, [randomTile], creature);
-					creature.lastMoved = Math.random() * 0.6;
-				}
+				// if (creature.lastMoved >= 1.5 && creature.getPath().length === 0 && !creature.isPlayerControlled()) {
+				// 	const randomTile: { x: number; y: number } = {
+				// 		x: creature.x + Math.floor(Math.random() * 12) - 6,
+				// 		y: creature.y + Math.floor(Math.random() * 12) - 6,
+				// 	};
+				// 	this.requestPath({ x: creature.x, y: creature.y }, [randomTile], creature);
+				// 	creature.lastMoved = Math.random() * 0.6;
+				// }
 			}
 		}
 		mapRenderer.renderCreatures(camera);

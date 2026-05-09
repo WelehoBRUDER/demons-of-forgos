@@ -6,6 +6,14 @@ const NORMAL = 1;
 const HOSTILE = 0;
 const NEUTRAL = 1;
 const FRIENDLY = 2;
+const defaultAbilityScores = {
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10,
+};
 let creatureIndex = 0;
 class Creature {
     _id;
@@ -13,6 +21,7 @@ class Creature {
     uid;
     x;
     y;
+    abilityScores = defaultAbilityScores;
     screenX = 0; // For smooth movement, this will be updated gradually towards x
     screenY = 0; // For smooth movement, this will be updated gradually towards y
     baseClass = "Creature";
@@ -23,6 +32,7 @@ class Creature {
     currentPath = [];
     visualOffsetX = 0; // For smooth movement, this will be updated gradually towards 0
     visualOffsetY = 0; // For smooth movement, this will be updated gradually towards 0
+    initiative = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
     hp = 4;
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
@@ -37,6 +47,7 @@ class Creature {
         this.lastMoved = Math.random();
         this.hp = data.hp ?? this.getMaxHP();
         this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
+        this.initiative = data.initiative ?? 0; // 0 outside combat
     }
     restoreStrippedData(data) {
         this.setUID(data.u);
@@ -172,8 +183,24 @@ class Creature {
     setHP(amount) {
         this.hp = amount;
     }
+    calcAbilityModifierFromScore(score) {
+        return Math.floor((score - 10) / 2);
+    }
+    getAbilityScores() {
+        return this.abilityScores;
+    }
+    getAbilityScoreModifiers() {
+        return {
+            strength: this.calcAbilityModifierFromScore(this.abilityScores.strength),
+            dexterity: this.calcAbilityModifierFromScore(this.abilityScores.dexterity),
+            constitution: this.calcAbilityModifierFromScore(this.abilityScores.constitution),
+            intelligence: this.calcAbilityModifierFromScore(this.abilityScores.intelligence),
+            wisdom: this.calcAbilityModifierFromScore(this.abilityScores.wisdom),
+            charisma: this.calcAbilityModifierFromScore(this.abilityScores.charisma),
+        };
+    }
     getMaxHP() {
-        return 4; // For simplicity, all creatures have the same max HP for now
+        return 4; // Should be overridden by subclasses
     }
     getHpPercentage() {
         return Math.max(0, this.hp / this.getMaxHP());
@@ -197,6 +224,12 @@ class Creature {
             isDrop: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
             isDifficultTerrain: BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
         };
+    }
+    rollInitiative() {
+        const roll = DiceRoller.roll(Dice.d20)[0];
+        const initiative = roll + this.getAbilityScoreModifiers().dexterity;
+        this.initiative = initiative;
+        return initiative;
     }
     moveOnPath(dt) {
         this.handleMovementAnimation(dt);

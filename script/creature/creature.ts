@@ -7,6 +7,7 @@ interface CreatureInterface {
 	sizeCategory?: string;
 	uid?: string;
 	hp?: number;
+	initiative?: number;
 }
 
 interface StrippedCreatureData {
@@ -14,6 +15,15 @@ interface StrippedCreatureData {
 	u: string;
 	x: number;
 	y: number;
+}
+
+interface AbilityScores {
+	strength: number;
+	dexterity: number;
+	constitution: number;
+	intelligence: number;
+	wisdom: number;
+	charisma: number;
 }
 
 // Movement constants
@@ -32,6 +42,14 @@ interface TilePropertyInteractions {
 	isDifficultTerrain: number; // 0 means impeded, 1 means normal
 }
 
+const defaultAbilityScores: AbilityScores = {
+	strength: 10,
+	dexterity: 10,
+	constitution: 10,
+	intelligence: 10,
+	wisdom: 10,
+	charisma: 10,
+};
 let creatureIndex = 0;
 class Creature implements CreatureInterface {
 	_id: number;
@@ -39,6 +57,7 @@ class Creature implements CreatureInterface {
 	uid: string;
 	x: number;
 	y: number;
+	abilityScores: AbilityScores = defaultAbilityScores;
 	screenX: number = 0; // For smooth movement, this will be updated gradually towards x
 	screenY: number = 0; // For smooth movement, this will be updated gradually towards y
 	baseClass: string = "Creature";
@@ -49,6 +68,7 @@ class Creature implements CreatureInterface {
 	currentPath: { x: number; y: number }[] = [];
 	visualOffsetX: number = 0; // For smooth movement, this will be updated gradually towards 0
 	visualOffsetY: number = 0; // For smooth movement, this will be updated gradually towards 0
+	initiative: number = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
 
 	hp: number = 4;
 	constructor(data: CreatureInterface) {
@@ -64,6 +84,7 @@ class Creature implements CreatureInterface {
 		this.lastMoved = Math.random();
 		this.hp = data.hp ?? this.getMaxHP();
 		this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
+		this.initiative = data.initiative ?? 0; // 0 outside combat
 	}
 
 	restoreStrippedData(data: StrippedCreatureData) {
@@ -231,8 +252,27 @@ class Creature implements CreatureInterface {
 		this.hp = amount;
 	}
 
+	calcAbilityModifierFromScore(score: number): number {
+		return Math.floor((score - 10) / 2);
+	}
+
+	getAbilityScores(): AbilityScores {
+		return this.abilityScores;
+	}
+
+	getAbilityScoreModifiers(): AbilityScores {
+		return {
+			strength: this.calcAbilityModifierFromScore(this.abilityScores.strength),
+			dexterity: this.calcAbilityModifierFromScore(this.abilityScores.dexterity),
+			constitution: this.calcAbilityModifierFromScore(this.abilityScores.constitution),
+			intelligence: this.calcAbilityModifierFromScore(this.abilityScores.intelligence),
+			wisdom: this.calcAbilityModifierFromScore(this.abilityScores.wisdom),
+			charisma: this.calcAbilityModifierFromScore(this.abilityScores.charisma),
+		};
+	}
+
 	getMaxHP(): number {
-		return 4; // For simplicity, all creatures have the same max HP for now
+		return 4; // Should be overridden by subclasses
 	}
 
 	getHpPercentage(): number {
@@ -261,6 +301,13 @@ class Creature implements CreatureInterface {
 			isDrop: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
 			isDifficultTerrain: BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
 		};
+	}
+
+	rollInitiative(): number {
+		const roll = DiceRoller.roll(Dice.d20)[0];
+		const initiative = roll + this.getAbilityScoreModifiers().dexterity;
+		this.initiative = initiative;
+		return initiative;
 	}
 
 	moveOnPath(dt: number) {
