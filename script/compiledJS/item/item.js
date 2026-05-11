@@ -30,6 +30,9 @@ class Item {
     getSpritePosition() {
         return this.spritePosition;
     }
+    getModifiers(ctx) {
+        return [];
+    }
 }
 class ItemManager {
     items;

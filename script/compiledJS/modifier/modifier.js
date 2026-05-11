@@ -7,22 +7,73 @@ var Operation;
 })(Operation || (Operation = {}));
 var ModifierType;
 (function (ModifierType) {
-    ModifierType[ModifierType["alchemical"] = 0] = "alchemical";
-    ModifierType[ModifierType["armor"] = 1] = "armor";
-    ModifierType[ModifierType["circumstance"] = 2] = "circumstance";
-    ModifierType[ModifierType["competence"] = 3] = "competence";
-    ModifierType[ModifierType["deflection"] = 4] = "deflection";
-    ModifierType[ModifierType["enhancement"] = 5] = "enhancement";
-    ModifierType[ModifierType["inherent"] = 6] = "inherent";
-    ModifierType[ModifierType["insight"] = 7] = "insight";
-    ModifierType[ModifierType["luck"] = 8] = "luck";
-    ModifierType[ModifierType["morale"] = 9] = "morale";
-    ModifierType[ModifierType["naturalArmor"] = 10] = "naturalArmor";
-    ModifierType[ModifierType["profane"] = 11] = "profane";
-    ModifierType[ModifierType["resistance"] = 12] = "resistance";
-    ModifierType[ModifierType["sacred"] = 13] = "sacred";
-    ModifierType[ModifierType["shield"] = 14] = "shield";
-    ModifierType[ModifierType["size"] = 15] = "size";
-    ModifierType[ModifierType["untyped"] = 16] = "untyped";
+    ModifierType["alchemical"] = "alchemical";
+    ModifierType["armor"] = "armor";
+    ModifierType["circumstance"] = "circumstance";
+    ModifierType["competence"] = "competence";
+    ModifierType["deflection"] = "deflection";
+    ModifierType["enhancement"] = "enhancement";
+    ModifierType["inherent"] = "inherent";
+    ModifierType["insight"] = "insight";
+    ModifierType["luck"] = "luck";
+    ModifierType["morale"] = "morale";
+    ModifierType["naturalArmor"] = "naturalArmor";
+    ModifierType["profane"] = "profane";
+    ModifierType["resistance"] = "resistance";
+    ModifierType["sacred"] = "sacred";
+    ModifierType["shield"] = "shield";
+    ModifierType["size"] = "size";
+    ModifierType["untyped"] = "untyped";
+    ModifierType["dodge"] = "dodge";
 })(ModifierType || (ModifierType = {}));
+class ModifierManager {
+    stacks(type) {
+        // Define which modifier types stack and which don't
+        const stackingTypes = new Set([ModifierType.untyped, ModifierType.dodge, ModifierType.circumstance]);
+        return stackingTypes.has(type);
+    }
+    // Mainly for modifiers that don't stack, since the highest value applies.
+    getExistingModifier(target, type, modifiers) {
+        return modifiers.find((mod) => mod.target === target && mod.type === type) || null;
+    }
+    // Groups all modifiers that are actually applied, since it is possible to have non-stacking modifiers that are overridden by higher values.
+    collectModifiers(creature, context) {
+        const modifiers = [];
+        // Loop through each provider and collect their modifiers, applying stacking rules
+        for (const provider of creature.getAllProviders()) {
+            const providedModifiers = provider.getModifiers(context);
+            for (const mod of providedModifiers) {
+                if (mod.enabled === false)
+                    continue; // Skip disabled modifiers
+                const existing = this.getExistingModifier(mod.target, mod.type, modifiers);
+                if (!existing || this.stacks(mod.type)) {
+                    modifiers.push(mod);
+                }
+                else {
+                    if (mod.value > existing.value) {
+                        modifiers.splice(modifiers.indexOf(existing), 1, mod);
+                    }
+                }
+            }
+        }
+        return modifiers;
+    }
+    getTotalModifier(target, creature, context, options) {
+        const mods = this.collectModifiers(creature, context).filter((mod) => mod.target === target);
+        if (options?.groupedByType) {
+            const grouped = {};
+            for (const mod of mods) {
+                if (!grouped[mod.type]) {
+                    grouped[mod.type] = mod.value;
+                }
+                else {
+                    grouped[mod.type] += mod.value;
+                }
+            }
+            return grouped;
+        }
+        return mods.reduce((total, mod) => total + mod.value, 0);
+    }
+}
+const modifierManager = new ModifierManager();
 //# sourceMappingURL=modifier.js.map

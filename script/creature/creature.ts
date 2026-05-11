@@ -75,7 +75,13 @@ class Creature implements CreatureInterface {
 	currentPath: { x: number; y: number }[] = [];
 	visualOffsetX: number = 0; // For smooth movement, this will be updated gradually towards 0
 	visualOffsetY: number = 0; // For smooth movement, this will be updated gradually towards 0
+	providers: ModifierProvider[] = []; // This can hold references to various sources of modifiers, such as equipped items, active effects, etc.
+	providersNeedUpdate: boolean = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
+
 	initiative: number = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
+	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
+	feats: string[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
+	equipment: EquipmentInterface = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
 
 	hp: number = 4;
 	constructor(data: CreatureInterface) {
@@ -143,6 +149,22 @@ class Creature implements CreatureInterface {
 		return this.faction;
 	}
 
+	getAllProviders(): ModifierProvider[] {
+		if (!this.providersNeedUpdate) {
+			return this.providers;
+		}
+
+		const updatedProviders: ModifierProvider[] = [];
+
+		updatedProviders.push(...this.getAllEquippedItems());
+		// TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
+
+		this.providers = updatedProviders;
+		this.providersNeedUpdate = false;
+
+		return updatedProviders;
+	}
+
 	getAC(): ArmorClass {
 		let ac = 10;
 		let touchAC = 10;
@@ -159,14 +181,52 @@ class Creature implements CreatureInterface {
 			}
 		}
 		const dexBonus = this.getAbilityScoreModifiers().dexterity;
+
 		ac += Math.min(dexBonus, this.dexToACLimit());
 		touchAC += Math.min(dexBonus, this.dexToACLimit());
+
+		const acBonuses = modifierManager.getTotalModifier("ac", this, null, { groupedByType: true }) as GroupedModifiers;
+		for (const modType in acBonuses) {
+			const value = acBonuses[modType as ModifierType] || 0;
+			if (modType === ModifierType.armor || modType === ModifierType.shield || modType === ModifierType.naturalArmor) {
+				ac += value;
+				flatFootedAC += value;
+			} else {
+				ac += value;
+				touchAC += value;
+				flatFootedAC += value;
+			}
+		}
 		// Future: Add armor, shields, natural armor, magical effects, etc.
 		return {
 			full: ac,
 			touch: touchAC,
 			flatFooted: flatFootedAC,
 		};
+	}
+
+	getAllEquippedItems(): Item[] {
+		const items: Item[] = [];
+		if (this.equipment.weapon) {
+			items.push(this.equipment.weapon);
+		}
+		if (this.equipment.offhand) {
+			items.push(this.equipment.offhand);
+		}
+		if (this.equipment.armor) {
+			items.push(this.equipment.armor);
+		}
+		return items;
+	}
+
+	equipItem(item: Item) {
+		this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
+		if (item instanceof Weapon) {
+			this.equipment.weapon = item;
+		}
+		if (item instanceof Armor) {
+			this.equipment.armor = item;
+		}
 	}
 
 	setPosition(x: number, y: number) {
@@ -187,7 +247,17 @@ class Creature implements CreatureInterface {
 	}
 
 	dexToACLimit(): number {
-		return Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
+		const items: Item[] = this.getAllEquippedItems();
+		let maxDexLimit = -Infinity;
+		for (const item of items) {
+			if (item instanceof Armor) {
+				const dexLimit = item.getDexLimit();
+				if (dexLimit > maxDexLimit) {
+					maxDexLimit = dexLimit;
+				}
+			}
+		}
+		return maxDexLimit !== -Infinity ? maxDexLimit : Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
 	}
 
 	// This function should only be called for testing.

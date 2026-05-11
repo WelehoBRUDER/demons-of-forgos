@@ -21,4 +21,8 @@ class Equipment extends Item {
 	getSizeOnRender(): { width: number; height: number } {
 		return this.sizeOnRender;
 	}
+
+	getModifiers(ctx: any): Modifier[] {
+		return [];
+	}
 }

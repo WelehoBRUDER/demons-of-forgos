@@ -18,6 +18,9 @@ itemManager.addItem(new Armor({
             texturePosition: { x: 0, y: 0 },
         },
     ],
+    shield: false,
+    ac: 2,
+    dexLimit: 6,
 }));
 itemManager.addItem(new Armor({
     id: "plate_armor",
@@ -42,5 +45,23 @@ itemManager.addItem(new Armor({
             texturePosition: { x: 0, y: 0 },
         },
     ],
+    shield: false,
+    ac: 8,
+    dexLimit: 1,
+}));
+itemManager.addItem(new Armor({
+    id: "shield",
+    spritePath: "assets/items/armor/iron_armor.png",
+    equippable: [
+        {
+            texturePath: "assets/items/armor/iron_armor.png",
+            sizeOnRender: { width: 150, height: 140 },
+            anchorPoint: AnchorPointType.body,
+            texturePosition: { x: 0, y: 0 },
+        },
+    ],
+    shield: true,
+    ac: 2,
+    dexLimit: 0, // This is anyway ignored for shields
 }));
 //# sourceMappingURL=armors.js.map

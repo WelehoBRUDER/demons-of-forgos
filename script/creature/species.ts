@@ -41,7 +41,7 @@ const sizeCategories: SizeCategories = {
 	gargantuan: 4, // Maximum size is 4x4 tiles and will never be exceeded by any creature.
 };
 
-class Species {
+class Species implements ModifierProvider {
 	id: string;
 	type: SpeciesType;
 	size: number;
@@ -67,6 +67,14 @@ class Species {
 
 	getAnchorPoints(): AnchorPoint {
 		return this.anchorPoints;
+	}
+
+	getModifiers(ctx: any): Modifier[] {
+		return [];
+	}
+
+	getSize(): number {
+		return this.size;
 	}
 }
 

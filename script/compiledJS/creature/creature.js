@@ -32,7 +32,12 @@ class Creature {
     currentPath = [];
     visualOffsetX = 0; // For smooth movement, this will be updated gradually towards 0
     visualOffsetY = 0; // For smooth movement, this will be updated gradually towards 0
+    providers = []; // This can hold references to various sources of modifiers, such as equipped items, active effects, etc.
+    providersNeedUpdate = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
     initiative = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
+    statusEffects = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
+    feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
+    equipment = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
     hp = 4;
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
@@ -86,6 +91,17 @@ class Creature {
     getFaction() {
         return this.faction;
     }
+    getAllProviders() {
+        if (!this.providersNeedUpdate) {
+            return this.providers;
+        }
+        const updatedProviders = [];
+        updatedProviders.push(...this.getAllEquippedItems());
+        // TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
+        this.providers = updatedProviders;
+        this.providersNeedUpdate = false;
+        return updatedProviders;
+    }
     getAC() {
         let ac = 10;
         let touchAC = 10;
@@ -105,12 +121,47 @@ class Creature {
         const dexBonus = this.getAbilityScoreModifiers().dexterity;
         ac += Math.min(dexBonus, this.dexToACLimit());
         touchAC += Math.min(dexBonus, this.dexToACLimit());
+        const acBonuses = modifierManager.getTotalModifier("ac", this, null, { groupedByType: true });
+        for (const modType in acBonuses) {
+            const value = acBonuses[modType] || 0;
+            if (modType === ModifierType.armor || modType === ModifierType.shield || modType === ModifierType.naturalArmor) {
+                ac += value;
+                flatFootedAC += value;
+            }
+            else {
+                ac += value;
+                touchAC += value;
+                flatFootedAC += value;
+            }
+        }
         // Future: Add armor, shields, natural armor, magical effects, etc.
         return {
             full: ac,
             touch: touchAC,
             flatFooted: flatFootedAC,
         };
+    }
+    getAllEquippedItems() {
+        const items = [];
+        if (this.equipment.weapon) {
+            items.push(this.equipment.weapon);
+        }
+        if (this.equipment.offhand) {
+            items.push(this.equipment.offhand);
+        }
+        if (this.equipment.armor) {
+            items.push(this.equipment.armor);
+        }
+        return items;
+    }
+    equipItem(item) {
+        this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
+        if (item instanceof Weapon) {
+            this.equipment.weapon = item;
+        }
+        if (item instanceof Armor) {
+            this.equipment.armor = item;
+        }
     }
     setPosition(x, y) {
         this.x = x;
@@ -127,7 +178,17 @@ class Creature {
         this.screenY = y * atlas.getTileSize();
     }
     dexToACLimit() {
-        return Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
+        const items = this.getAllEquippedItems();
+        let maxDexLimit = -Infinity;
+        for (const item of items) {
+            if (item instanceof Armor) {
+                const dexLimit = item.getDexLimit();
+                if (dexLimit > maxDexLimit) {
+                    maxDexLimit = dexLimit;
+                }
+            }
+        }
+        return maxDexLimit !== -Infinity ? maxDexLimit : Infinity; // 0 = no benefit, 2 = max +2 AC from dex, etc.
     }
     // This function should only be called for testing.
     // For actual gameplay, use a random wandering behavior or player-controlled movement instead.

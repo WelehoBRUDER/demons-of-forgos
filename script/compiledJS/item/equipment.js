@@ -14,5 +14,8 @@ class Equipment extends Item {
     getSizeOnRender() {
         return this.sizeOnRender;
     }
+    getModifiers(ctx) {
+        return [];
+    }
 }
 //# sourceMappingURL=equipment.js.map

@@ -13,7 +13,6 @@ class DynamicCreature extends Creature {
     hair;
     eyes;
     mouth;
-    equipment;
     constructor(data) {
         super(data);
         this._id = DynamicCreature.nextId++; // Assign the current value of nextId to _id, then increment nextId
@@ -43,23 +42,8 @@ class DynamicCreature extends Creature {
             items: this.getAllEquippedItems(),
         };
     }
-    getAllEquippedItems() {
-        const items = [];
-        if (this.equipment.weapon) {
-            items.push(this.equipment.weapon);
-        }
-        if (this.equipment.armor) {
-            items.push(this.equipment.armor);
-        }
-        return items;
-    }
     equipItem(item) {
-        if (item instanceof Weapon) {
-            this.equipment.weapon = item;
-        }
-        if (item instanceof Armor) {
-            this.equipment.armor = item;
-        }
+        super.equipItem(item);
         this.renderSprite(); // Re-render the sprite to reflect the equipped item
     }
     // Dynamic creatures must be tracked separately due to unique rendering.

@@ -32,8 +32,9 @@ interface DynamicSpriteTextures {
 }
 
 interface EquipmentInterface {
-	weapon?: Weapon;
-	armor?: Armor;
+	weapon?: Weapon | null;
+	offhand?: Weapon | Armor | null;
+	armor?: Armor | null;
 }
 
 // All PCs use this class because their rendering starts from a base body sprite with hair, items etc layered on top.
@@ -44,7 +45,6 @@ class DynamicCreature extends Creature {
 	hair: number;
 	eyes: number;
 	mouth: number;
-	equipment: EquipmentInterface;
 
 	constructor(data: DynamicCreatureInterface) {
 		super(data);
@@ -78,24 +78,8 @@ class DynamicCreature extends Creature {
 		};
 	}
 
-	getAllEquippedItems(): Item[] {
-		const items: Item[] = [];
-		if (this.equipment.weapon) {
-			items.push(this.equipment.weapon);
-		}
-		if (this.equipment.armor) {
-			items.push(this.equipment.armor);
-		}
-		return items;
-	}
-
 	equipItem(item: Item) {
-		if (item instanceof Weapon) {
-			this.equipment.weapon = item;
-		}
-		if (item instanceof Armor) {
-			this.equipment.armor = item;
-		}
+		super.equipItem(item);
 		this.renderSprite(); // Re-render the sprite to reflect the equipped item
 	}
 

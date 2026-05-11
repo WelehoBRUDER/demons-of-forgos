@@ -12,8 +12,8 @@ enum AnchorPointType {
 	weapon = "weapon",
 }
 
-class Item {
-	private id: string;
+class Item implements ModifierProvider {
+	protected id: string;
 	private spritePath: string;
 	private spritePosition: { x: number; y: number }; // Position of the item's sprite on the item atlas
 	protected type: string; // Class type
@@ -39,6 +39,10 @@ class Item {
 
 	getSpritePosition(): { x: number; y: number } {
 		return this.spritePosition;
+	}
+
+	getModifiers(ctx: any): Modifier[] {
+		return [];
 	}
 }
 

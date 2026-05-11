@@ -44,6 +44,12 @@ class Species {
     getAnchorPoints() {
         return this.anchorPoints;
     }
+    getModifiers(ctx) {
+        return [];
+    }
+    getSize() {
+        return this.size;
+    }
 }
 const sizeCategoryModifiers = {
     tiny: [
