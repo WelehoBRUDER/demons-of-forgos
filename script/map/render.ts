@@ -262,44 +262,86 @@ class MapRenderer {
 			) {
 				continue; // Skip rendering if creature is outside the screen bounds
 			}
+			let atlasX,
+				atlasY = 0;
+
+			let atlasToUse: OffscreenCanvas = null;
+
 			if (creature.baseClass === "NPCCreature") {
 				const npc = creature as NPCCreature;
 				// This is a terrible way to retrieve the data, but I haven't yet fixed the issue with spritePosition being lost when a new enemy is added
-				const { x: atlasX, y: atlasY } = entityManager.getEnemyTemplateById(npc.id)?.getSpritePosition() ?? { x: 0, y: 0 };
-				const offset = sizeCategory >= SizeCategory.MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
-				const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
-				this.creatureCtx.drawImage(
-					spriteAtlas,
-					atlasX,
-					atlasY,
-					spriteSize,
-					spriteSize,
-					creatureScreenX - offset - visualOffsetX * zoom,
-					creatureScreenY - offset - visualOffsetY * zoom,
-					creatureSize,
-					creatureSize,
-				);
-				this.drawCreatureHealthBar(creature, creatureScreenX, creatureScreenY, creatureSize, zoom, offset);
+				const { x: _atlasX, y: _atlasY } = entityManager.getEnemyTemplateById(npc.id)?.getSpritePosition() ?? { x: 0, y: 0 };
+				atlasX = _atlasX;
+				atlasY = _atlasY;
+				atlasToUse = spriteAtlas;
 			}
 			if (creature.baseClass === "DynamicCreature") {
 				const dynamicCreature = creature as DynamicCreature;
-				const { x: atlasX, y: atlasY } = atlas.getDynamicSpriteTexturePosition(dynamicCreature);
-				const offset = sizeCategory >= SizeCategory.MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
-				const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
-				this.creatureCtx.drawImage(
-					dynamicSpriteAtlas,
-					atlasX,
-					atlasY,
-					spriteSize,
-					spriteSize,
-					creatureScreenX - offset - visualOffsetX * zoom,
-					creatureScreenY - offset - visualOffsetY * zoom,
-					creatureSize,
-					creatureSize,
-				);
-				this.drawCreatureHealthBar(creature, creatureScreenX, creatureScreenY, creatureSize, zoom, offset);
+				const { x: _atlasX, y: _atlasY } = atlas.getDynamicSpriteTexturePosition(dynamicCreature);
+				atlasX = _atlasX;
+				atlasY = _atlasY;
+				atlasToUse = dynamicSpriteAtlas;
 			}
+
+			const offset = sizeCategory >= SizeCategory.MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
+			const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
+			this.creatureCtx.drawImage(
+				atlasToUse,
+				atlasX,
+				atlasY,
+				spriteSize,
+				spriteSize,
+				creatureScreenX - offset - visualOffsetX * zoom,
+				creatureScreenY - offset - visualOffsetY * zoom,
+				creatureSize,
+				creatureSize,
+			);
+			this.drawCreatureHealthBar(creature, creatureScreenX, creatureScreenY, creatureSize, zoom, offset);
 		}
+	}
+
+	drawCreaturePortrait(creature: Creature, ctx: CanvasRenderingContext2D, size: number = 128) {
+		const spriteAtlas = atlas.getSpriteAtlas();
+		const spriteSize = atlas.getSpriteSize();
+		const dynamicSpriteAtlas = atlas.getDynamicSpriteAtlas();
+		const sizeCategory: number = creature.getSizeCategory();
+		// @TODO - change magic numbers to something coherent
+		const scaledSize = 0.8 + ((sizeCategory - 0.5) / 3.5) * 0.4; // Scale between 0.8 and 1.2 based on size category (assuming size categories range from 0.5 to 4)
+		const creatureSize = size * 3 * scaledSize; // Portraits should be roughly equal size, with minor scaling based on creature size category
+		const creatureScreenX = 0;
+		const creatureScreenY = 0;
+		let atlasX,
+			atlasY = 0;
+
+		let atlasToUse: OffscreenCanvas = null;
+
+		if (creature.baseClass === "NPCCreature") {
+			const npc = creature as NPCCreature;
+			// This is a terrible way to retrieve the data, but I haven't yet fixed the issue with spritePosition being lost when a new enemy is added
+			const { x: _atlasX, y: _atlasY } = entityManager.getEnemyTemplateById(npc.id)?.getSpritePosition() ?? { x: 0, y: 0 };
+			atlasX = _atlasX;
+			atlasY = _atlasY;
+			atlasToUse = spriteAtlas;
+		}
+		if (creature.baseClass === "DynamicCreature") {
+			const dynamicCreature = creature as DynamicCreature;
+			const { x: _atlasX, y: _atlasY } = atlas.getDynamicSpriteTexturePosition(dynamicCreature);
+			atlasX = _atlasX;
+			atlasY = _atlasY;
+			atlasToUse = dynamicSpriteAtlas;
+		}
+		const offset = (creatureSize - size) / 2; // Center sprite
+		ctx.drawImage(
+			atlasToUse,
+			atlasX,
+			atlasY,
+			spriteSize,
+			spriteSize,
+			creatureScreenX - offset,
+			creatureScreenY,
+			creatureSize,
+			creatureSize,
+		);
 	}
 
 	drawCreatureHealthBar(creature: Creature, screenX: number, screenY: number, size: number, zoom: number = 1, offset: number = 0) {
@@ -533,6 +575,8 @@ const devInit = () => {
 		uid: "player_character:001", // Unique identifier for the player character
 	});
 
+	testPlayer.setFaction(Faction.FRIENDLY);
+
 	//const mapWidth: number = 100;
 	//const mapHeight: number = 100;
 	//const emptyMap = generateEmptyMap(mapWidth, mapHeight, 2);
@@ -563,4 +607,5 @@ const devInit = () => {
 	game.setControlledCreatureId(creature.getUID());
 	mapRenderer.renderVisibleMap(camera);
 	mapRenderer.renderTileHighlight();
+	portraitManager.generateAllPortraits();
 };

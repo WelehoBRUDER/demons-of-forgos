@@ -20,9 +20,7 @@ class NPCCreature extends Creature {
         this.spritePosition = data.spritePosition ?? { x: -1, y: -1 };
         this.species = data.species;
         this.baseClass = "NPCCreature";
-        console.log("Creating NPCCreature with data:", data);
         if (data.baseHitDice) {
-            console.log("Setting hit dice for NPCCreature:", data.baseHitDice);
             this.baseHitDice = { ...data.baseHitDice };
         }
         if (data.modifiers) {

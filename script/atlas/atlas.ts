@@ -13,6 +13,7 @@ class Atlas {
 	private spriteCtx: OffscreenCanvasRenderingContext2D;
 	private dynamicSpriteCtx: OffscreenCanvasRenderingContext2D;
 	private itemSpriteCtx: OffscreenCanvasRenderingContext2D;
+	private renderVersion: number = 0;
 
 	constructor(tileSize: number, texturesPerRow: number) {
 		this.tileSize = tileSize;
@@ -210,7 +211,8 @@ class Atlas {
 		});
 	}
 
-	drawDynamicSprite(dynamicCreature: DynamicCreature) {
+	async drawDynamicSprite(dynamicCreature: DynamicCreature) {
+		const currentRender: number = ++this.renderVersion; // Increment render version for each draw call
 		const ctx = this.dynamicSpriteCtx;
 		const spriteSize = this.getSpriteSize();
 		const { x, y } = this.getDynamicSpriteTexturePosition(dynamicCreature);
@@ -219,40 +221,62 @@ class Atlas {
 		const species = speciesManager.getSpeciesById(dynamicCreature.species);
 		const items = texturesToRender.items;
 
-		let imagesLoaded = 0;
-		Object.values(texturesToRender).forEach((texturePath: string | Item[]) => {
-			if (Array.isArray(texturePath)) {
-				return;
+		const loadOrder: string[] = [
+			texturesToRender.body,
+			texturesToRender.eyes,
+			texturesToRender.hair,
+			texturesToRender.mouth,
+			texturesToRender.ears,
+		];
+
+		const images = await Promise.all(
+			loadOrder.map(async (texturePath: string) => {
+				const img = new Image();
+				img.src = texturePath;
+
+				// Better than onload
+				await img.decode();
+
+				return img;
+			}),
+		);
+
+		if (currentRender !== this.renderVersion) {
+			console.warn("A newer render call has been made, aborting this one to prevent outdated sprite rendering.");
+			return; // A newer render call has been made, so we should abort this one to prevent outdated sprite rendering.
+		}
+
+		for (const img of images) {
+			// Note: This will draw all textures in the order of the loadOrder array, which should be body first and then details on top.
+			ctx.drawImage(img, x, y, spriteSize, spriteSize);
+		}
+
+		items.forEach((item: Item) => {
+			const position = itemManager.getItem(item.getId())?.getSpritePosition();
+			if (item instanceof Weapon) {
+				const { width, height } = item.getSizeOnRender();
+				const anchor = species.getAnchorPoints()[item.getAnchorPoint()];
+				ctx.drawImage(
+					this.itemSprites,
+					position.x,
+					position.y,
+					this.getSpriteSize(),
+					this.getSpriteSize(),
+					x + anchor.x - width / 2,
+					y + anchor.y - height / 2,
+					width,
+					height,
+				);
 			}
-
-			const img = new Image();
-			img.onload = () => {
-				imagesLoaded++;
-				ctx.drawImage(img, x, y, spriteSize, spriteSize);
-				if (imagesLoaded === 4) {
-					drawItems();
-				}
-				// skip the others because they're not implemented yet
-			};
-			img.onerror = () => {
-				console.error(`Failed to load dynamic creature body texture: ${texturePath}`);
-			};
-			img.src = texturePath;
-		});
-
-		//while (imagesLoaded < 4) {}
-
-		const drawItems = (): void => {
-			items.forEach((item: Item) => {
-				const position = itemManager.getItem(item.getId())?.getSpritePosition();
-				console.log(item.getId(), position);
-				if (item instanceof Weapon) {
-					const { width, height } = item.getSizeOnRender();
-					const anchor = species.getAnchorPoints()[item.getAnchorPoint()];
+			if (item instanceof Armor) {
+				const equippableData = item.getEquippableItemData();
+				equippableData.forEach((data: EquippableItemData) => {
+					const { width, height } = data.sizeOnRender || { width: this.getSpriteSize(), height: this.getSpriteSize() };
+					const anchor = species.getAnchorPoints()[data.anchorPoint || AnchorPointType.body];
 					ctx.drawImage(
 						this.itemSprites,
-						position.x,
-						position.y,
+						data.texturePosition?.x || 0,
+						data.texturePosition?.y || 0,
 						this.getSpriteSize(),
 						this.getSpriteSize(),
 						x + anchor.x - width / 2,
@@ -260,29 +284,11 @@ class Atlas {
 						width,
 						height,
 					);
-				}
-				if (item instanceof Armor) {
-					const equippableData = item.getEquippableItemData();
-					equippableData.forEach((data: EquippableItemData) => {
-						console.log(data);
-						const { width, height } = data.sizeOnRender || { width: this.getSpriteSize(), height: this.getSpriteSize() };
-						const anchor = species.getAnchorPoints()[data.anchorPoint || AnchorPointType.body];
-						console.log(anchor);
-						ctx.drawImage(
-							this.itemSprites,
-							data.texturePosition?.x || 0,
-							data.texturePosition?.y || 0,
-							this.getSpriteSize(),
-							this.getSpriteSize(),
-							x + anchor.x - width / 2,
-							y + anchor.y - height / 2,
-							width,
-							height,
-						);
-					});
-				}
-			});
-		};
+				});
+			}
+		});
+
+		portraitManager.generateAllPortraits();
 	}
 
 	getDynamicSpriteTexturePosition(dynamicCreature: DynamicCreature): { x: number; y: number } {

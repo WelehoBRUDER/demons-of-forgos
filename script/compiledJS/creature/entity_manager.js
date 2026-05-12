@@ -135,6 +135,15 @@ class EntityManager {
     getCreatureByUID(uid) {
         return this.creatures.get(uid);
     }
+    getCreaturesByFaction(faction) {
+        const creaturesInFaction = [];
+        for (const creature of this.creatures.values()) {
+            if (creature.getFaction() === faction) {
+                creaturesInFaction.push(creature);
+            }
+        }
+        return creaturesInFaction;
+    }
 }
 const entityManager = new EntityManager();
 //# sourceMappingURL=entity_manager.js.map
