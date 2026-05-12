@@ -78,6 +78,13 @@ class DynamicCreature extends Creature {
 		};
 	}
 
+	getMaxHP(): number {
+		let base: number = super.getMaxHP();
+		let firstHitDie = this.getHitDice()[0]; // Assuming the first hit die is the one to use for base HP calculation
+		// Slightly janky maybe, but this lines makes it so that dynamic creatures benefit from their full hit die at 1st level.
+		return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
+	}
+
 	equipItem(item: Item) {
 		super.equipItem(item);
 		this.renderSprite(); // Re-render the sprite to reflect the equipped item

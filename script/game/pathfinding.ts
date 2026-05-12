@@ -160,7 +160,7 @@ class Pathfinding {
 
 		const propertyInteractions = creature.getTilePropertyInteractions();
 
-		if (size == SMALL) size = MEDIUM; // Treat small and medium creatures the same
+		if (size == SizeCategory.SMALL) size = SizeCategory.MEDIUM; // Treat small and medium creatures the same
 
 		let cost: number = 0;
 		for (let dx = 0; dx < size; dx++) {
@@ -190,10 +190,10 @@ class Pathfinding {
 			const properties: TileFlags = obj.getTileProperties();
 
 			if (properties.isWall) return Infinity; // Impassable wall (static obstacle)
-			if (properties.isWater && interactions.isWater === BLOCKED) return Infinity; // Impassable water (can be flown/hovered or walked over)
-			if (properties.isLowWall && interactions.isLowWall === BLOCKED) return Infinity; // Impassable low wall (can be flown over but not hovered)
-			if (properties.isDrop && interactions.isDrop === BLOCKED) return Infinity; // Impassable drop (can be flown or hovered over)
-			if (properties.isDifficultTerrain && interactions.isDifficultTerrain === BLOCKED) return 2; // Difficult terrain, double movement cost
+			if (properties.isWater && interactions.isWater === MovementType.BLOCKED) return Infinity; // Impassable water (can be flown/hovered or walked over)
+			if (properties.isLowWall && interactions.isLowWall === MovementType.BLOCKED) return Infinity; // Impassable low wall (can be flown over but not hovered)
+			if (properties.isDrop && interactions.isDrop === MovementType.BLOCKED) return Infinity; // Impassable drop (can be flown or hovered over)
+			if (properties.isDifficultTerrain && interactions.isDifficultTerrain === MovementType.BLOCKED) return 2; // Difficult terrain, double movement cost
 
 			return 1; // Normal movement cost
 		}
@@ -206,16 +206,16 @@ class Pathfinding {
 		const properties: TileFlags = map.getTileProperties(x, y);
 
 		//console.log(`Cost from terrain at (${x}, ${y}):`, properties, "with interactions", interactions);
-		if (properties.isWater && interactions.isWater === BLOCKED) return Infinity; // Impassable water (can be flown/hovered or walked over)
-		if (properties.isLowWall && interactions.isLowWall === BLOCKED) return Infinity; // Impassable low wall (can be flown over but not hovered)
-		if (properties.isDrop && interactions.isDrop === BLOCKED) return Infinity; // Impassable drop (can be flown or hovered over)
-		if (properties.isDifficultTerrain && interactions.isDifficultTerrain === BLOCKED) return 2; // Difficult terrain, double movement cost
+		if (properties.isWater && interactions.isWater === MovementType.BLOCKED) return Infinity; // Impassable water (can be flown/hovered or walked over)
+		if (properties.isLowWall && interactions.isLowWall === MovementType.BLOCKED) return Infinity; // Impassable low wall (can be flown over but not hovered)
+		if (properties.isDrop && interactions.isDrop === MovementType.BLOCKED) return Infinity; // Impassable drop (can be flown or hovered over)
+		if (properties.isDifficultTerrain && interactions.isDifficultTerrain === MovementType.BLOCKED) return 2; // Difficult terrain, double movement cost
 
 		return 1; // Normal movement cost
 	}
 
 	costFromEntities(x: number, y: number, map: WorldMap, creature: Creature): number {
-		if (creature.getSizeCategory() === TINY) return 1; // Tiny creatures can move through occupied tiles without penalty
+		if (creature.getSizeCategory() === SizeCategory.TINY) return 1; // Tiny creatures can move through occupied tiles without penalty
 
 		const creaturesBounding: Creature[] = entityManager.getCreaturesBoundingWithPosition(map.id, x, y);
 		for (const other of creaturesBounding) {

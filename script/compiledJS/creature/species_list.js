@@ -14,7 +14,7 @@ class SpeciesManager {
 const speciesManager = new SpeciesManager();
 speciesManager.addSpecies(new Species({
     id: "human",
-    type: SpeciesType.humanoid,
-    size: sizeCategories.medium,
+    type: SpeciesType.HUMANOID,
+    size: SizeCategory.MEDIUM,
 }));
 //# sourceMappingURL=species_list.js.map

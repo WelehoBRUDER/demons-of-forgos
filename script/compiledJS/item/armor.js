@@ -49,6 +49,13 @@ class Armor extends Equipment {
                     value: this.ac,
                     type: ModifierType.armor,
                 },
+                {
+                    id: `${this.id}_debug_dex`,
+                    target: AbilityScore.DEXTERITY,
+                    operation: Operation.add,
+                    value: 10,
+                    type: ModifierType.sacred,
+                },
             ];
         }
     }

@@ -3,8 +3,8 @@ interface CreatureInterface {
 	x?: number;
 	y?: number;
 	map?: string;
-	faction?: number;
-	sizeCategory?: string;
+	faction?: Faction;
+	sizeCategory?: SizeCategory;
 	uid?: string;
 	hp?: number;
 	initiative?: number;
@@ -17,6 +17,15 @@ interface StrippedCreatureData {
 	y: number;
 }
 
+enum AbilityScore {
+	STRENGTH = "strength",
+	DEXTERITY = "dexterity",
+	CONSTITUTION = "constitution",
+	INTELLIGENCE = "intelligence",
+	WISDOM = "wisdom",
+	CHARISMA = "charisma",
+}
+
 interface AbilityScores {
 	strength: number;
 	dexterity: number;
@@ -27,13 +36,30 @@ interface AbilityScores {
 }
 
 // Movement constants
-const BLOCKED = 0;
-const NORMAL = 1;
+enum MovementType {
+	BLOCKED = 0,
+	NORMAL = 1,
+}
 
-// Faction constants
-const HOSTILE = 0;
-const NEUTRAL = 1;
-const FRIENDLY = 2;
+enum Faction {
+	HOSTILE = 0,
+	NEUTRAL = 1,
+	FRIENDLY = 2,
+}
+
+enum HitDice {
+	D4 = 4,
+	D6 = 6,
+	D8 = 8,
+	D10 = 10,
+	D12 = 12,
+	D20 = 20,
+}
+
+interface HitDieInfo {
+	type: HitDice;
+	count: number;
+}
 
 interface TilePropertyInteractions {
 	isWater: number; // 0 means impeded, 1 means normal
@@ -70,8 +96,8 @@ class Creature implements CreatureInterface {
 	baseClass: string = "Creature";
 	lastMoved: number = 0;
 	map: string; // ID pointing to the map the creature is on, set when added to map
-	faction: number = NEUTRAL; // 0 = hostile, 1 = neutral, 2 = friendly. This can be used for AI behavior and targeting.
-	sizeCategory: string = "medium";
+	faction: Faction = Faction.NEUTRAL; // 0 = hostile, 1 = neutral, 2 = friendly. This can be used for AI behavior and targeting.
+	sizeCategory: SizeCategory = SizeCategory.MEDIUM;
 	currentPath: { x: number; y: number }[] = [];
 	visualOffsetX: number = 0; // For smooth movement, this will be updated gradually towards 0
 	visualOffsetY: number = 0; // For smooth movement, this will be updated gradually towards 0
@@ -84,14 +110,15 @@ class Creature implements CreatureInterface {
 	equipment: EquipmentInterface = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
 
 	hp: number = 4;
+
 	constructor(data: CreatureInterface) {
 		this._id = creatureIndex++; // Assign a unique ID to each creature
 		this.id = data.id;
 		this.x = data.x ?? -1;
 		this.y = data.y ?? -1;
 		this.map = data.map ?? "";
-		this.faction = data.faction ?? NEUTRAL;
-		this.sizeCategory = data.sizeCategory ?? "medium";
+		this.faction = data.faction ?? Faction.NEUTRAL;
+		this.sizeCategory = data.sizeCategory ?? SizeCategory.MEDIUM;
 		this.screenX = this.x;
 		this.screenY = this.y;
 		this.lastMoved = Math.random();
@@ -129,7 +156,7 @@ class Creature implements CreatureInterface {
 		this.map = mapId;
 	}
 
-	setFaction(faction: number) {
+	setFaction(faction: Faction) {
 		this.faction = faction;
 	}
 
@@ -145,8 +172,14 @@ class Creature implements CreatureInterface {
 		return this.map;
 	}
 
-	getFaction(): number {
+	getFaction(): Faction {
 		return this.faction;
+	}
+
+	getHitDice(): HitDieInfo[] {
+		// This should be implemented based on the creature's class or species
+		// Typically, enemies return a static count while player characters calculate it based on their class levels and hit dice progression
+		return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now
 	}
 
 	getAllProviders(): ModifierProvider[] {
@@ -157,6 +190,7 @@ class Creature implements CreatureInterface {
 		const updatedProviders: ModifierProvider[] = [];
 
 		updatedProviders.push(...this.getAllEquippedItems());
+		updatedProviders.push(this.getSizeProvider());
 		// TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
 
 		this.providers = updatedProviders;
@@ -169,17 +203,6 @@ class Creature implements CreatureInterface {
 		let ac = 10;
 		let touchAC = 10;
 		let flatFootedAC = 10;
-		const sizeModifiers = this.getSizeModifiers();
-		for (const modifier of sizeModifiers) {
-			if (modifier.enabled === false) continue; // Skip disabled modifiers
-			if (modifier.target === "ac") {
-				if (modifier.operation === Operation.add) {
-					ac += modifier.value;
-					touchAC += modifier.value;
-					flatFootedAC += modifier.value;
-				}
-			}
-		}
 		const dexBonus = this.getAbilityScoreModifiers().dexterity;
 
 		ac += Math.min(dexBonus, this.dexToACLimit());
@@ -287,16 +310,15 @@ class Creature implements CreatureInterface {
 	}
 
 	getSizeCategoryId(): string {
-		return this.sizeCategory;
+		return SizeCategory[this.sizeCategory];
 	}
 
 	getSizeCategory(): number {
-		return sizeCategories[this.sizeCategory] || sizeCategories.medium;
+		return this.sizeCategory;
 	}
 
-	getSizeModifiers(): Modifier[] {
-		const category = this.getSizeCategoryId();
-		return sizeCategoryModifiers[category] || [];
+	getSizeProvider(): ModifierProvider {
+		return Size.getProvider(this.sizeCategory);
 	}
 
 	getOccupiedArea(): number[][] {
@@ -369,22 +391,41 @@ class Creature implements CreatureInterface {
 	}
 
 	getAbilityScores(): AbilityScores {
-		return this.abilityScores;
+		const scores: AbilityScores = { ...this.abilityScores };
+		for (const ability in scores) {
+			const bonuses: number = modifierManager.getTotalModifier(ability, this, {}) as number;
+			scores[ability as keyof AbilityScores] += bonuses;
+		}
+		return scores;
 	}
 
 	getAbilityScoreModifiers(): AbilityScores {
+		const scores = this.getAbilityScores();
 		return {
-			strength: this.calcAbilityModifierFromScore(this.abilityScores.strength),
-			dexterity: this.calcAbilityModifierFromScore(this.abilityScores.dexterity),
-			constitution: this.calcAbilityModifierFromScore(this.abilityScores.constitution),
-			intelligence: this.calcAbilityModifierFromScore(this.abilityScores.intelligence),
-			wisdom: this.calcAbilityModifierFromScore(this.abilityScores.wisdom),
-			charisma: this.calcAbilityModifierFromScore(this.abilityScores.charisma),
+			strength: this.calcAbilityModifierFromScore(scores.strength),
+			dexterity: this.calcAbilityModifierFromScore(scores.dexterity),
+			constitution: this.calcAbilityModifierFromScore(scores.constitution),
+			intelligence: this.calcAbilityModifierFromScore(scores.intelligence),
+			wisdom: this.calcAbilityModifierFromScore(scores.wisdom),
+			charisma: this.calcAbilityModifierFromScore(scores.charisma),
 		};
 	}
 
 	getMaxHP(): number {
-		return 4; // Should be overridden by subclasses
+		let base: number = 0;
+		const flatBonus: number = modifierManager.getTotalModifier("hp", this, {}) as number;
+		const hitDieBonus: number = modifierManager.getTotalModifier("hp.per_hitDie", this, {}) as number;
+		const constitutionBonus: number = this.getAbilityScoreModifiers().constitution;
+		const hitDice = this.getHitDice();
+
+		for (const hitDieInfo of hitDice) {
+			base += hitDieInfo.count * (hitDieInfo.type / 2 + 1); // Average roll of the hit die, e.g. D6 averages to 3.5, so (6/2)+1 = 4
+			base += hitDieInfo.count * (hitDieBonus + constitutionBonus); // Add any per-hit-die bonuses
+		}
+
+		Math.floor(base);
+
+		return base + flatBonus;
 	}
 
 	getHpPercentage(): number {
@@ -408,10 +449,10 @@ class Creature implements CreatureInterface {
 		// 0 means impeded, 1 means normal
 		// The return value could also be a weight for pathfinding depending on the speed
 		return {
-			isWater: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
-			isLowWall: this.getHoverSpeed() === 0 ? BLOCKED : NORMAL,
-			isDrop: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
-			isDifficultTerrain: BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
+			isWater: this.getFlySpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+			isLowWall: this.getHoverSpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+			isDrop: this.getFlySpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+			isDifficultTerrain: MovementType.BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
 		};
 	}
 

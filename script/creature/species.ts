@@ -6,9 +6,9 @@ interface SpeciesData {
 }
 
 enum SpeciesType {
-	humanoid = "humanoid",
-	beast = "beast",
-	undead = "undead",
+	HUMANOID = "humanoid",
+	BEAST = "beast",
+	UNDEAD = "undead",
 }
 
 interface SizeCategories {
@@ -23,23 +23,6 @@ interface Stats {
 	wis: number;
 	cha: number;
 }
-
-// Defined constants for better readability in code
-const TINY = 0.5;
-const SMALL = 0.75;
-const MEDIUM = 1;
-const LARGE = 2;
-const HUGE = 3;
-const GARGANTUAN = 4; // Maximum size is 4x4 tiles and will never be exceeded by any creature.
-
-const sizeCategories: SizeCategories = {
-	tiny: 0.5,
-	small: 0.75,
-	medium: 1,
-	large: 2,
-	huge: 3,
-	gargantuan: 4, // Maximum size is 4x4 tiles and will never be exceeded by any creature.
-};
 
 class Species implements ModifierProvider {
 	id: string;
@@ -77,60 +60,3 @@ class Species implements ModifierProvider {
 		return this.size;
 	}
 }
-
-const sizeCategoryModifiers: { [key in keyof typeof sizeCategories]: [Modifier] } = {
-	tiny: [
-		{
-			id: "tiny_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: 2,
-			type: ModifierType.size,
-		},
-	],
-	small: [
-		{
-			id: "small_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: 1,
-			type: ModifierType.size,
-		},
-	],
-	medium: [
-		{
-			id: "medium_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: 0,
-			type: ModifierType.size,
-		},
-	],
-	large: [
-		{
-			id: "large_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: -1,
-			type: ModifierType.size,
-		},
-	],
-	huge: [
-		{
-			id: "huge_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: -2,
-			type: ModifierType.size,
-		},
-	],
-	gargantuan: [
-		{
-			id: "gargantuan_size_modifier",
-			target: "ac",
-			operation: Operation.add,
-			value: -4,
-			type: ModifierType.size,
-		},
-	],
-};

@@ -1,11 +1,34 @@
 "use strict";
+var AbilityScore;
+(function (AbilityScore) {
+    AbilityScore["STRENGTH"] = "strength";
+    AbilityScore["DEXTERITY"] = "dexterity";
+    AbilityScore["CONSTITUTION"] = "constitution";
+    AbilityScore["INTELLIGENCE"] = "intelligence";
+    AbilityScore["WISDOM"] = "wisdom";
+    AbilityScore["CHARISMA"] = "charisma";
+})(AbilityScore || (AbilityScore = {}));
 // Movement constants
-const BLOCKED = 0;
-const NORMAL = 1;
-// Faction constants
-const HOSTILE = 0;
-const NEUTRAL = 1;
-const FRIENDLY = 2;
+var MovementType;
+(function (MovementType) {
+    MovementType[MovementType["BLOCKED"] = 0] = "BLOCKED";
+    MovementType[MovementType["NORMAL"] = 1] = "NORMAL";
+})(MovementType || (MovementType = {}));
+var Faction;
+(function (Faction) {
+    Faction[Faction["HOSTILE"] = 0] = "HOSTILE";
+    Faction[Faction["NEUTRAL"] = 1] = "NEUTRAL";
+    Faction[Faction["FRIENDLY"] = 2] = "FRIENDLY";
+})(Faction || (Faction = {}));
+var HitDice;
+(function (HitDice) {
+    HitDice[HitDice["D4"] = 4] = "D4";
+    HitDice[HitDice["D6"] = 6] = "D6";
+    HitDice[HitDice["D8"] = 8] = "D8";
+    HitDice[HitDice["D10"] = 10] = "D10";
+    HitDice[HitDice["D12"] = 12] = "D12";
+    HitDice[HitDice["D20"] = 20] = "D20";
+})(HitDice || (HitDice = {}));
 const defaultAbilityScores = {
     strength: 10,
     dexterity: 10,
@@ -27,8 +50,8 @@ class Creature {
     baseClass = "Creature";
     lastMoved = 0;
     map; // ID pointing to the map the creature is on, set when added to map
-    faction = NEUTRAL; // 0 = hostile, 1 = neutral, 2 = friendly. This can be used for AI behavior and targeting.
-    sizeCategory = "medium";
+    faction = Faction.NEUTRAL; // 0 = hostile, 1 = neutral, 2 = friendly. This can be used for AI behavior and targeting.
+    sizeCategory = SizeCategory.MEDIUM;
     currentPath = [];
     visualOffsetX = 0; // For smooth movement, this will be updated gradually towards 0
     visualOffsetY = 0; // For smooth movement, this will be updated gradually towards 0
@@ -45,8 +68,8 @@ class Creature {
         this.x = data.x ?? -1;
         this.y = data.y ?? -1;
         this.map = data.map ?? "";
-        this.faction = data.faction ?? NEUTRAL;
-        this.sizeCategory = data.sizeCategory ?? "medium";
+        this.faction = data.faction ?? Faction.NEUTRAL;
+        this.sizeCategory = data.sizeCategory ?? SizeCategory.MEDIUM;
         this.screenX = this.x;
         this.screenY = this.y;
         this.lastMoved = Math.random();
@@ -91,12 +114,18 @@ class Creature {
     getFaction() {
         return this.faction;
     }
+    getHitDice() {
+        // This should be implemented based on the creature's class or species
+        // Typically, enemies return a static count while player characters calculate it based on their class levels and hit dice progression
+        return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now
+    }
     getAllProviders() {
         if (!this.providersNeedUpdate) {
             return this.providers;
         }
         const updatedProviders = [];
         updatedProviders.push(...this.getAllEquippedItems());
+        updatedProviders.push(this.getSizeProvider());
         // TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
         this.providers = updatedProviders;
         this.providersNeedUpdate = false;
@@ -106,18 +135,6 @@ class Creature {
         let ac = 10;
         let touchAC = 10;
         let flatFootedAC = 10;
-        const sizeModifiers = this.getSizeModifiers();
-        for (const modifier of sizeModifiers) {
-            if (modifier.enabled === false)
-                continue; // Skip disabled modifiers
-            if (modifier.target === "ac") {
-                if (modifier.operation === Operation.add) {
-                    ac += modifier.value;
-                    touchAC += modifier.value;
-                    flatFootedAC += modifier.value;
-                }
-            }
-        }
         const dexBonus = this.getAbilityScoreModifiers().dexterity;
         ac += Math.min(dexBonus, this.dexToACLimit());
         touchAC += Math.min(dexBonus, this.dexToACLimit());
@@ -217,14 +234,13 @@ class Creature {
         }
     }
     getSizeCategoryId() {
-        return this.sizeCategory;
+        return SizeCategory[this.sizeCategory];
     }
     getSizeCategory() {
-        return sizeCategories[this.sizeCategory] || sizeCategories.medium;
+        return this.sizeCategory;
     }
-    getSizeModifiers() {
-        const category = this.getSizeCategoryId();
-        return sizeCategoryModifiers[category] || [];
+    getSizeProvider() {
+        return Size.getProvider(this.sizeCategory);
     }
     getOccupiedArea() {
         const box = [];
@@ -281,20 +297,36 @@ class Creature {
         return Math.floor((score - 10) / 2);
     }
     getAbilityScores() {
-        return this.abilityScores;
+        const scores = { ...this.abilityScores };
+        for (const ability in scores) {
+            const bonuses = modifierManager.getTotalModifier(ability, this, {});
+            scores[ability] += bonuses;
+        }
+        return scores;
     }
     getAbilityScoreModifiers() {
+        const scores = this.getAbilityScores();
         return {
-            strength: this.calcAbilityModifierFromScore(this.abilityScores.strength),
-            dexterity: this.calcAbilityModifierFromScore(this.abilityScores.dexterity),
-            constitution: this.calcAbilityModifierFromScore(this.abilityScores.constitution),
-            intelligence: this.calcAbilityModifierFromScore(this.abilityScores.intelligence),
-            wisdom: this.calcAbilityModifierFromScore(this.abilityScores.wisdom),
-            charisma: this.calcAbilityModifierFromScore(this.abilityScores.charisma),
+            strength: this.calcAbilityModifierFromScore(scores.strength),
+            dexterity: this.calcAbilityModifierFromScore(scores.dexterity),
+            constitution: this.calcAbilityModifierFromScore(scores.constitution),
+            intelligence: this.calcAbilityModifierFromScore(scores.intelligence),
+            wisdom: this.calcAbilityModifierFromScore(scores.wisdom),
+            charisma: this.calcAbilityModifierFromScore(scores.charisma),
         };
     }
     getMaxHP() {
-        return 4; // Should be overridden by subclasses
+        let base = 0;
+        const flatBonus = modifierManager.getTotalModifier("hp", this, {});
+        const hitDieBonus = modifierManager.getTotalModifier("hp.per_hitDie", this, {});
+        const constitutionBonus = this.getAbilityScoreModifiers().constitution;
+        const hitDice = this.getHitDice();
+        for (const hitDieInfo of hitDice) {
+            base += hitDieInfo.count * (hitDieInfo.type / 2 + 1); // Average roll of the hit die, e.g. D6 averages to 3.5, so (6/2)+1 = 4
+            base += hitDieInfo.count * (hitDieBonus + constitutionBonus); // Add any per-hit-die bonuses
+        }
+        Math.floor(base);
+        return base + flatBonus;
     }
     getHpPercentage() {
         return Math.max(0, this.hp / this.getMaxHP());
@@ -313,10 +345,10 @@ class Creature {
         // 0 means impeded, 1 means normal
         // The return value could also be a weight for pathfinding depending on the speed
         return {
-            isWater: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
-            isLowWall: this.getHoverSpeed() === 0 ? BLOCKED : NORMAL,
-            isDrop: this.getFlySpeed() === 0 ? BLOCKED : NORMAL,
-            isDifficultTerrain: BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
+            isWater: this.getFlySpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+            isLowWall: this.getHoverSpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+            isDrop: this.getFlySpeed() === 0 ? MovementType.BLOCKED : MovementType.NORMAL,
+            isDifficultTerrain: MovementType.BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
         };
     }
     rollInitiative() {

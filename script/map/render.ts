@@ -266,7 +266,7 @@ class MapRenderer {
 				const npc = creature as NPCCreature;
 				// This is a terrible way to retrieve the data, but I haven't yet fixed the issue with spritePosition being lost when a new enemy is added
 				const { x: atlasX, y: atlasY } = entityManager.getEnemyTemplateById(npc.id)?.getSpritePosition() ?? { x: 0, y: 0 };
-				const offset = sizeCategory >= MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
+				const offset = sizeCategory >= SizeCategory.MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
 				const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
 				this.creatureCtx.drawImage(
 					spriteAtlas,
@@ -284,7 +284,7 @@ class MapRenderer {
 			if (creature.baseClass === "DynamicCreature") {
 				const dynamicCreature = creature as DynamicCreature;
 				const { x: atlasX, y: atlasY } = atlas.getDynamicSpriteTexturePosition(dynamicCreature);
-				const offset = sizeCategory >= MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
+				const offset = sizeCategory >= SizeCategory.MEDIUM ? 0 : (creatureSize - size) / 2; // Center sprite
 				const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
 				this.creatureCtx.drawImage(
 					dynamicSpriteAtlas,
