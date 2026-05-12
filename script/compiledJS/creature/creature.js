@@ -387,6 +387,12 @@ class Creature {
         this.hp = amount;
         this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
     }
+    getWeapon() {
+        if (this.equipment.weapon) {
+            return this.equipment.weapon;
+        }
+        return null;
+    }
     // isWall will always block movement, as it is explicitly an enclosed barrier.
     getTilePropertyInteractions() {
         // 0 means impeded, 1 means normal

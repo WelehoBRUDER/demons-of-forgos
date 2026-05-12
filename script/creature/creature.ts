@@ -504,6 +504,13 @@ class Creature implements CreatureInterface {
 		this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
 	}
 
+	getWeapon(): Weapon | null {
+		if (this.equipment.weapon) {
+			return this.equipment.weapon;
+		}
+		return null;
+	}
+
 	// isWall will always block movement, as it is explicitly an enclosed barrier.
 	getTilePropertyInteractions(): TilePropertyInteractions {
 		// 0 means impeded, 1 means normal
