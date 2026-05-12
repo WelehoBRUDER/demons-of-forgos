@@ -1,14 +1,36 @@
 "use strict";
+class BaseCreatureModifierProvider {
+    modifiers;
+    constructor(modifiers) {
+        this.modifiers = modifiers;
+    }
+    getModifiers(ctx) {
+        return this.modifiers;
+    }
+}
 class NPCCreature extends Creature {
     spritePath;
     spritePosition;
     species; // Will contain species data
+    baseHitDice; // Default hit die, can be overridden by specific NPC data
+    modifiers; // Modifiers specific to this NPC, such as racial traits, class features, etc.
     constructor(data) {
         super(data);
         this.spritePath = data.spritePath;
         this.spritePosition = data.spritePosition ?? { x: -1, y: -1 };
         this.species = data.species;
         this.baseClass = "NPCCreature";
+        console.log("Creating NPCCreature with data:", data);
+        if (data.baseHitDice) {
+            console.log("Setting hit dice for NPCCreature:", data.baseHitDice);
+            this.baseHitDice = { ...data.baseHitDice };
+        }
+        if (data.modifiers) {
+            const provider = new BaseCreatureModifierProvider(data.modifiers);
+            this.modifiers = provider;
+        }
+        this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+        this.providersNeedUpdate = true; // Mark providers as needing update to ensure modifiers are included in calculations
     }
     setSpritePosition(x, y) {
         this.spritePosition = { x, y };
@@ -19,8 +41,16 @@ class NPCCreature extends Creature {
     getSpritePosition() {
         return this.spritePosition;
     }
-    getMaxHP() {
-        return 4;
+    getHitDice() {
+        return this.baseHitDice;
+    }
+    getAllProviders() {
+        const baseProviders = super.getAllProviders();
+        if (this.providersNeedUpdate) {
+            baseProviders.push(this.modifiers);
+            this.providers = baseProviders;
+        }
+        return baseProviders;
     }
     getEditorDynamicData() {
         return {

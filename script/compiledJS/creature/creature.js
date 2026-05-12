@@ -68,14 +68,15 @@ class Creature {
         this.x = data.x ?? -1;
         this.y = data.y ?? -1;
         this.map = data.map ?? "";
+        this.abilityScores = data.abilityScores ? { ...data.abilityScores } : { ...defaultAbilityScores };
         this.faction = data.faction ?? Faction.NEUTRAL;
         this.sizeCategory = data.sizeCategory ?? SizeCategory.MEDIUM;
         this.screenX = this.x;
         this.screenY = this.y;
         this.lastMoved = Math.random();
-        this.hp = data.hp ?? this.getMaxHP();
         this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
         this.initiative = data.initiative ?? 0; // 0 outside combat
+        this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
     }
     restoreStrippedData(data) {
         this.setUID(data.u);
@@ -104,6 +105,14 @@ class Creature {
     }
     getIndex() {
         return this._id;
+    }
+    getInitiative() {
+        return this.initiative;
+    }
+    getInitiativeBonus() {
+        let base = this.getAbilityScoreModifiers().dexterity;
+        const bonuses = modifierManager.getTotalModifier("initiative", this, {});
+        return base + bonuses;
     }
     getBaseClass() {
         return this.baseClass;
@@ -290,9 +299,6 @@ class Creature {
             //this.die();
         }
     }
-    setHP(amount) {
-        this.hp = amount;
-    }
     calcAbilityModifierFromScore(score) {
         return Math.floor((score - 10) / 2);
     }
@@ -321,10 +327,12 @@ class Creature {
         const hitDieBonus = modifierManager.getTotalModifier("hp.per_hitDie", this, {});
         const constitutionBonus = this.getAbilityScoreModifiers().constitution;
         const hitDice = this.getHitDice();
-        for (const hitDieInfo of hitDice) {
+        if (!hitDice)
+            return 1;
+        Object.values(hitDice).forEach((hitDieInfo) => {
             base += hitDieInfo.count * (hitDieInfo.type / 2 + 1); // Average roll of the hit die, e.g. D6 averages to 3.5, so (6/2)+1 = 4
             base += hitDieInfo.count * (hitDieBonus + constitutionBonus); // Add any per-hit-die bonuses
-        }
+        });
         Math.floor(base);
         return base + flatBonus;
     }
@@ -339,6 +347,10 @@ class Creature {
     }
     getHoverSpeed() {
         return 0; // Hovering must be specified by creature stat block.
+    }
+    setHP(amount) {
+        this.hp = amount;
+        this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
     }
     // isWall will always block movement, as it is explicitly an enclosed barrier.
     getTilePropertyInteractions() {

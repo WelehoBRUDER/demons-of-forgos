@@ -100,7 +100,7 @@ class DynamicCreature extends Creature {
 	}
 
 	getSizeCategory(): number {
-		return speciesManager.getSpeciesById(this.species)?.size || sizeCategories.medium;
+		return speciesManager.getSpeciesById(this.species)?.size || SizeCategory.MEDIUM;
 	}
 
 	renderSprite(): void {

@@ -60,7 +60,7 @@ class DynamicCreature extends Creature {
         return speciesManager.getSpeciesById(this.species)?.size.toString() || "medium";
     }
     getSizeCategory() {
-        return speciesManager.getSpeciesById(this.species)?.size || sizeCategories.medium;
+        return speciesManager.getSpeciesById(this.species)?.size || SizeCategory.MEDIUM;
     }
     renderSprite() {
         atlas.drawDynamicSprite(this);

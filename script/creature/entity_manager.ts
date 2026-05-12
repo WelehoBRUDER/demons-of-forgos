@@ -27,6 +27,7 @@ class EntityManager {
 		let _creature: Creature = creature;
 		if (type === "NPCCreature") {
 			const base = this.getEnemyTemplateById(id);
+			// @ts-ignore
 			const creature: NPCCreature = new NPCCreature(base ?? ({} as NPCCreatureInterface));
 			if (creature) {
 				_creature = creature;

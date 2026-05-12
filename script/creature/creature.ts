@@ -1,5 +1,6 @@
 interface CreatureInterface {
 	id: string;
+	abilityScores?: AbilityScores;
 	x?: number;
 	y?: number;
 	map?: string;
@@ -117,14 +118,16 @@ class Creature implements CreatureInterface {
 		this.x = data.x ?? -1;
 		this.y = data.y ?? -1;
 		this.map = data.map ?? "";
+		this.abilityScores = data.abilityScores ? { ...data.abilityScores } : { ...defaultAbilityScores };
 		this.faction = data.faction ?? Faction.NEUTRAL;
 		this.sizeCategory = data.sizeCategory ?? SizeCategory.MEDIUM;
 		this.screenX = this.x;
 		this.screenY = this.y;
 		this.lastMoved = Math.random();
-		this.hp = data.hp ?? this.getMaxHP();
 		this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
 		this.initiative = data.initiative ?? 0; // 0 outside combat
+
+		this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
 	}
 
 	restoreStrippedData(data: StrippedCreatureData) {
@@ -162,6 +165,16 @@ class Creature implements CreatureInterface {
 
 	getIndex(): number {
 		return this._id;
+	}
+
+	getInitiative(): number {
+		return this.initiative;
+	}
+
+	getInitiativeBonus(): number {
+		let base: number = this.getAbilityScoreModifiers().dexterity;
+		const bonuses: number = modifierManager.getTotalModifier("initiative", this, {}) as number;
+		return base + bonuses;
 	}
 
 	getBaseClass(): string {
@@ -382,10 +395,6 @@ class Creature implements CreatureInterface {
 		}
 	}
 
-	setHP(amount: number) {
-		this.hp = amount;
-	}
-
 	calcAbilityModifierFromScore(score: number): number {
 		return Math.floor((score - 10) / 2);
 	}
@@ -418,10 +427,12 @@ class Creature implements CreatureInterface {
 		const constitutionBonus: number = this.getAbilityScoreModifiers().constitution;
 		const hitDice = this.getHitDice();
 
-		for (const hitDieInfo of hitDice) {
+		if (!hitDice) return 1;
+
+		Object.values(hitDice).forEach((hitDieInfo) => {
 			base += hitDieInfo.count * (hitDieInfo.type / 2 + 1); // Average roll of the hit die, e.g. D6 averages to 3.5, so (6/2)+1 = 4
 			base += hitDieInfo.count * (hitDieBonus + constitutionBonus); // Add any per-hit-die bonuses
-		}
+		});
 
 		Math.floor(base);
 
@@ -442,6 +453,11 @@ class Creature implements CreatureInterface {
 
 	getHoverSpeed(): number {
 		return 0; // Hovering must be specified by creature stat block.
+	}
+
+	setHP(amount: number) {
+		this.hp = amount;
+		this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
 	}
 
 	// isWall will always block movement, as it is explicitly an enclosed barrier.
