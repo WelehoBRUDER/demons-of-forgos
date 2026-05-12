@@ -9,6 +9,8 @@ interface CreatureInterface {
 	uid?: string;
 	hp?: number;
 	initiative?: number;
+	feats?: string[];
+	bab?: number;
 }
 
 interface StrippedCreatureData {
@@ -104,6 +106,7 @@ class Creature implements CreatureInterface {
 	visualOffsetY: number = 0; // For smooth movement, this will be updated gradually towards 0
 	providers: ModifierProvider[] = []; // This can hold references to various sources of modifiers, such as equipped items, active effects, etc.
 	providersNeedUpdate: boolean = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
+	bab: number = 0; // Base Attack Bonus, can be calculated based on class levels for player characters or set as a static value for enemies
 
 	initiative: number = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
 	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
@@ -126,6 +129,8 @@ class Creature implements CreatureInterface {
 		this.lastMoved = Math.random();
 		this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
 		this.initiative = data.initiative ?? 0; // 0 outside combat
+		this.feats = data.feats ?? [];
+		this.bab = data.bab ?? 0;
 
 		this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
 	}
@@ -133,6 +138,30 @@ class Creature implements CreatureInterface {
 	restoreStrippedData(data: StrippedCreatureData) {
 		this.setUID(data.u);
 		this.setPosition(data.x, data.y);
+	}
+
+	addFeat(featId: string) {
+		this.feats.push(featId);
+		this.providersNeedUpdate = true; // Mark providers as needing update since feats can change modifiers
+	}
+
+	getFeats(): string[] {
+		return this.feats;
+	}
+
+	getFeatProviders(): ModifierProvider[] {
+		const providers: ModifierProvider[] = [];
+		for (const featId of this.feats) {
+			const feat = featManager.getFeat(featId);
+			if (feat) {
+				providers.push(feat);
+			}
+		}
+		return providers;
+	}
+
+	resetHP() {
+		this.setHP(this.getMaxHP());
 	}
 
 	getUID(): string {
@@ -195,6 +224,20 @@ class Creature implements CreatureInterface {
 		return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now
 	}
 
+	getBaseAttackBonus(): number {
+		return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
+	}
+
+	getHitDiceTotalCount(): number {
+		const hitDice = this.getHitDice();
+		let total = 0;
+		for (const hd of hitDice) {
+			total += hd.count; // Average roll of the hit die
+		}
+
+		return total;
+	}
+
 	getAllProviders(): ModifierProvider[] {
 		if (!this.providersNeedUpdate) {
 			return this.providers;
@@ -204,6 +247,7 @@ class Creature implements CreatureInterface {
 
 		updatedProviders.push(...this.getAllEquippedItems());
 		updatedProviders.push(this.getSizeProvider());
+		updatedProviders.push(...this.getFeatProviders());
 		// TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
 
 		this.providers = updatedProviders;

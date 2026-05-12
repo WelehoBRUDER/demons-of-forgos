@@ -41,16 +41,16 @@ class ModifierManager {
         const modifiers = [];
         // Loop through each provider and collect their modifiers, applying stacking rules
         for (const provider of creature.getAllProviders()) {
-            const providedModifiers = provider.getModifiers(context);
+            const providedModifiers = provider.getModifiers(creature, context);
             for (const mod of providedModifiers) {
-                if (mod.enabled === false)
+                if (mod.enabled && !mod.enabled(creature, context))
                     continue; // Skip disabled modifiers
                 const existing = this.getExistingModifier(mod.target, mod.type, modifiers);
                 if (!existing || this.stacks(mod.type)) {
                     modifiers.push(mod);
                 }
                 else {
-                    if (mod.value > existing.value) {
+                    if (mod.evaluate(creature, context) > existing.evaluate(creature, context)) {
                         modifiers.splice(modifiers.indexOf(existing), 1, mod);
                     }
                 }
@@ -64,15 +64,15 @@ class ModifierManager {
             const grouped = {};
             for (const mod of mods) {
                 if (!grouped[mod.type]) {
-                    grouped[mod.type] = mod.value;
+                    grouped[mod.type] = mod.evaluate(creature, context);
                 }
                 else {
-                    grouped[mod.type] += mod.value;
+                    grouped[mod.type] += mod.evaluate(creature, context);
                 }
             }
             return grouped;
         }
-        return mods.reduce((total, mod) => total + mod.value, 0);
+        return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 0);
     }
 }
 const modifierManager = new ModifierManager();

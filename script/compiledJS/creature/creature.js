@@ -57,6 +57,7 @@ class Creature {
     visualOffsetY = 0; // For smooth movement, this will be updated gradually towards 0
     providers = []; // This can hold references to various sources of modifiers, such as equipped items, active effects, etc.
     providersNeedUpdate = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
+    bab = 0; // Base Attack Bonus, can be calculated based on class levels for player characters or set as a static value for enemies
     initiative = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
     statusEffects = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
     feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
@@ -76,11 +77,33 @@ class Creature {
         this.lastMoved = Math.random();
         this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
         this.initiative = data.initiative ?? 0; // 0 outside combat
+        this.feats = data.feats ?? [];
+        this.bab = data.bab ?? 0;
         this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
     }
     restoreStrippedData(data) {
         this.setUID(data.u);
         this.setPosition(data.x, data.y);
+    }
+    addFeat(featId) {
+        this.feats.push(featId);
+        this.providersNeedUpdate = true; // Mark providers as needing update since feats can change modifiers
+    }
+    getFeats() {
+        return this.feats;
+    }
+    getFeatProviders() {
+        const providers = [];
+        for (const featId of this.feats) {
+            const feat = featManager.getFeat(featId);
+            if (feat) {
+                providers.push(feat);
+            }
+        }
+        return providers;
+    }
+    resetHP() {
+        this.setHP(this.getMaxHP());
     }
     getUID() {
         return this.uid;
@@ -128,6 +151,17 @@ class Creature {
         // Typically, enemies return a static count while player characters calculate it based on their class levels and hit dice progression
         return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now
     }
+    getBaseAttackBonus() {
+        return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
+    }
+    getHitDiceTotalCount() {
+        const hitDice = this.getHitDice();
+        let total = 0;
+        for (const hd of hitDice) {
+            total += hd.count; // Average roll of the hit die
+        }
+        return total;
+    }
     getAllProviders() {
         if (!this.providersNeedUpdate) {
             return this.providers;
@@ -135,6 +169,7 @@ class Creature {
         const updatedProviders = [];
         updatedProviders.push(...this.getAllEquippedItems());
         updatedProviders.push(this.getSizeProvider());
+        updatedProviders.push(...this.getFeatProviders());
         // TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
         this.providers = updatedProviders;
         this.providersNeedUpdate = false;

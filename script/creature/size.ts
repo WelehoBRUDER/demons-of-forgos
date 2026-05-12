@@ -13,7 +13,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "tiny_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: 2,
+			evaluate: () => 2,
 			type: ModifierType.size,
 		},
 	],
@@ -22,7 +22,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "small_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: 1,
+			evaluate: () => 1,
 			type: ModifierType.size,
 		},
 	],
@@ -31,7 +31,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "medium_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: 0,
+			evaluate: () => 0,
 			type: ModifierType.size,
 		},
 	],
@@ -40,7 +40,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "large_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: -1,
+			evaluate: () => -1,
 			type: ModifierType.size,
 		},
 	],
@@ -49,7 +49,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "huge_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: -2,
+			evaluate: () => -2,
 			type: ModifierType.size,
 		},
 	],
@@ -58,7 +58,7 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			id: "gargantuan_size_modifier",
 			target: "ac",
 			operation: Operation.add,
-			value: -4,
+			evaluate: () => -4,
 			type: ModifierType.size,
 		},
 	],
@@ -71,6 +71,14 @@ class Size {
 
 	static getProvider(sizeCategory: SizeCategory): SizeProvider {
 		return new SizeProvider(sizeCategory);
+	}
+
+	static getMinSizeCategory(): SizeCategory {
+		return SizeCategory.TINY;
+	}
+
+	static getMaxSizeCategory(): SizeCategory {
+		return SizeCategory.GARGANTUAN;
 	}
 }
 

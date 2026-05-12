@@ -305,8 +305,11 @@ class MapRenderer {
 		const spriteSize = atlas.getSpriteSize();
 		const dynamicSpriteAtlas = atlas.getDynamicSpriteAtlas();
 		const sizeCategory: number = creature.getSizeCategory();
-		// @TODO - change magic numbers to something coherent
-		const scaledSize = 0.8 + ((sizeCategory - 0.5) / 3.5) * 0.4; // Scale between 0.8 and 1.2 based on size category (assuming size categories range from 0.5 to 4)
+
+		const minSize: number = Size.getMinSizeCategory();
+		const maxSize: number = Size.getMaxSizeCategory();
+		const limits: number[] = [0.8, 1.2]; // Min and max scale limits for portraits
+		const scaledSize = limits[0] + ((sizeCategory - minSize) / (maxSize - minSize)) * (limits[1] - limits[0]); // Scale between 0.8 and 1.2 based on size category
 		const creatureSize = size * 3 * scaledSize; // Portraits should be roughly equal size, with minor scaling based on creature size category
 		const creatureScreenX = 0;
 		const creatureScreenY = 0;
@@ -573,6 +576,7 @@ const devInit = () => {
 		species: "human",
 		bodyType: BodyType.A,
 		uid: "player_character:001", // Unique identifier for the player character
+		feats: ["toughness"],
 	});
 
 	testPlayer.setFaction(Faction.FRIENDLY);
@@ -607,5 +611,6 @@ const devInit = () => {
 	game.setControlledCreatureId(creature.getUID());
 	mapRenderer.renderVisibleMap(camera);
 	mapRenderer.renderTileHighlight();
+	creature.resetHP();
 	portraitManager.generateAllPortraits();
 };

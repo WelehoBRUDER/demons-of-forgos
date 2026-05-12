@@ -29,18 +29,18 @@ type Modifier = {
 	id: string;
 	target: string;
 	operation: Operation;
-	value: number;
+	evaluate: (creature: Creature, ctx: any) => number; // Optional function to calculate the modifier value based on context
 	type: ModifierType;
 	sourceType?: string;
 	sourceId?: string;
-	enabled?: boolean;
+	enabled?: (creature: Creature, ctx: any) => boolean;
 	tags?: string[]; // Optional tags for additional categorization or filtering
 };
 
 type GroupedModifiers = { [key in ModifierType as ModifierType]?: number };
 
 interface ModifierProvider {
-	getModifiers(ctx: any): Modifier[];
+	getModifiers(creature: Creature, ctx: any): Modifier[];
 }
 
 class ModifierManager {
@@ -61,16 +61,16 @@ class ModifierManager {
 
 		// Loop through each provider and collect their modifiers, applying stacking rules
 		for (const provider of creature.getAllProviders()) {
-			const providedModifiers = provider.getModifiers(context);
+			const providedModifiers = provider.getModifiers(creature, context);
 
 			for (const mod of providedModifiers) {
-				if (mod.enabled === false) continue; // Skip disabled modifiers
+				if (mod.enabled && !mod.enabled(creature, context)) continue; // Skip disabled modifiers
 				const existing = this.getExistingModifier(mod.target, mod.type, modifiers);
 
 				if (!existing || this.stacks(mod.type)) {
 					modifiers.push(mod);
 				} else {
-					if (mod.value > existing.value) {
+					if (mod.evaluate(creature, context) > existing.evaluate(creature, context)) {
 						modifiers.splice(modifiers.indexOf(existing), 1, mod);
 					}
 				}
@@ -90,14 +90,14 @@ class ModifierManager {
 			const grouped: GroupedModifiers = {};
 			for (const mod of mods) {
 				if (!grouped[mod.type]) {
-					grouped[mod.type] = mod.value;
+					grouped[mod.type] = mod.evaluate(creature, context);
 				} else {
-					grouped[mod.type]! += mod.value;
+					grouped[mod.type]! += mod.evaluate(creature, context);
 				}
 			}
 			return grouped;
 		}
-		return mods.reduce((total, mod) => total + mod.value, 0);
+		return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 0);
 	}
 }
 

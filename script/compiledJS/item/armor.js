@@ -35,7 +35,7 @@ class Armor extends Equipment {
                     id: `${this.id}_shield_modifier`,
                     target: "ac",
                     operation: Operation.add,
-                    value: this.ac,
+                    evaluate: () => this.ac,
                     type: ModifierType.shield,
                 },
             ];
@@ -46,14 +46,14 @@ class Armor extends Equipment {
                     id: `${this.id}_armor_modifier`,
                     target: "ac",
                     operation: Operation.add,
-                    value: this.ac,
+                    evaluate: () => this.ac,
                     type: ModifierType.armor,
                 },
                 {
                     id: `${this.id}_debug_dex`,
                     target: AbilityScore.DEXTERITY,
                     operation: Operation.add,
-                    value: 10,
+                    evaluate: () => 10,
                     type: ModifierType.sacred,
                 },
             ];
