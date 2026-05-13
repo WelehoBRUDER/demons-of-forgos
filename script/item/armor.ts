@@ -66,10 +66,10 @@ class Armor extends Equipment {
 					type: ModifierType.armor,
 				},
 				{
-					id: `${this.id}_debug_dex`,
-					target: AbilityScore.DEXTERITY,
+					id: `${this.id}_debug_str`,
+					target: AbilityScore.STRENGTH,
 					operation: Operation.add,
-					evaluate: () => 10,
+					evaluate: () => 5,
 					type: ModifierType.sacred,
 				},
 			];

@@ -48,8 +48,16 @@ featManager.addFeat(
 				operation: Operation.add,
 				evaluate: (creature: Creature, ctx: any) => {
 					const bab = creature.getBaseAttackBonus();
+					const bonusDamage = 2 + Math.floor(bab / 4) * 2; // +2 damage for every 4 BAB
 					// Add logic for two-handing and off-handing since they affect the damage bonus, but for treat everything as usual
-					return 2 + Math.floor(bab / 4) * 2; // +2 damage for every 4 BAB
+					console.log("Power Attack Bonus Damage:", bonusDamage, "Context:", ctx);
+					if (ctx.heldInTwoHands) {
+						return Math.floor(bonusDamage * 1.5);
+					}
+					if (ctx.isOffHand) {
+						return Math.floor(bonusDamage / 2);
+					}
+					return bonusDamage;
 				},
 				type: ModifierType.untyped,
 			},

@@ -3,11 +3,28 @@ enum WeaponType {
 	RANGED = "ranged",
 }
 
+enum DamageType {
+	SLASHING = "slashing",
+	PIERCING = "piercing",
+	BLUDGEONING = "bludgeoning",
+	FIRE = "fire",
+	COLD = "cold",
+	LIGHTNING = "lightning",
+	ACID = "acid",
+	POISON = "poison",
+	FORCE = "force",
+	SONIC = "sonic",
+	PRECISION = "precision",
+	DIVINE = "divine",
+}
+
 interface WeaponData extends EquipmentData {
 	damage: DamageDieInfo;
 	weaponType: WeaponType;
+	enhancementBonus?: number; // Optional enhancement bonus to damage and attack rolls (e.g., +1, +2, etc.)
 	critRange?: number; // Minimum number on a d20 roll to score a critical hit (e.g., 19 means 19-20 is a crit)
 	critMultiplier?: number; // Damage multiplier for critical hits (e.g., 2 means double damage on a crit)
+	damageType?: DamageType; // Type of damage dealt by the weapon
 	finesse?: boolean;
 	light?: boolean;
 	heavy?: boolean;
@@ -42,25 +59,25 @@ interface DamageDieInfo {
 }
 
 class DamageProgression {
-	static getNextDamage(damage: DamageDieInfo): DamageDieInfo {
+	static getNextDamage(damage: DamageDieInfo, step: number = 1): DamageDieInfo {
 		const key = DamageProgression.damageObjectToKey(damage);
 		const progression = Object.values(DamageDiceProgression);
 		const index = progression.indexOf(key);
-		if (index >= 0 && index < progression.length - 1) {
+		if (index >= 0 && index < progression.length - step) {
 			// @ts-ignore
-			return DamageProgression.damageKeyToObject(progression[index + 1]);
+			return DamageProgression.damageKeyToObject(progression[index + step]);
 		} else {
 			throw new Error(`Damage ${key} is not in the progression or is already at max`);
 		}
 	}
 
-	static getPreviousDamage(damage: DamageDieInfo): DamageDieInfo {
+	static getPreviousDamage(damage: DamageDieInfo, step: number = 1): DamageDieInfo {
 		const key = DamageProgression.damageObjectToKey(damage);
 		const progression = Object.values(DamageDiceProgression);
 		const index = progression.indexOf(key);
-		if (index > 0) {
+		if (index > 0 && index >= step) {
 			// @ts-ignore
-			return DamageProgression.damageKeyToObject(progression[index - 1]);
+			return DamageProgression.damageKeyToObject(progression[index - step]);
 		} else {
 			throw new Error(`Damage ${key} is not in the progression or is already at minimum`);
 		}
@@ -96,17 +113,21 @@ class DamageProgression {
 class Weapon extends Equipment {
 	damage: DamageDieInfo;
 	weaponType: WeaponType;
+	damageType: DamageType;
 	critRange: number;
 	critMultiplier: number;
 	finesse: boolean;
 	light: boolean;
 	heavy: boolean;
+	enhancementBonus: number;
 	constructor(data: WeaponData) {
 		super(data);
 		this.type = "Weapon";
 		this.anchorPoint = data.anchorPoint || AnchorPointType.weapon; // Default to "weapon" anchor point if not specified
 		this.damage = data.damage;
 		this.weaponType = data.weaponType;
+		this.damageType = data.damageType || DamageType.SLASHING; // Default damage type is slashing if not specified
+		this.enhancementBonus = data.enhancementBonus || 0;
 		this.critRange = data.critRange || 20; // Default critical hit range is 20 (only a natural 20 is a crit)
 		this.critMultiplier = data.critMultiplier || 2; // Default critical hit damage multiplier is 2 (double damage)
 		this.finesse = data.finesse || false;
@@ -116,6 +137,10 @@ class Weapon extends Equipment {
 
 	getDamage(): DamageDieInfo {
 		return this.damage;
+	}
+
+	getWeaponType(): WeaponType {
+		return this.weaponType;
 	}
 
 	isFinesse(): boolean {
@@ -128,6 +153,14 @@ class Weapon extends Equipment {
 
 	isHeavy(): boolean {
 		return this.heavy;
+	}
+
+	getEnhancementBonus(): number {
+		return this.enhancementBonus;
+	}
+
+	getDamageType(): DamageType {
+		return this.damageType;
 	}
 
 	getModifiers(ctx: any): Modifier[] {

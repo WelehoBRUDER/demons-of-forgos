@@ -67,7 +67,7 @@ class Portrait {
         this.acText.textContent = `AC: ${full} (Flat-Footed: ${flatFooted}, Touch: ${touch})`;
     }
     updateHealth(hp, maxHp) {
-        this.healthText.textContent = `${hp}/${maxHp} HP`;
+        this.healthText.textContent = `${hp}/${maxHp} HP \n${entityManager.getCreatureByUID(this.creatureUID)?.getPrimaryWeaponAttackString()}`;
     }
 }
 const portraitManager = new PortraitManager();

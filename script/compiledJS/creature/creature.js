@@ -387,9 +387,15 @@ class Creature {
         this.hp = amount;
         this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
     }
-    getWeapon() {
+    getPrimaryWeapon() {
         if (this.equipment.weapon) {
             return this.equipment.weapon;
+        }
+        return null;
+    }
+    getSecondaryWeapon() {
+        if (this.equipment.offhand && this.equipment.offhand instanceof Weapon) {
+            return this.equipment.offhand;
         }
         return null;
     }
@@ -468,6 +474,126 @@ class Creature {
             x: this.x,
             y: this.y,
         };
+    }
+    getPrimaryWeaponTotalDamage() {
+        const primaryDamageInfo = this.getPrimaryWeaponDamage();
+        if (!primaryDamageInfo) {
+            return null;
+        }
+        return this.calculateBaseDamage(primaryDamageInfo);
+    }
+    getSecondaryWeaponTotalDamage() {
+        const secondaryDamageInfo = this.getSecondaryWeaponDamage();
+        if (!secondaryDamageInfo) {
+            return null;
+        }
+        return this.calculateBaseDamage(secondaryDamageInfo);
+    }
+    getPrimaryWeaponAttackString() {
+        const primary = this.getPrimaryWeapon();
+        if (!primary) {
+            return "Unarmed Attack";
+        }
+        const attackBonus = this.getWeaponAttackBonus(primary);
+        const attackDamage = this.getPrimaryWeaponTotalDamage();
+        return `${primary.getId()} +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${primary.getDamageType()}`;
+    }
+    getSecondaryWeaponAttackString() {
+        const secondary = this.getSecondaryWeapon();
+        if (!secondary) {
+            return "";
+        }
+        const attackBonus = this.getWeaponAttackBonus(secondary) - 4; // Off-hand attacks typically take a -4 penalty unless the character has the Two-Weapon Fighting feat
+        const attackDamage = this.getSecondaryWeaponTotalDamage();
+        return `${secondary.getId()} (Off-hand) +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${secondary.getDamageType()}`;
+    }
+    getWeaponAttackBonus(weapon) {
+        const weaponType = weapon.getWeaponType();
+        const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
+        const baseAttackBonus = this.getBaseAttackBonus();
+        const abilityModifier = weapon.isFinesse()
+            ? Math.max(this.getAbilityScoreModifiers().strength, this.getAbilityScoreModifiers().dexterity)
+            : this.getAbilityScoreModifiers().strength;
+        const modBonuses = modifierManager.getTotalModifier(attackType, this, { weapon });
+        return baseAttackBonus + abilityModifier + modBonuses;
+    }
+    calculateBaseDamage(data) {
+        const { dice, ctx } = data;
+        const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
+        const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
+        let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
+        const attackType = ctx.weaponType === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
+        const modBonuses = modifierManager.getTotalModifier(attackType, this, ctx);
+        const strengthBonus = this.getAbilityScoreModifiers().strength;
+        bonusDamage += modBonuses;
+        bonusDamage += ctx.heldInTwoHands ? Math.floor(strengthBonus * 1.5) : strengthBonus; // If the weapon is held in two hands, strength bonus is multiplied by 1.5
+        const totalMinDamage = minDamage + bonusDamage;
+        const totalMaxDamage = maxDamage + bonusDamage;
+        return [totalMinDamage, totalMaxDamage]; // Return min and max damage for simplicity, can be changed to a random roll if desired
+    }
+    getAllWeapons() {
+        const weapons = [];
+        const primary = this.getPrimaryWeapon();
+        const secondary = this.getSecondaryWeapon();
+        if (primary) {
+            weapons.push(primary);
+        }
+        if (secondary) {
+            weapons.push(secondary);
+        }
+        return weapons;
+    }
+    getPrimaryWeaponDamage() {
+        const primary = this.getPrimaryWeapon();
+        const secondary = this.getSecondaryWeapon();
+        if (!primary && !secondary) {
+            return null;
+        }
+        if (primary && !secondary) {
+            return this.handleDamageDieProgression(primary.getDamage(), {
+                weapon: primary,
+                isPrimary: true,
+                heldInTwoHands: true,
+                weaponType: primary.getWeaponType(),
+            });
+        }
+        if (primary && secondary) {
+            // If dual-wielding, primary weapon is considered to be held in one hand for damage calculation purposes
+            return this.handleDamageDieProgression(primary.getDamage(), {
+                weapon: primary,
+                isPrimary: true,
+                heldInTwoHands: false,
+                weaponType: primary.getWeaponType(),
+            });
+        }
+    }
+    getSecondaryWeaponDamage() {
+        const secondary = this.getSecondaryWeapon();
+        if (!secondary) {
+            return null;
+        }
+        // If dual-wielding, off-hand weapon is considered to be held in one hand for damage calculation purposes
+        return this.handleDamageDieProgression(secondary.getDamage(), {
+            weapon: secondary,
+            isPrimary: false,
+            heldInTwoHands: false,
+            weaponType: secondary.getWeaponType(),
+            isOffHand: true,
+        });
+    }
+    handleDamageDieProgression(damage, ctx) {
+        const weapon = ctx.weapon;
+        // Default behavior
+        const sizeCategory = this.getSizeCategory();
+        if (sizeCategory < SizeCategory.MEDIUM) {
+            // Weapon damage dice are reduced
+            damage = DamageProgression.getPreviousDamage(damage);
+        }
+        else if (sizeCategory > SizeCategory.MEDIUM) {
+            // Weapon damage dice are increased
+            damage = DamageProgression.getNextDamage(damage, 2 * (sizeCategory - SizeCategory.MEDIUM)); // Increase damage by 2 steps for each size category above medium
+        }
+        return { dice: damage, ctx };
     }
 }
 const creatures = [];

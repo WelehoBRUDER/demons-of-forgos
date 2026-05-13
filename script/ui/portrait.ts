@@ -74,7 +74,7 @@ class Portrait {
 	}
 
 	updateHealth(hp: number, maxHp: number) {
-		this.healthText.textContent = `${hp}/${maxHp} HP`;
+		this.healthText.textContent = `${hp}/${maxHp} HP \n${entityManager.getCreatureByUID(this.creatureUID)?.getPrimaryWeaponAttackString()}`;
 	}
 }
 

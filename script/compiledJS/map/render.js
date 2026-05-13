@@ -465,7 +465,8 @@ const devInit = () => {
         species: "human",
         bodyType: BodyType.A,
         uid: "player_character:001", // Unique identifier for the player character
-        feats: ["toughness"],
+        feats: ["toughness", "power_attack"],
+        bab: 1,
     });
     testPlayer.setFaction(Faction.FRIENDLY);
     //const mapWidth: number = 100;
