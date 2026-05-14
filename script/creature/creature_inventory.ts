@@ -144,6 +144,7 @@ class CreatureInventory {
 				isOffHand: false,
 				heldInTwoHands: false,
 				isDualWielding: true,
+				offhandIsLight: secondary.isLight(),
 			},
 			{
 				weapon: secondary,
@@ -151,6 +152,7 @@ class CreatureInventory {
 				isOffHand: true,
 				heldInTwoHands: false,
 				isDualWielding: true,
+				offhandIsLight: secondary.isLight(),
 			},
 		];
 	}

@@ -43,19 +43,33 @@ class CreatureCombat implements ICreatureCombat {
 	formatAttackResult(attackResult: AttackResult): string {
 		if (!attackResult) return "";
 		const criticalThreatRangeText = attackResult.criticalThreatRange < 20 ? `${attackResult.criticalThreatRange}-20` : "20";
-		return `${attackResult.weapon.getId()} +${attackResult.attackBonus} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
+		const attackBonusText: string = attackResult.attackBonus >= 0 ? `+${attackResult.attackBonus}` : `${attackResult.attackBonus}`;
+		return `${attackResult.weapon.getId()} ${attackBonusText} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
 	}
 
 	getWeaponAttackBonus(ctx: AttackContext): number {
 		const weapon = ctx.weapon;
 		const weaponType = weapon.getWeaponType();
 		const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
+
+		// BAB
 		const baseAttackBonus = this.getBaseAttackBonus();
+		// Ability modifier
 		const abilityModifier = weapon.isFinesse()
 			? Math.max(this.owner.stats.getAbilityScoreModifiers().strength, this.owner.stats.getAbilityScoreModifiers().dexterity)
 			: this.owner.stats.getAbilityScoreModifiers().strength;
-		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, { weapon }) as number;
-		return baseAttackBonus + abilityModifier + modBonuses;
+
+		let penalty = 0;
+		if (ctx.isDualWielding) {
+			penalty = ctx.isPrimary ? -6 : -10;
+			if (ctx.offhandIsLight) {
+				penalty += 2; // Light off-hand weapons reduce the dual-wielding penalty by 2
+			}
+		}
+
+		// Modifiers from feats, equipment, buffs, etc.
+		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
+		return baseAttackBonus + abilityModifier + modBonuses + penalty;
 	}
 
 	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[] {

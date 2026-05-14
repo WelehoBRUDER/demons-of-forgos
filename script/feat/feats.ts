@@ -64,3 +64,25 @@ featManager.addFeat(
 		],
 	}),
 );
+featManager.addFeat(
+	new Feat({
+		id: "two_weapon_fighting",
+		modifiers: [
+			{
+				id: "two_weapon_fighting_bonus",
+				target: "meleeAtk",
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: AttackContext) => {
+					if (ctx.isDualWielding) {
+						if (ctx.isOffHand) {
+							return 6; // +6 to off-hand attacks
+						}
+						return 2; // +2 to main-hand attacks when dual-wielding
+					}
+					return 0;
+				},
+				type: ModifierType.untyped,
+			},
+		],
+	}),
+);

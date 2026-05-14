@@ -144,6 +144,7 @@ interface AttackContext {
 	isOffHand: boolean;
 	heldInTwoHands: boolean;
 	isDualWielding: boolean;
+	offhandIsLight?: boolean;
 }
 
 interface AttackResult {
