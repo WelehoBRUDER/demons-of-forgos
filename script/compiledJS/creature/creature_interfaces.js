@@ -1,4 +1,16 @@
 "use strict";
+const defaultEquipment = {
+    weapon: null,
+    offhand: null,
+    armor: null,
+    ring1: null,
+    ring2: null,
+    amulet: null,
+    hands: null,
+    feet: null,
+    head: null,
+    cape: null,
+};
 var AbilityScore;
 (function (AbilityScore) {
     AbilityScore["STRENGTH"] = "strength";
@@ -37,4 +49,23 @@ const defaultAbilityScores = {
     wisdom: 10,
     charisma: 10,
 };
+// Masculine and feminine body types. If species doesn't have body type variations, just use "A" for all creatures of that species.
+var BodyType;
+(function (BodyType) {
+    BodyType["A"] = "A";
+    BodyType["B"] = "B";
+})(BodyType || (BodyType = {}));
+var EquipmentSlot;
+(function (EquipmentSlot) {
+    EquipmentSlot["WEAPON"] = "weapon";
+    EquipmentSlot["OFFHAND"] = "offhand";
+    EquipmentSlot["ARMOR"] = "armor";
+    EquipmentSlot["RING1"] = "ring1";
+    EquipmentSlot["RING2"] = "ring2";
+    EquipmentSlot["AMULET"] = "amulet";
+    EquipmentSlot["HANDS"] = "hands";
+    EquipmentSlot["FEET"] = "feet";
+    EquipmentSlot["HEAD"] = "head";
+    EquipmentSlot["CAPE"] = "cape";
+})(EquipmentSlot || (EquipmentSlot = {}));
 //# sourceMappingURL=creature_interfaces.js.map

@@ -27,7 +27,7 @@ class NPCCreature extends Creature {
             const provider = new BaseCreatureModifierProvider(data.modifiers);
             this.modifiers = provider;
         }
-        this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+        this.stats.setHP(data?.stats?.hp ?? this.stats.getMaxHP()); // Set HP to provided value or max HP if not provided
         this.providersNeedUpdate = true; // Mark providers as needing update to ensure modifiers are included in calculations
     }
     setSpritePosition(x, y) {

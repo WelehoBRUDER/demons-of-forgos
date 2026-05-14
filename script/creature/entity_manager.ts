@@ -155,7 +155,7 @@ class EntityManager {
 	getCreaturesByFaction(faction: Faction): Creature[] {
 		const creaturesInFaction: Creature[] = [];
 		for (const creature of this.creatures.values()) {
-			if (creature.getFaction() === faction) {
+			if (creature.stats.getFaction() === faction) {
 				creaturesInFaction.push(creature);
 			}
 		}

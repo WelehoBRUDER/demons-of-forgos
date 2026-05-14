@@ -6,14 +6,12 @@ class Creature {
     uid;
     x;
     y;
-    abilityScores = defaultAbilityScores;
+    stats;
     screenX = 0; // For smooth movement, this will be updated gradually towards x
     screenY = 0; // For smooth movement, this will be updated gradually towards y
     baseClass = "Creature";
     lastMoved = 0;
     map; // ID pointing to the map the creature is on, set when added to map
-    faction = Faction.NEUTRAL; // 0 = hostile, 1 = neutral, 2 = friendly. This can be used for AI behavior and targeting.
-    sizeCategory = SizeCategory.MEDIUM;
     currentPath = [];
     visualOffsetX = 0; // For smooth movement, this will be updated gradually towards 0
     visualOffsetY = 0; // For smooth movement, this will be updated gradually towards 0
@@ -23,18 +21,17 @@ class Creature {
     initiative = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
     statusEffects = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
     feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
-    equipment = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
-    inventory = new Inventory(); // Inventory to hold items the creature is carrying, separate from equipped items
-    hp = 4;
+    inventory; // Inventory to hold items the creature is carrying, separate from equipped items
+    combat; // Combat-related data and methods for the creature
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
         this.id = data.id;
         this.x = data.x ?? -1;
         this.y = data.y ?? -1;
         this.map = data.map ?? "";
-        this.abilityScores = data.abilityScores ? { ...data.abilityScores } : { ...defaultAbilityScores };
-        this.faction = data.faction ?? Faction.NEUTRAL;
-        this.sizeCategory = data.sizeCategory ?? SizeCategory.MEDIUM;
+        this.stats = new CreatureStats(this, data.stats || { hp: 4 });
+        this.inventory = new CreatureInventory(this, data.inventory); // Initialize an empty inventory, can be populated with data.inventory if provided
+        this.combat = new CreatureCombat(this, data.combat); // Initialize combat data, can be populated with data.combat if provided
         this.screenX = this.x;
         this.screenY = this.y;
         this.lastMoved = Math.random();
@@ -42,13 +39,10 @@ class Creature {
         this.initiative = data.initiative ?? 0; // 0 outside combat
         this.feats = data.feats ?? [];
         this.bab = data.bab ?? 0;
-        this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+        //this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
     }
     getInventory() {
         return this.inventory;
-    }
-    getAllItems() {
-        return this.getAllEquippedItems().concat(this.inventory.getItems());
     }
     restoreStrippedData(data) {
         this.setUID(data.u);
@@ -71,9 +65,6 @@ class Creature {
         }
         return providers;
     }
-    resetHP() {
-        this.setHP(this.getMaxHP());
-    }
     getUID() {
         return this.uid;
     }
@@ -92,19 +83,8 @@ class Creature {
     setMap(mapId) {
         this.map = mapId;
     }
-    setFaction(faction) {
-        this.faction = faction;
-    }
     getIndex() {
         return this._id;
-    }
-    getInitiative() {
-        return this.initiative;
-    }
-    getInitiativeBonus() {
-        let base = this.getAbilityScoreModifiers().dexterity;
-        const bonuses = modifierManager.getTotalModifier("initiative", this, {});
-        return base + bonuses;
     }
     getBaseClass() {
         return this.baseClass;
@@ -112,120 +92,18 @@ class Creature {
     getMap() {
         return this.map;
     }
-    getFaction() {
-        return this.faction;
-    }
-    getHitDice() {
-        // This should be implemented based on the creature's class or species
-        // Typically, enemies return a static count while player characters calculate it based on their class levels and hit dice progression
-        return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now
-    }
-    getBaseAttackBonus() {
-        return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
-    }
-    getHitDiceTotalCount() {
-        const hitDice = this.getHitDice();
-        let total = 0;
-        for (const hd of hitDice) {
-            total += hd.count; // Average roll of the hit die
-        }
-        return total;
-    }
     getAllProviders() {
         if (!this.providersNeedUpdate) {
             return this.providers;
         }
         const updatedProviders = [];
-        updatedProviders.push(...this.getAllEquippedItems());
-        updatedProviders.push(this.getSizeProvider());
+        updatedProviders.push(...this.inventory.getAllEquippedItems());
+        updatedProviders.push(this.stats.getSizeProvider());
         updatedProviders.push(...this.getFeatProviders());
         // TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
         this.providers = updatedProviders;
         this.providersNeedUpdate = false;
         return updatedProviders;
-    }
-    getAC() {
-        let ac = 10;
-        let touchAC = 10;
-        let flatFootedAC = 10;
-        const dexBonus = this.getAbilityScoreModifiers().dexterity;
-        ac += Math.min(dexBonus, this.dexToACLimit());
-        touchAC += Math.min(dexBonus, this.dexToACLimit());
-        const acBonuses = modifierManager.getTotalModifier("ac", this, null, { groupedByType: true });
-        for (const modType in acBonuses) {
-            const value = acBonuses[modType] || 0;
-            if (modType === ModifierType.armor || modType === ModifierType.shield || modType === ModifierType.naturalArmor) {
-                ac += value;
-                flatFootedAC += value;
-            }
-            else {
-                ac += value;
-                touchAC += value;
-                flatFootedAC += value;
-            }
-        }
-        // Future: Add armor, shields, natural armor, magical effects, etc.
-        return {
-            full: ac,
-            touch: touchAC,
-            flatFooted: flatFootedAC,
-        };
-    }
-    getAllEquippedItems() {
-        const items = [];
-        if (this.equipment.weapon) {
-            items.push(this.equipment.weapon);
-        }
-        if (this.equipment.offhand) {
-            items.push(this.equipment.offhand);
-        }
-        if (this.equipment.armor) {
-            items.push(this.equipment.armor);
-        }
-        return items;
-    }
-    equipItem(item, slot) {
-        this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
-        if (item instanceof Weapon) {
-            this.equipWeapon(item, slot);
-        }
-    }
-    equipWeapon(weapon, slot) {
-        const primary = this.getPrimaryWeapon();
-        const secondary = this.getSecondaryWeapon();
-        if (weapon.getWeaponType() === WeaponType.RANGED || weapon.isHeavy()) {
-            if (primary) {
-                this.unequipItem(EquipmentSlot.WEAPON);
-            }
-            if (secondary) {
-                this.unequipItem(EquipmentSlot.OFFHAND);
-            }
-            this.equipment.weapon = weapon;
-            return;
-        }
-        if (slot === EquipmentSlot.WEAPON) {
-            if (primary) {
-                this.unequipItem(EquipmentSlot.WEAPON);
-            }
-            this.equipment.weapon = weapon;
-        }
-        else if (slot === EquipmentSlot.OFFHAND) {
-            if (secondary) {
-                this.unequipItem(EquipmentSlot.OFFHAND);
-            }
-            this.equipment.offhand = weapon;
-        }
-    }
-    getEquippedItem(slot) {
-        return this.equipment[slot] || null;
-    }
-    unequipItem(slot) {
-        this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
-        const item = this.getEquippedItem(slot);
-        if (item) {
-            this.equipment[slot] = null;
-        }
-        this.getInventory().addItem(item); // Add the unequipped item back to the inventory
     }
     setPosition(x, y) {
         this.x = x;
@@ -242,7 +120,7 @@ class Creature {
         this.screenY = y * atlas.getTileSize();
     }
     dexToACLimit() {
-        const items = this.getAllEquippedItems();
+        const items = this.inventory.getAllEquippedItems();
         let maxDexLimit = -Infinity;
         for (const item of items) {
             if (item instanceof Armor) {
@@ -274,24 +152,15 @@ class Creature {
         const newX = this.x + randomDirection.dx;
         const newY = this.y + randomDirection.dy;
         // Check bounds and tile properties before moving
-        const cost = pathfinder.costToEnter(newX, newY, mapRenderer.getMap(), this, this.getSizeCategory());
+        const cost = pathfinder.costToEnter(newX, newY, mapRenderer.getMap(), this, this.stats.getSizeCategory());
         //console.log(`Creature ${this.id} attempting to move to (${newX}, ${newY}) with movement cost:`, cost);
         if (cost !== Infinity) {
             this.move(newX, newY);
         }
     }
-    getSizeCategoryId() {
-        return SizeCategory[this.sizeCategory];
-    }
-    getSizeCategory() {
-        return this.sizeCategory;
-    }
-    getSizeProvider() {
-        return Size.getProvider(this.sizeCategory);
-    }
     getOccupiedArea() {
         const box = [];
-        const size = this.getSizeCategory();
+        const size = this.stats.getSizeCategory();
         // Tiny creatures don't occupy a full tile
         if (size < 0.75) {
             return box;
@@ -317,7 +186,7 @@ class Creature {
         return { x: this.screenX, y: this.screenY };
     }
     getCenterScreenPosition() {
-        const offset = (this.getSizeCategory() * atlas.getTileSize()) / 2;
+        const offset = (this.stats.getSizeCategory() * atlas.getTileSize()) / 2;
         return { x: this.screenX + offset, y: this.screenY + offset };
     }
     getPosition() {
@@ -328,79 +197,32 @@ class Creature {
         this.y = newY;
         //mapRenderer.renderVisibleMap(camera); // Re-render the map to reflect the creature's new position
     }
-    getHP() {
-        return this.hp;
-    }
     takeDamage(amount) {
-        this.hp -= amount;
-        if (this.hp <= 0) {
+        this.stats.setHP(this.stats.getHP() - amount);
+        if (this.stats.getHP() <= 0) {
             //this.die();
         }
     }
-    calcAbilityModifierFromScore(score) {
-        return Math.floor((score - 10) / 2);
+    getHitDice() {
+        return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now, should be overridden by specific creature types
     }
-    getAbilityScores() {
-        const scores = { ...this.abilityScores };
-        for (const ability in scores) {
-            const bonuses = modifierManager.getTotalModifier(ability, this, {});
-            scores[ability] += bonuses;
-        }
-        return scores;
-    }
-    getAbilityScoreModifiers() {
-        const scores = this.getAbilityScores();
-        return {
-            strength: this.calcAbilityModifierFromScore(scores.strength),
-            dexterity: this.calcAbilityModifierFromScore(scores.dexterity),
-            constitution: this.calcAbilityModifierFromScore(scores.constitution),
-            intelligence: this.calcAbilityModifierFromScore(scores.intelligence),
-            wisdom: this.calcAbilityModifierFromScore(scores.wisdom),
-            charisma: this.calcAbilityModifierFromScore(scores.charisma),
-        };
-    }
-    getMaxHP() {
-        let base = 0;
-        const flatBonus = modifierManager.getTotalModifier("hp", this, {});
-        const hitDieBonus = modifierManager.getTotalModifier("hp.per_hitDie", this, {});
-        const constitutionBonus = this.getAbilityScoreModifiers().constitution;
+    getHitDiceTotalCount() {
         const hitDice = this.getHitDice();
-        if (!hitDice)
-            return 1;
-        Object.values(hitDice).forEach((hitDieInfo) => {
-            base += hitDieInfo.count * (hitDieInfo.type / 2 + 1); // Average roll of the hit die, e.g. D6 averages to 3.5, so (6/2)+1 = 4
-            base += hitDieInfo.count * (hitDieBonus + constitutionBonus); // Add any per-hit-die bonuses
-        });
-        Math.floor(base);
-        return base + flatBonus;
-    }
-    getHpPercentage() {
-        return Math.max(0, this.hp / this.getMaxHP());
+        let total = 0;
+        for (const hd of hitDice) {
+            total += hd.count; // Average roll of the hit die
+        }
+        return total;
     }
     getMoveSpeed() {
-        return 6; // Default movement is 6 tiles per action.
+        const bonusSpeed = modifierManager.getTotalModifier("movementSpeed", this, {});
+        return 6 + bonusSpeed; // Default movement is 6 tiles per action.
     }
     getFlySpeed() {
         return 0; // Flight must be specified by creature stat block.
     }
     getHoverSpeed() {
         return 0; // Hovering must be specified by creature stat block.
-    }
-    setHP(amount) {
-        this.hp = amount;
-        this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
-    }
-    getPrimaryWeapon() {
-        if (this.equipment.weapon) {
-            return this.equipment.weapon;
-        }
-        return null;
-    }
-    getSecondaryWeapon() {
-        if (this.equipment.offhand && this.equipment.offhand instanceof Weapon) {
-            return this.equipment.offhand;
-        }
-        return null;
     }
     // isWall will always block movement, as it is explicitly an enclosed barrier.
     getTilePropertyInteractions() {
@@ -413,19 +235,13 @@ class Creature {
             isDifficultTerrain: MovementType.BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
         };
     }
-    rollInitiative() {
-        const roll = DiceRoller.roll(Dice.d20)[0];
-        const initiative = roll + this.getAbilityScoreModifiers().dexterity;
-        this.initiative = initiative;
-        return initiative;
-    }
     moveOnPath(dt) {
         this.handleMovementAnimation(dt);
         if (this.currentPath.length === 0 || !this.hasFinishedMoving())
             return;
         const nextTile = this.currentPath.shift();
         if (nextTile) {
-            const cost = pathfinder.costToEnter(nextTile.x, nextTile.y, mapRenderer.getMap(), this, this.getSizeCategory());
+            const cost = pathfinder.costToEnter(nextTile.x, nextTile.y, mapRenderer.getMap(), this, this.stats.getSizeCategory());
             /* Something is blocking the path */
             if (cost === Infinity) {
                 const goal = mapRenderer.getPathPredictionGoal();
@@ -477,115 +293,6 @@ class Creature {
             x: this.x,
             y: this.y,
         };
-    }
-    getEquippedWeapons() {
-        const primary = this.getPrimaryWeapon();
-        const secondary = this.getSecondaryWeapon();
-        if (!primary && !secondary) {
-            return [];
-        }
-        if (primary && !secondary) {
-            return [
-                {
-                    weapon: primary,
-                    isPrimary: true,
-                    isOffHand: false,
-                    heldInTwoHands: false,
-                    isDualWielding: false,
-                },
-            ];
-        }
-        return [
-            {
-                weapon: primary,
-                isPrimary: true,
-                isOffHand: false,
-                heldInTwoHands: false,
-                isDualWielding: true,
-            },
-            {
-                weapon: secondary,
-                isPrimary: false,
-                isOffHand: true,
-                heldInTwoHands: false,
-                isDualWielding: true,
-            },
-        ];
-    }
-    buildAttack(ctx) {
-        const weapon = ctx.weapon;
-        const damageDice = this.handleDamageDieProgression(weapon.getDamage());
-        const attackBonus = this.getWeaponAttackBonus(ctx);
-        const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
-        const critRange = weapon.getCritRange();
-        const critMultiplier = weapon.getCritMultiplier();
-        return {
-            weapon,
-            attackBonus,
-            damageMin,
-            damageMax,
-            damageType: weapon.getDamageType(),
-            criticalThreatRange: critRange,
-            criticalMultiplier: critMultiplier,
-        };
-    }
-    getAttackResults() {
-        return this.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
-    }
-    formatAttackResult(attackResult) {
-        if (!attackResult)
-            return "";
-        const criticalThreatRangeText = attackResult.criticalThreatRange < 20 ? `${attackResult.criticalThreatRange}-20` : "20";
-        return `${attackResult.weapon.getId()} +${attackResult.attackBonus} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
-    }
-    getWeaponAttackBonus(ctx) {
-        const weapon = ctx.weapon;
-        const weaponType = weapon.getWeaponType();
-        const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
-        const baseAttackBonus = this.getBaseAttackBonus();
-        const abilityModifier = weapon.isFinesse()
-            ? Math.max(this.getAbilityScoreModifiers().strength, this.getAbilityScoreModifiers().dexterity)
-            : this.getAbilityScoreModifiers().strength;
-        const modBonuses = modifierManager.getTotalModifier(attackType, this, { weapon });
-        return baseAttackBonus + abilityModifier + modBonuses;
-    }
-    calculateBaseDamage(dice, ctx) {
-        const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
-        const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
-        let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
-        const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
-        const modBonuses = modifierManager.getTotalModifier(attackType, this, ctx);
-        bonusDamage += modBonuses;
-        bonusDamage += this.getStrengthBasedDamageBonus(ctx); // Calculate strength-based damage bonus based on attack context
-        const totalMinDamage = minDamage + bonusDamage;
-        const totalMaxDamage = maxDamage + bonusDamage;
-        return [totalMinDamage, totalMaxDamage]; // Return min and max damage for simplicity, can be changed to a random roll if desired
-    }
-    getStrengthBasedDamageBonus(ctx) {
-        const str = this.getAbilityScoreModifiers().strength;
-        if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
-            return ctx.weapon.isComposite() ? str : 0; // Composite bows add strength bonus to damage, regular ranged weapons do not
-        }
-        if (ctx.isOffHand) {
-            return Math.floor(str / 2); // Off-hand attacks typically get half the strength bonus
-        }
-        if (ctx.heldInTwoHands) {
-            return Math.floor(str * 1.5); // Two-handed attacks typically get 1.5 times the strength bonus
-        }
-        return str; // Normal strength bonus for one-handed attacks
-    }
-    handleDamageDieProgression(damage) {
-        // Default behavior
-        const sizeCategory = this.getSizeCategory();
-        if (sizeCategory < SizeCategory.MEDIUM) {
-            // Weapon damage dice are reduced
-            damage = DamageProgression.getPreviousDamage(damage);
-        }
-        else if (sizeCategory > SizeCategory.MEDIUM) {
-            // Weapon damage dice are increased
-            damage = DamageProgression.getNextDamage(damage, 2 * (sizeCategory - SizeCategory.MEDIUM)); // Increase damage by 2 steps for each size category above medium
-        }
-        return damage;
     }
 }
 const creatures = [];

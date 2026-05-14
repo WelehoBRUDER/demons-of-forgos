@@ -19,7 +19,7 @@ class Pathfinding {
 		const cameFrom = new Map<string, string>();
 		const gScore = new Map<string, number>();
 		const fScore = new Map<string, number>();
-		const size = creature.getSizeCategory();
+		const size = creature.stats.getSizeCategory();
 
 		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance);
 		if (expandedGoals.length === 0) {
@@ -115,7 +115,7 @@ class Pathfinding {
 		creature: Creature,
 		adjacencyTolerance: number,
 	): { x: number; y: number }[] {
-		const size = creature.getSizeCategory();
+		const size = creature.stats.getSizeCategory();
 		const expandedGoals: { x: number; y: number }[] = [];
 		for (const g of goal) {
 			if (this.costToEnter(g.x, g.y, map, creature, size) !== Infinity) {
@@ -215,7 +215,7 @@ class Pathfinding {
 	}
 
 	costFromEntities(x: number, y: number, map: WorldMap, creature: Creature): number {
-		if (creature.getSizeCategory() === SizeCategory.TINY) return 1; // Tiny creatures can move through occupied tiles without penalty
+		if (creature.stats.getSizeCategory() === SizeCategory.TINY) return 1; // Tiny creatures can move through occupied tiles without penalty
 
 		const creaturesBounding: Creature[] = entityManager.getCreaturesBoundingWithPosition(map.id, x, y);
 		for (const other of creaturesBounding) {
@@ -235,7 +235,7 @@ class Pathfinding {
 		maxDistance: number = 5,
 	): { x: number; y: number } | null {
 		// First check the target tile itself
-		if (this.costToEnter(target.x, target.y, map, creature, creature.getSizeCategory()) !== Infinity) {
+		if (this.costToEnter(target.x, target.y, map, creature, creature.stats.getSizeCategory()) !== Infinity) {
 			return target;
 		}
 		for (let distance = 1; distance <= maxDistance; distance++) {
@@ -246,7 +246,7 @@ class Pathfinding {
 					const checkX = target.x + dx;
 					const checkY = target.y + dy;
 					if (!map.inBounds(checkX, checkY)) continue;
-					if (this.costToEnter(checkX, checkY, map, creature, creature.getSizeCategory()) !== Infinity) {
+					if (this.costToEnter(checkX, checkY, map, creature, creature.stats.getSizeCategory()) !== Infinity) {
 						return { x: checkX, y: checkY };
 					}
 				}

@@ -61,15 +61,15 @@ class Portrait {
         const creature = entityManager.getCreatureByUID(this.creatureUID);
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         mapRenderer.drawCreaturePortrait(creature, this.ctx);
-        this.updateHealth(creature.getHP(), creature.getMaxHP());
+        this.updateHealth(creature.stats.getHP(), creature.stats.getMaxHP());
         this.nameText.textContent = creature.getTemplateId();
-        const { full, flatFooted, touch } = creature.getAC();
+        const { full, flatFooted, touch } = creature.stats.getAC();
         this.acText.textContent = `AC: ${full} (Flat-Footed: ${flatFooted}, Touch: ${touch})`;
     }
     updateHealth(hp, maxHp) {
         const creature = entityManager.getCreatureByUID(this.creatureUID);
-        console.log(creature.getAttackResults());
-        this.healthText.textContent = `${hp}/${maxHp} HP \n${creature?.formatAttackResult(creature?.getAttackResults()[0])}`;
+        console.log(creature.combat.getAttackResults());
+        this.healthText.textContent = `${hp}/${maxHp} HP \n${creature?.combat.formatAttackResult(creature?.combat.getAttackResults()[0])}`;
     }
 }
 const portraitManager = new PortraitManager();

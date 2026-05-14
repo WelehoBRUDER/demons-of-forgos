@@ -210,7 +210,7 @@ class MapRenderer {
         this.creatureCtx.clearRect(0, 0, this.creatureCanvas.width, this.creatureCanvas.height);
         for (const creature of entityManager.getCreaturesOnMap(this.map.id)) {
             const { x, y } = creature.getScreenPosition();
-            const sizeCategory = creature.getSizeCategory();
+            const sizeCategory = creature.stats.getSizeCategory();
             const creatureSize = size * sizeCategory;
             const creatureScreenX = (x - cameraX) * zoom;
             const creatureScreenY = (y - cameraY) * zoom;
@@ -247,7 +247,7 @@ class MapRenderer {
         const spriteAtlas = atlas.getSpriteAtlas();
         const spriteSize = atlas.getSpriteSize();
         const dynamicSpriteAtlas = atlas.getDynamicSpriteAtlas();
-        const sizeCategory = creature.getSizeCategory();
+        const sizeCategory = creature.stats.getSizeCategory();
         const minSize = Size.getMinSizeCategory();
         const maxSize = Size.getMaxSizeCategory();
         const limits = [0.8, 1.2]; // Min and max scale limits for portraits
@@ -276,7 +276,7 @@ class MapRenderer {
         ctx.drawImage(atlasToUse, atlasX, atlasY, spriteSize, spriteSize, creatureScreenX - offset, creatureScreenY, creatureSize, creatureSize);
     }
     drawCreatureHealthBar(creature, screenX, screenY, size, zoom = 1, offset = 0) {
-        const hpPercentage = creature.getHpPercentage();
+        const hpPercentage = creature.stats.getHpPercentage();
         const barWidth = Math.round(zoom * 6);
         const barHeight = size * 0.9;
         const barX = screenX - barWidth - offset;
@@ -368,7 +368,8 @@ class MapRenderer {
         if (game.mouseHeldDownDuration() < 200)
             return; // Don't show path prediction for quick clicks, only for holds
         if (this.pathTiles.length === 0) {
-            this.pathTiles = pathfinder.AStar({ x: 0, y: 0 }, [this.highlightedTile], this.map, new Creature({ id: "test_creature" })) || [];
+            this.pathTiles =
+                pathfinder.AStar({ x: 0, y: 0 }, [this.highlightedTile], this.map, new Creature({ id: "test_creature", stats: {} })) || [];
         }
         const zoom = camera.getZoom();
         const size = this.tileSize * zoom;
@@ -467,32 +468,18 @@ const devInit = () => {
         uid: "player_character:001", // Unique identifier for the player character
         feats: ["toughness"],
         bab: 1,
+        stats: {},
     });
-    testPlayer.setFaction(Faction.FRIENDLY);
-    //const mapWidth: number = 100;
-    //const mapHeight: number = 100;
-    //const emptyMap = generateEmptyMap(mapWidth, mapHeight, 2);
-    // for (let i = 0; i < 20; i++) {
-    // 	const roll = Math.random();
-    // 	const id = roll > 0.4 ? "goblin" : roll < 0.4 && roll > 0.2 ? "ogre" : "skeleton"; // 60% goblins, 20% ogres, 20% skeletons
-    // 	entityManager.addCreature(
-    // 		entityManager.getEnemyTemplateById(id),
-    // 		emptyMap.id,
-    // 		Math.floor(Math.random() * mapWidth),
-    // 		Math.floor(Math.random() * mapHeight),
-    // 	);
-    // }
-    //mapRenderer.setMapData(emptyMap);
-    console.log(mapManager.getMap("dev_testing_area"));
+    testPlayer.stats.setFaction(Faction.FRIENDLY);
     mapRenderer.setMapData(mapManager.getMap("dev_testing_area"));
     const creature = entityManager.addCreature(testPlayer, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
-    creature.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
-    creature.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
-    creature.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
+    creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
+    creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
+    creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
     game.setControlledCreatureId(creature.getUID());
     mapRenderer.renderVisibleMap(camera);
     mapRenderer.renderTileHighlight();
-    creature.resetHP();
+    creature.stats.resetHP();
     portraitManager.generateAllPortraits();
 };
 //# sourceMappingURL=render.js.map

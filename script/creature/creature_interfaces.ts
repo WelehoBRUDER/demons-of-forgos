@@ -1,16 +1,50 @@
-interface CreatureInterface {
+interface ICreature {
 	id: string;
-	abilityScores?: AbilityScores;
 	x?: number;
 	y?: number;
 	map?: string;
-	faction?: Faction;
-	sizeCategory?: SizeCategory;
 	uid?: string;
-	hp?: number;
 	initiative?: number;
 	feats?: string[];
 	bab?: number;
+	stats?: ICreatureStats;
+	inventory?: CreatureInventory;
+	combat?: ICreatureCombat;
+}
+
+interface ICreatureStats {
+	abilityScores?: AbilityScores;
+	faction?: Faction;
+	sizeCategory?: SizeCategory;
+	hp?: number;
+}
+
+interface ICreatureCombat {
+	bab?: number;
+	initiative?: number;
+
+	getAttackResults(): AttackResult[];
+	buildAttack(ctx: AttackContext): AttackResult;
+	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[];
+	handleDamageDieProgression(damage: DamageDieInfo): DamageDieInfo;
+	getStrengthBasedDamageBonus(ctx: AttackContext): number;
+}
+
+interface IDynamicCreature extends ICreature {
+	species: string; // will store Species class data
+	bodyType: BodyType; // will store body type data
+	hair?: number; // optional, for future use when we add hair style variations
+	eyes?: number; // optional, for future use when we add eye style variations
+	mouth?: number; // optional, for future use when we add mouth style variations
+	uid: string; // Unique identifier for the dynamic creature, used for referencing in the map and editor
+}
+
+interface INPCCreature extends ICreature {
+	species: string;
+	spritePath: string;
+	spritePosition?: { x: number; y: number };
+	baseHitDice: HitDieInfo[]; // Optional hit dice information for the NPC, can be used to calculate HP and other stats
+	modifiers?: Modifier[]; // Optional array of modifiers specific to this NPC, such as racial traits, class features, etc.
 }
 
 interface StrippedCreatureData {
@@ -19,6 +53,24 @@ interface StrippedCreatureData {
 	x: number;
 	y: number;
 }
+
+interface I_Inventory {
+	items: Item[];
+	equipment: ICreatureEquipment;
+}
+
+const defaultEquipment: ICreatureEquipment = {
+	weapon: null,
+	offhand: null,
+	armor: null,
+	ring1: null,
+	ring2: null,
+	amulet: null,
+	hands: null,
+	feet: null,
+	head: null,
+	cape: null,
+};
 
 enum AbilityScore {
 	STRENGTH = "strength",
@@ -102,4 +154,53 @@ interface AttackResult {
 	damageType: string;
 	criticalThreatRange: number;
 	criticalMultiplier: number;
+}
+
+// Masculine and feminine body types. If species doesn't have body type variations, just use "A" for all creatures of that species.
+enum BodyType {
+	A = "A",
+	B = "B",
+}
+
+interface AnchorPoint {
+	head: { x: number; y: number };
+	body: { x: number; y: number };
+	legs: { x: number; y: number };
+	feet: { x: number; y: number };
+	weapon: { x: number; y: number };
+}
+
+interface DynamicSpriteTextures {
+	body: string;
+	hair: string;
+	eyes: string;
+	mouth: string;
+	ears: string;
+	items: Item[];
+}
+
+enum EquipmentSlot {
+	WEAPON = "weapon",
+	OFFHAND = "offhand",
+	ARMOR = "armor",
+	RING1 = "ring1",
+	RING2 = "ring2",
+	AMULET = "amulet",
+	HANDS = "hands",
+	FEET = "feet",
+	HEAD = "head",
+	CAPE = "cape",
+}
+
+interface ICreatureEquipment {
+	weapon?: Weapon | null;
+	offhand?: Weapon | Armor | null;
+	armor?: Armor | null;
+	ring1?: Item | null;
+	ring2?: Item | null;
+	amulet?: Item | null;
+	hands?: Item | null;
+	feet?: Item | null;
+	head?: Item | null;
+	cape?: Item | null;
 }

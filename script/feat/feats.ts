@@ -37,7 +37,7 @@ featManager.addFeat(
 				target: "meleeAtk",
 				operation: Operation.add,
 				evaluate: (creature: Creature, ctx: any) => {
-					const bab = creature.getBaseAttackBonus();
+					const bab = creature.combat.getBaseAttackBonus();
 					return -(1 + Math.floor(bab / 4)); // -1 attack penalty for every 4 BAB
 				},
 				type: ModifierType.untyped,
@@ -47,7 +47,7 @@ featManager.addFeat(
 				target: "meleeDmg",
 				operation: Operation.add,
 				evaluate: (creature: Creature, ctx: AttackContext) => {
-					const bab = creature.getBaseAttackBonus();
+					const bab = creature.combat.getBaseAttackBonus();
 					const bonusDamage = 2 + Math.floor(bab / 4) * 2; // +2 damage for every 4 BAB
 					// Add logic for two-handing and off-handing since they affect the damage bonus, but for treat everything as usual
 					console.log("Power Attack Bonus Damage:", bonusDamage, "Context:", ctx);

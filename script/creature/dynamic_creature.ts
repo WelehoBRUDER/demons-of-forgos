@@ -1,64 +1,5 @@
-interface DynamicCreatureInterface extends CreatureInterface {
-	species: string; // will store Species class data
-	bodyType: BodyType; // will store body type data
-	hair?: number; // optional, for future use when we add hair style variations
-	eyes?: number; // optional, for future use when we add eye style variations
-	mouth?: number; // optional, for future use when we add mouth style variations
-	equipment?: EquipmentInterface; // optional, for future use when we add equipment like weapons, armor, etc.
-	uid: string; // Unique identifier for the dynamic creature, used for referencing in the map and editor
-}
-
-// Masculine and feminine body types. If species doesn't have body type variations, just use "A" for all creatures of that species.
-enum BodyType {
-	A = "A",
-	B = "B",
-}
-
-interface AnchorPoint {
-	head: { x: number; y: number };
-	body: { x: number; y: number };
-	legs: { x: number; y: number };
-	feet: { x: number; y: number };
-	weapon: { x: number; y: number };
-}
-
-interface DynamicSpriteTextures {
-	body: string;
-	hair: string;
-	eyes: string;
-	mouth: string;
-	ears: string;
-	items: Item[];
-}
-
-enum EquipmentSlot {
-	WEAPON = "weapon",
-	OFFHAND = "offhand",
-	ARMOR = "armor",
-	RING1 = "ring1",
-	RING2 = "ring2",
-	AMULET = "amulet",
-	HANDS = "hands",
-	FEET = "feet",
-	HEAD = "head",
-	CAPE = "cape",
-}
-
-interface EquipmentInterface {
-	weapon?: Weapon | null;
-	offhand?: Weapon | Armor | null;
-	armor?: Armor | null;
-	ring1?: Item | null;
-	ring2?: Item | null;
-	amulet?: Item | null;
-	hands?: Item | null;
-	feet?: Item | null;
-	head?: Item | null;
-	cape?: Item | null;
-}
-
 // All PCs use this class because their rendering starts from a base body sprite with hair, items etc layered on top.
-class DynamicCreature extends Creature {
+class DynamicCreature extends Creature implements IDynamicCreature {
 	private static nextId = 1; // Static property to keep track of the next available ID
 	species: string;
 	bodyType: BodyType;
@@ -66,7 +7,7 @@ class DynamicCreature extends Creature {
 	eyes: number;
 	mouth: number;
 
-	constructor(data: DynamicCreatureInterface) {
+	constructor(data: IDynamicCreature) {
 		super(data);
 		this._id = DynamicCreature.nextId++; // Assign the current value of nextId to _id, then increment nextId
 		this.species = data.species;
@@ -75,8 +16,9 @@ class DynamicCreature extends Creature {
 		this.eyes = data.eyes || 1;
 		this.mouth = data.mouth || 1;
 		this.baseClass = "DynamicCreature";
-		this.equipment = data.equipment || {};
 		this.uid = data.uid; // Set the UID from the data, which should be unique for each dynamic creature
+		this.stats = new DynamicCreatureStats(this, data.stats);
+		this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
 		this.renderSprite();
 	}
 
@@ -94,20 +36,8 @@ class DynamicCreature extends Creature {
 			hair: `assets/sprites/player_character/hair/hair_${this.hair}.png`,
 			eyes: `assets/sprites/player_character/eyes/eyes_${this.eyes}.png`,
 			mouth: `assets/sprites/player_character/mouth/nose_mouth_${this.mouth}.png`,
-			items: this.getAllEquippedItems(),
+			items: this.inventory.getAllEquippedItems(),
 		};
-	}
-
-	getMaxHP(): number {
-		let base: number = super.getMaxHP();
-		let firstHitDie = this.getHitDice()[0]; // Assuming the first hit die is the one to use for base HP calculation
-		// Slightly janky maybe, but this lines makes it so that dynamic creatures benefit from their full hit die at 1st level.
-		return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
-	}
-
-	equipItem(item: Item, slot: EquipmentSlot) {
-		super.equipItem(item, slot);
-		this.renderSprite(); // Re-render the sprite to reflect the equipped item
 	}
 
 	// Dynamic creatures must be tracked separately due to unique rendering.
@@ -119,11 +49,40 @@ class DynamicCreature extends Creature {
 		return speciesManager.getSpeciesById(this.species)?.size.toString() || "medium";
 	}
 
-	getSizeCategory(): number {
-		return speciesManager.getSpeciesById(this.species)?.size || SizeCategory.MEDIUM;
-	}
-
 	renderSprite(): void {
 		atlas.drawDynamicSprite(this);
+	}
+}
+
+class DynamicCreatureStats extends CreatureStats {
+	declare owner: DynamicCreature;
+
+	constructor(owner: DynamicCreature, stats?: ICreatureStats) {
+		super(owner, stats);
+		this.owner = owner;
+	}
+
+	getMaxHP(): number {
+		let base: number = super.getMaxHP();
+		let firstHitDie = this.owner.getHitDice()[0]; // Assuming the first hit die is the one to use for base HP calculation
+		// Slightly janky maybe, but this lines makes it so that dynamic creatures benefit from their full hit die at 1st level.
+		return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
+	}
+
+	getSizeCategory(): number {
+		return speciesManager.getSpeciesById(this.owner.species)?.size || SizeCategory.MEDIUM;
+	}
+}
+
+class DynamicCreatureInventory extends CreatureInventory {
+	declare owner: DynamicCreature;
+
+	constructor(owner: DynamicCreature, inventory: I_Inventory) {
+		super(owner, inventory);
+		this.owner = owner;
+	}
+	equipItem(item: Item, slot: EquipmentSlot): void {
+		super.equipItem(item, slot);
+		this.owner.renderSprite(); // Re-render the creature's sprite whenever an item is equipped to reflect the change visually
 	}
 }

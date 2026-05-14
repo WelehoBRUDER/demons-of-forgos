@@ -1,0 +1,104 @@
+"use strict";
+class CreatureCombat {
+    owner;
+    bab;
+    initiative;
+    constructor(owner, combatData) {
+        this.owner = owner;
+        this.bab = combatData?.bab || 0;
+        this.initiative = combatData?.initiative || 0;
+    }
+    getBaseAttackBonus() {
+        return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
+    }
+    buildAttack(ctx) {
+        const weapon = ctx.weapon;
+        const damageDice = this.handleDamageDieProgression(weapon.getDamage());
+        const attackBonus = this.getWeaponAttackBonus(ctx);
+        const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
+        const critRange = weapon.getCritRange();
+        const critMultiplier = weapon.getCritMultiplier();
+        return {
+            weapon,
+            attackBonus,
+            damageMin,
+            damageMax,
+            damageType: weapon.getDamageType(),
+            criticalThreatRange: critRange,
+            criticalMultiplier: critMultiplier,
+        };
+    }
+    getAttackResults() {
+        return this.owner.inventory.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
+    }
+    formatAttackResult(attackResult) {
+        if (!attackResult)
+            return "";
+        const criticalThreatRangeText = attackResult.criticalThreatRange < 20 ? `${attackResult.criticalThreatRange}-20` : "20";
+        return `${attackResult.weapon.getId()} +${attackResult.attackBonus} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
+    }
+    getWeaponAttackBonus(ctx) {
+        const weapon = ctx.weapon;
+        const weaponType = weapon.getWeaponType();
+        const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
+        const baseAttackBonus = this.getBaseAttackBonus();
+        const abilityModifier = weapon.isFinesse()
+            ? Math.max(this.owner.stats.getAbilityScoreModifiers().strength, this.owner.stats.getAbilityScoreModifiers().dexterity)
+            : this.owner.stats.getAbilityScoreModifiers().strength;
+        const modBonuses = modifierManager.getTotalModifier(attackType, this.owner, { weapon });
+        return baseAttackBonus + abilityModifier + modBonuses;
+    }
+    calculateBaseDamage(dice, ctx) {
+        const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
+        const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
+        let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
+        const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
+        const modBonuses = modifierManager.getTotalModifier(attackType, this.owner, ctx);
+        bonusDamage += modBonuses;
+        bonusDamage += this.getStrengthBasedDamageBonus(ctx); // Calculate strength-based damage bonus based on attack context
+        const totalMinDamage = minDamage + bonusDamage;
+        const totalMaxDamage = maxDamage + bonusDamage;
+        return [totalMinDamage, totalMaxDamage]; // Return min and max damage for simplicity, can be changed to a random roll if desired
+    }
+    getStrengthBasedDamageBonus(ctx) {
+        const str = this.owner.stats.getAbilityScoreModifiers().strength;
+        if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
+            return ctx.weapon.isComposite() ? str : 0; // Composite bows add strength bonus to damage, regular ranged weapons do not
+        }
+        if (ctx.isOffHand) {
+            return Math.floor(str / 2); // Off-hand attacks typically get half the strength bonus
+        }
+        if (ctx.heldInTwoHands) {
+            return Math.floor(str * 1.5); // Two-handed attacks typically get 1.5 times the strength bonus
+        }
+        return str; // Normal strength bonus for one-handed attacks
+    }
+    handleDamageDieProgression(damage) {
+        // Default behavior
+        const sizeCategory = this.owner.stats.getSizeCategory();
+        if (sizeCategory < SizeCategory.MEDIUM) {
+            // Weapon damage dice are reduced
+            damage = DamageProgression.getPreviousDamage(damage);
+        }
+        else if (sizeCategory > SizeCategory.MEDIUM) {
+            // Weapon damage dice are increased
+            damage = DamageProgression.getNextDamage(damage, 2 * (sizeCategory - SizeCategory.MEDIUM)); // Increase damage by 2 steps for each size category above medium
+        }
+        return damage;
+    }
+    getInitiative() {
+        return this.initiative;
+    }
+    getInitiativeBonus() {
+        let base = this.owner.stats.getAbilityScoreModifiers().dexterity;
+        const bonuses = modifierManager.getTotalModifier("initiative", this.owner, {});
+        return base + bonuses;
+    }
+    rollInitiative() {
+        const roll = DiceRoller.roll(Dice.d20)[0];
+        const initiative = roll + this.getInitiativeBonus();
+        this.initiative = initiative;
+        return initiative;
+    }
+}
+//# sourceMappingURL=creature_combat.js.map

@@ -81,7 +81,6 @@ class WorldMap {
 	convertStrippedObjectData(objects: StrippedObjectData[]): DynamicObject[] {
 		return objects.map((obj) => {
 			const object: DynamicObject = getDynamicObjectById(obj.i);
-			console.log(obj);
 			object.restoreStrippedData(obj); // Restore the object's state, position, and UID from the stripped data
 			// Implementation for converting stripped object data to dynamic objects
 			return object;
