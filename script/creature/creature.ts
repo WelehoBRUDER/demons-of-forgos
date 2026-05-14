@@ -1,91 +1,3 @@
-interface CreatureInterface {
-	id: string;
-	abilityScores?: AbilityScores;
-	x?: number;
-	y?: number;
-	map?: string;
-	faction?: Faction;
-	sizeCategory?: SizeCategory;
-	uid?: string;
-	hp?: number;
-	initiative?: number;
-	feats?: string[];
-	bab?: number;
-}
-
-interface StrippedCreatureData {
-	i: string;
-	u: string;
-	x: number;
-	y: number;
-}
-
-enum AbilityScore {
-	STRENGTH = "strength",
-	DEXTERITY = "dexterity",
-	CONSTITUTION = "constitution",
-	INTELLIGENCE = "intelligence",
-	WISDOM = "wisdom",
-	CHARISMA = "charisma",
-}
-
-interface AbilityScores {
-	strength: number;
-	dexterity: number;
-	constitution: number;
-	intelligence: number;
-	wisdom: number;
-	charisma: number;
-}
-
-// Movement constants
-enum MovementType {
-	BLOCKED = 0,
-	NORMAL = 1,
-}
-
-enum Faction {
-	HOSTILE = 0,
-	NEUTRAL = 1,
-	FRIENDLY = 2,
-}
-
-enum HitDice {
-	D4 = 4,
-	D6 = 6,
-	D8 = 8,
-	D10 = 10,
-	D12 = 12,
-	D20 = 20,
-}
-
-interface HitDieInfo {
-	type: HitDice;
-	count: number;
-}
-
-interface TilePropertyInteractions {
-	isWater: number; // 0 means impeded, 1 means normal
-	isLowWall: number; // 0 means impeded, 1 means normal
-	isDrop: number; // 0 means impeded, 1 means normal
-	isDifficultTerrain: number; // 0 means impeded, 1 means normal
-}
-
-const defaultAbilityScores: AbilityScores = {
-	strength: 10,
-	dexterity: 10,
-	constitution: 10,
-	intelligence: 10,
-	wisdom: 10,
-	charisma: 10,
-};
-
-interface ArmorClass {
-	full: number; // Total AC including all modifiers
-	touch: number; // AC against attacks that ignore armor and natural armor
-	flatFooted: number; // AC against attacks when the creature is flat-footed (can't use dex bonus)
-}
-
 let creatureIndex = 0;
 class Creature implements CreatureInterface {
 	_id: number;
@@ -112,6 +24,7 @@ class Creature implements CreatureInterface {
 	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
 	feats: string[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
 	equipment: EquipmentInterface = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
+	inventory = new Inventory(); // Inventory to hold items the creature is carrying, separate from equipped items
 
 	hp: number = 4;
 
@@ -133,6 +46,14 @@ class Creature implements CreatureInterface {
 		this.bab = data.bab ?? 0;
 
 		this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+	}
+
+	getInventory(): Inventory {
+		return this.inventory;
+	}
+
+	getAllItems(): Item[] {
+		return this.getAllEquippedItems().concat(this.inventory.getItems());
 	}
 
 	restoreStrippedData(data: StrippedCreatureData) {
@@ -299,14 +220,52 @@ class Creature implements CreatureInterface {
 		return items;
 	}
 
-	equipItem(item: Item) {
+	equipItem(item: Item, slot: EquipmentSlot) {
 		this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
 		if (item instanceof Weapon) {
-			this.equipment.weapon = item;
+			this.equipWeapon(item, slot);
 		}
-		if (item instanceof Armor) {
-			this.equipment.armor = item;
+	}
+
+	equipWeapon(weapon: Weapon, slot: EquipmentSlot) {
+		const primary = this.getPrimaryWeapon();
+		const secondary = this.getSecondaryWeapon();
+
+		if (weapon.getWeaponType() === WeaponType.RANGED || weapon.isHeavy()) {
+			if (primary) {
+				this.unequipItem(EquipmentSlot.WEAPON);
+			}
+			if (secondary) {
+				this.unequipItem(EquipmentSlot.OFFHAND);
+			}
+			this.equipment.weapon = weapon;
+			return;
 		}
+
+		if (slot === EquipmentSlot.WEAPON) {
+			if (primary) {
+				this.unequipItem(EquipmentSlot.WEAPON);
+			}
+			this.equipment.weapon = weapon;
+		} else if (slot === EquipmentSlot.OFFHAND) {
+			if (secondary) {
+				this.unequipItem(EquipmentSlot.OFFHAND);
+			}
+			this.equipment.offhand = weapon;
+		}
+	}
+
+	getEquippedItem(slot: EquipmentSlot): Item | null {
+		return this.equipment[slot] || null;
+	}
+
+	unequipItem(slot: EquipmentSlot) {
+		this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
+		const item = this.getEquippedItem(slot);
+		if (item) {
+			this.equipment[slot] = null;
+		}
+		this.getInventory().addItem(item); // Add the unequipped item back to the inventory
 	}
 
 	setPosition(x: number, y: number) {
@@ -604,43 +563,79 @@ class Creature implements CreatureInterface {
 		};
 	}
 
-	getPrimaryWeaponTotalDamage(): number[] | null {
-		const primaryDamageInfo = this.getPrimaryWeaponDamage();
-		if (!primaryDamageInfo) {
-			return null;
-		}
-		return this.calculateBaseDamage(primaryDamageInfo);
-	}
-
-	getSecondaryWeaponTotalDamage(): number[] | null {
-		const secondaryDamageInfo = this.getSecondaryWeaponDamage();
-		if (!secondaryDamageInfo) {
-			return null;
-		}
-		return this.calculateBaseDamage(secondaryDamageInfo);
-	}
-
-	getPrimaryWeaponAttackString(): string {
+	getEquippedWeapons(): AttackContext[] {
 		const primary = this.getPrimaryWeapon();
-		if (!primary) {
-			return "Unarmed Attack";
-		}
-		const attackBonus = this.getWeaponAttackBonus(primary);
-		const attackDamage = this.getPrimaryWeaponTotalDamage();
-		return `${primary.getId()} +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${primary.getDamageType()}`;
-	}
-
-	getSecondaryWeaponAttackString(): string {
 		const secondary = this.getSecondaryWeapon();
-		if (!secondary) {
-			return "";
+
+		if (!primary && !secondary) {
+			return [];
 		}
-		const attackBonus = this.getWeaponAttackBonus(secondary) - 4; // Off-hand attacks typically take a -4 penalty unless the character has the Two-Weapon Fighting feat
-		const attackDamage = this.getSecondaryWeaponTotalDamage();
-		return `${secondary.getId()} (Off-hand) +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${secondary.getDamageType()}`;
+
+		if (primary && !secondary) {
+			return [
+				{
+					weapon: primary,
+					isPrimary: true,
+					isOffHand: false,
+					heldInTwoHands: false,
+					isDualWielding: false,
+				},
+			];
+		}
+
+		return [
+			{
+				weapon: primary,
+				isPrimary: true,
+				isOffHand: false,
+				heldInTwoHands: false,
+				isDualWielding: true,
+			},
+			{
+				weapon: secondary,
+				isPrimary: false,
+				isOffHand: true,
+				heldInTwoHands: false,
+				isDualWielding: true,
+			},
+		];
 	}
 
-	getWeaponAttackBonus(weapon: Weapon): number {
+	buildAttack(ctx: AttackContext): AttackResult {
+		const weapon = ctx.weapon;
+
+		const damageDice = this.handleDamageDieProgression(weapon.getDamage());
+
+		const attackBonus = this.getWeaponAttackBonus(ctx);
+
+		const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
+
+		const critRange = weapon.getCritRange();
+		const critMultiplier = weapon.getCritMultiplier();
+
+		return {
+			weapon,
+			attackBonus,
+			damageMin,
+			damageMax,
+			damageType: weapon.getDamageType(),
+			criticalThreatRange: critRange,
+			criticalMultiplier: critMultiplier,
+		};
+	}
+
+	getAttackResults(): AttackResult[] {
+		return this.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
+	}
+
+	formatAttackResult(attackResult: AttackResult): string {
+		if (!attackResult) return "";
+		const criticalThreatRangeText = attackResult.criticalThreatRange < 20 ? `${attackResult.criticalThreatRange}-20` : "20";
+		return `${attackResult.weapon.getId()} +${attackResult.attackBonus} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
+	}
+
+	getWeaponAttackBonus(ctx: AttackContext): number {
+		const weapon = ctx.weapon;
 		const weaponType = weapon.getWeaponType();
 		const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
 		const baseAttackBonus = this.getBaseAttackBonus();
@@ -651,76 +646,38 @@ class Creature implements CreatureInterface {
 		return baseAttackBonus + abilityModifier + modBonuses;
 	}
 
-	calculateBaseDamage(data: { dice: DamageDieInfo; ctx: any }): number[] {
-		const { dice, ctx } = data;
+	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[] {
 		const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
 		const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
 		let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
-		const attackType = ctx.weaponType === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
+		const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this, ctx) as number;
-		const strengthBonus = this.getAbilityScoreModifiers().strength;
 		bonusDamage += modBonuses;
-		bonusDamage += ctx.heldInTwoHands ? Math.floor(strengthBonus * 1.5) : strengthBonus; // If the weapon is held in two hands, strength bonus is multiplied by 1.5
+		bonusDamage += this.getStrengthBasedDamageBonus(ctx); // Calculate strength-based damage bonus based on attack context
 		const totalMinDamage = minDamage + bonusDamage;
 		const totalMaxDamage = maxDamage + bonusDamage;
 		return [totalMinDamage, totalMaxDamage]; // Return min and max damage for simplicity, can be changed to a random roll if desired
 	}
 
-	getAllWeapons(): Weapon[] {
-		const weapons: Weapon[] = [];
-		const primary = this.getPrimaryWeapon();
-		const secondary = this.getSecondaryWeapon();
-		if (primary) {
-			weapons.push(primary);
+	getStrengthBasedDamageBonus(ctx: AttackContext): number {
+		const str: number = this.getAbilityScoreModifiers().strength;
+
+		if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
+			return ctx.weapon.isComposite() ? str : 0; // Composite bows add strength bonus to damage, regular ranged weapons do not
 		}
-		if (secondary) {
-			weapons.push(secondary);
+
+		if (ctx.isOffHand) {
+			return Math.floor(str / 2); // Off-hand attacks typically get half the strength bonus
 		}
-		return weapons;
+
+		if (ctx.heldInTwoHands) {
+			return Math.floor(str * 1.5); // Two-handed attacks typically get 1.5 times the strength bonus
+		}
+
+		return str; // Normal strength bonus for one-handed attacks
 	}
 
-	getPrimaryWeaponDamage(): { dice: DamageDieInfo; ctx: any } | null {
-		const primary = this.getPrimaryWeapon();
-		const secondary = this.getSecondaryWeapon();
-		if (!primary && !secondary) {
-			return null;
-		}
-		if (primary && !secondary) {
-			return this.handleDamageDieProgression(primary.getDamage(), {
-				weapon: primary,
-				isPrimary: true,
-				heldInTwoHands: true,
-				weaponType: primary.getWeaponType(),
-			});
-		}
-		if (primary && secondary) {
-			// If dual-wielding, primary weapon is considered to be held in one hand for damage calculation purposes
-			return this.handleDamageDieProgression(primary.getDamage(), {
-				weapon: primary,
-				isPrimary: true,
-				heldInTwoHands: false,
-				weaponType: primary.getWeaponType(),
-			});
-		}
-	}
-
-	getSecondaryWeaponDamage(): { dice: DamageDieInfo; ctx: any } | null {
-		const secondary = this.getSecondaryWeapon();
-		if (!secondary) {
-			return null;
-		}
-		// If dual-wielding, off-hand weapon is considered to be held in one hand for damage calculation purposes
-		return this.handleDamageDieProgression(secondary.getDamage(), {
-			weapon: secondary,
-			isPrimary: false,
-			heldInTwoHands: false,
-			weaponType: secondary.getWeaponType(),
-			isOffHand: true,
-		});
-	}
-
-	handleDamageDieProgression(damage: DamageDieInfo, ctx: any): { dice: DamageDieInfo; ctx: any } {
-		const weapon = ctx.weapon as Weapon;
+	handleDamageDieProgression(damage: DamageDieInfo): DamageDieInfo {
 		// Default behavior
 		const sizeCategory = this.getSizeCategory();
 		if (sizeCategory < SizeCategory.MEDIUM) {
@@ -730,7 +687,7 @@ class Creature implements CreatureInterface {
 			// Weapon damage dice are increased
 			damage = DamageProgression.getNextDamage(damage, 2 * (sizeCategory - SizeCategory.MEDIUM)); // Increase damage by 2 steps for each size category above medium
 		}
-		return { dice: damage, ctx };
+		return damage;
 	}
 }
 

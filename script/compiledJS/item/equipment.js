@@ -17,5 +17,8 @@ class Equipment extends Item {
     getModifiers(ctx) {
         return [];
     }
+    stacks() {
+        return false; // Equipment items do not stack by default, as each piece of equipment is unique and can only be equipped once
+    }
 }
 //# sourceMappingURL=equipment.js.map

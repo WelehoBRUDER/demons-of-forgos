@@ -1,42 +1,4 @@
 "use strict";
-var AbilityScore;
-(function (AbilityScore) {
-    AbilityScore["STRENGTH"] = "strength";
-    AbilityScore["DEXTERITY"] = "dexterity";
-    AbilityScore["CONSTITUTION"] = "constitution";
-    AbilityScore["INTELLIGENCE"] = "intelligence";
-    AbilityScore["WISDOM"] = "wisdom";
-    AbilityScore["CHARISMA"] = "charisma";
-})(AbilityScore || (AbilityScore = {}));
-// Movement constants
-var MovementType;
-(function (MovementType) {
-    MovementType[MovementType["BLOCKED"] = 0] = "BLOCKED";
-    MovementType[MovementType["NORMAL"] = 1] = "NORMAL";
-})(MovementType || (MovementType = {}));
-var Faction;
-(function (Faction) {
-    Faction[Faction["HOSTILE"] = 0] = "HOSTILE";
-    Faction[Faction["NEUTRAL"] = 1] = "NEUTRAL";
-    Faction[Faction["FRIENDLY"] = 2] = "FRIENDLY";
-})(Faction || (Faction = {}));
-var HitDice;
-(function (HitDice) {
-    HitDice[HitDice["D4"] = 4] = "D4";
-    HitDice[HitDice["D6"] = 6] = "D6";
-    HitDice[HitDice["D8"] = 8] = "D8";
-    HitDice[HitDice["D10"] = 10] = "D10";
-    HitDice[HitDice["D12"] = 12] = "D12";
-    HitDice[HitDice["D20"] = 20] = "D20";
-})(HitDice || (HitDice = {}));
-const defaultAbilityScores = {
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-};
 let creatureIndex = 0;
 class Creature {
     _id;
@@ -62,6 +24,7 @@ class Creature {
     statusEffects = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
     feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
     equipment = {}; // Object to hold equipped items, which can provide modifiers and affect the creature's stats and abilities
+    inventory = new Inventory(); // Inventory to hold items the creature is carrying, separate from equipped items
     hp = 4;
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
@@ -80,6 +43,12 @@ class Creature {
         this.feats = data.feats ?? [];
         this.bab = data.bab ?? 0;
         this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+    }
+    getInventory() {
+        return this.inventory;
+    }
+    getAllItems() {
+        return this.getAllEquippedItems().concat(this.inventory.getItems());
     }
     restoreStrippedData(data) {
         this.setUID(data.u);
@@ -215,14 +184,48 @@ class Creature {
         }
         return items;
     }
-    equipItem(item) {
+    equipItem(item, slot) {
         this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
         if (item instanceof Weapon) {
-            this.equipment.weapon = item;
+            this.equipWeapon(item, slot);
         }
-        if (item instanceof Armor) {
-            this.equipment.armor = item;
+    }
+    equipWeapon(weapon, slot) {
+        const primary = this.getPrimaryWeapon();
+        const secondary = this.getSecondaryWeapon();
+        if (weapon.getWeaponType() === WeaponType.RANGED || weapon.isHeavy()) {
+            if (primary) {
+                this.unequipItem(EquipmentSlot.WEAPON);
+            }
+            if (secondary) {
+                this.unequipItem(EquipmentSlot.OFFHAND);
+            }
+            this.equipment.weapon = weapon;
+            return;
         }
+        if (slot === EquipmentSlot.WEAPON) {
+            if (primary) {
+                this.unequipItem(EquipmentSlot.WEAPON);
+            }
+            this.equipment.weapon = weapon;
+        }
+        else if (slot === EquipmentSlot.OFFHAND) {
+            if (secondary) {
+                this.unequipItem(EquipmentSlot.OFFHAND);
+            }
+            this.equipment.offhand = weapon;
+        }
+    }
+    getEquippedItem(slot) {
+        return this.equipment[slot] || null;
+    }
+    unequipItem(slot) {
+        this.providersNeedUpdate = true; // Mark providers as needing update since equipment can change modifiers
+        const item = this.getEquippedItem(slot);
+        if (item) {
+            this.equipment[slot] = null;
+        }
+        this.getInventory().addItem(item); // Add the unequipped item back to the inventory
     }
     setPosition(x, y) {
         this.x = x;
@@ -475,39 +478,68 @@ class Creature {
             y: this.y,
         };
     }
-    getPrimaryWeaponTotalDamage() {
-        const primaryDamageInfo = this.getPrimaryWeaponDamage();
-        if (!primaryDamageInfo) {
-            return null;
-        }
-        return this.calculateBaseDamage(primaryDamageInfo);
-    }
-    getSecondaryWeaponTotalDamage() {
-        const secondaryDamageInfo = this.getSecondaryWeaponDamage();
-        if (!secondaryDamageInfo) {
-            return null;
-        }
-        return this.calculateBaseDamage(secondaryDamageInfo);
-    }
-    getPrimaryWeaponAttackString() {
+    getEquippedWeapons() {
         const primary = this.getPrimaryWeapon();
-        if (!primary) {
-            return "Unarmed Attack";
-        }
-        const attackBonus = this.getWeaponAttackBonus(primary);
-        const attackDamage = this.getPrimaryWeaponTotalDamage();
-        return `${primary.getId()} +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${primary.getDamageType()}`;
-    }
-    getSecondaryWeaponAttackString() {
         const secondary = this.getSecondaryWeapon();
-        if (!secondary) {
-            return "";
+        if (!primary && !secondary) {
+            return [];
         }
-        const attackBonus = this.getWeaponAttackBonus(secondary) - 4; // Off-hand attacks typically take a -4 penalty unless the character has the Two-Weapon Fighting feat
-        const attackDamage = this.getSecondaryWeaponTotalDamage();
-        return `${secondary.getId()} (Off-hand) +${attackBonus} to hit, Damage: ${attackDamage ? attackDamage[0] + "-" + attackDamage[1] : "N/A"} ${secondary.getDamageType()}`;
+        if (primary && !secondary) {
+            return [
+                {
+                    weapon: primary,
+                    isPrimary: true,
+                    isOffHand: false,
+                    heldInTwoHands: false,
+                    isDualWielding: false,
+                },
+            ];
+        }
+        return [
+            {
+                weapon: primary,
+                isPrimary: true,
+                isOffHand: false,
+                heldInTwoHands: false,
+                isDualWielding: true,
+            },
+            {
+                weapon: secondary,
+                isPrimary: false,
+                isOffHand: true,
+                heldInTwoHands: false,
+                isDualWielding: true,
+            },
+        ];
     }
-    getWeaponAttackBonus(weapon) {
+    buildAttack(ctx) {
+        const weapon = ctx.weapon;
+        const damageDice = this.handleDamageDieProgression(weapon.getDamage());
+        const attackBonus = this.getWeaponAttackBonus(ctx);
+        const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
+        const critRange = weapon.getCritRange();
+        const critMultiplier = weapon.getCritMultiplier();
+        return {
+            weapon,
+            attackBonus,
+            damageMin,
+            damageMax,
+            damageType: weapon.getDamageType(),
+            criticalThreatRange: critRange,
+            criticalMultiplier: critMultiplier,
+        };
+    }
+    getAttackResults() {
+        return this.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
+    }
+    formatAttackResult(attackResult) {
+        if (!attackResult)
+            return "";
+        const criticalThreatRangeText = attackResult.criticalThreatRange < 20 ? `${attackResult.criticalThreatRange}-20` : "20";
+        return `${attackResult.weapon.getId()} +${attackResult.attackBonus} to hit, Damage: ${attackResult.damageMin}-${attackResult.damageMax} ${attackResult.damageType}, Crit: ${criticalThreatRangeText} x${attackResult.criticalMultiplier}`;
+    }
+    getWeaponAttackBonus(ctx) {
+        const weapon = ctx.weapon;
         const weaponType = weapon.getWeaponType();
         const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
         const baseAttackBonus = this.getBaseAttackBonus();
@@ -517,72 +549,32 @@ class Creature {
         const modBonuses = modifierManager.getTotalModifier(attackType, this, { weapon });
         return baseAttackBonus + abilityModifier + modBonuses;
     }
-    calculateBaseDamage(data) {
-        const { dice, ctx } = data;
+    calculateBaseDamage(dice, ctx) {
         const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
         const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
         let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
-        const attackType = ctx.weaponType === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
+        const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
         const modBonuses = modifierManager.getTotalModifier(attackType, this, ctx);
-        const strengthBonus = this.getAbilityScoreModifiers().strength;
         bonusDamage += modBonuses;
-        bonusDamage += ctx.heldInTwoHands ? Math.floor(strengthBonus * 1.5) : strengthBonus; // If the weapon is held in two hands, strength bonus is multiplied by 1.5
+        bonusDamage += this.getStrengthBasedDamageBonus(ctx); // Calculate strength-based damage bonus based on attack context
         const totalMinDamage = minDamage + bonusDamage;
         const totalMaxDamage = maxDamage + bonusDamage;
         return [totalMinDamage, totalMaxDamage]; // Return min and max damage for simplicity, can be changed to a random roll if desired
     }
-    getAllWeapons() {
-        const weapons = [];
-        const primary = this.getPrimaryWeapon();
-        const secondary = this.getSecondaryWeapon();
-        if (primary) {
-            weapons.push(primary);
+    getStrengthBasedDamageBonus(ctx) {
+        const str = this.getAbilityScoreModifiers().strength;
+        if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
+            return ctx.weapon.isComposite() ? str : 0; // Composite bows add strength bonus to damage, regular ranged weapons do not
         }
-        if (secondary) {
-            weapons.push(secondary);
+        if (ctx.isOffHand) {
+            return Math.floor(str / 2); // Off-hand attacks typically get half the strength bonus
         }
-        return weapons;
+        if (ctx.heldInTwoHands) {
+            return Math.floor(str * 1.5); // Two-handed attacks typically get 1.5 times the strength bonus
+        }
+        return str; // Normal strength bonus for one-handed attacks
     }
-    getPrimaryWeaponDamage() {
-        const primary = this.getPrimaryWeapon();
-        const secondary = this.getSecondaryWeapon();
-        if (!primary && !secondary) {
-            return null;
-        }
-        if (primary && !secondary) {
-            return this.handleDamageDieProgression(primary.getDamage(), {
-                weapon: primary,
-                isPrimary: true,
-                heldInTwoHands: true,
-                weaponType: primary.getWeaponType(),
-            });
-        }
-        if (primary && secondary) {
-            // If dual-wielding, primary weapon is considered to be held in one hand for damage calculation purposes
-            return this.handleDamageDieProgression(primary.getDamage(), {
-                weapon: primary,
-                isPrimary: true,
-                heldInTwoHands: false,
-                weaponType: primary.getWeaponType(),
-            });
-        }
-    }
-    getSecondaryWeaponDamage() {
-        const secondary = this.getSecondaryWeapon();
-        if (!secondary) {
-            return null;
-        }
-        // If dual-wielding, off-hand weapon is considered to be held in one hand for damage calculation purposes
-        return this.handleDamageDieProgression(secondary.getDamage(), {
-            weapon: secondary,
-            isPrimary: false,
-            heldInTwoHands: false,
-            weaponType: secondary.getWeaponType(),
-            isOffHand: true,
-        });
-    }
-    handleDamageDieProgression(damage, ctx) {
-        const weapon = ctx.weapon;
+    handleDamageDieProgression(damage) {
         // Default behavior
         const sizeCategory = this.getSizeCategory();
         if (sizeCategory < SizeCategory.MEDIUM) {
@@ -593,7 +585,7 @@ class Creature {
             // Weapon damage dice are increased
             damage = DamageProgression.getNextDamage(damage, 2 * (sizeCategory - SizeCategory.MEDIUM)); // Increase damage by 2 steps for each size category above medium
         }
-        return { dice: damage, ctx };
+        return damage;
     }
 }
 const creatures = [];

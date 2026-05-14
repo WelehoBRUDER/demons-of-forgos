@@ -4,6 +4,7 @@ itemManager.addItem(
 		spritePath: "assets/items/weapons/longsword.png",
 		damage: { count: 1, type: Dice.d8 },
 		weaponType: WeaponType.MELEE,
+		damageType: DamageType.SLASHING,
 	}),
 );
 itemManager.addItem(
@@ -12,8 +13,21 @@ itemManager.addItem(
 		spritePath: "assets/items/weapons/longsword.png",
 		damage: { count: 1, type: Dice.d4 },
 		weaponType: WeaponType.MELEE,
+		damageType: DamageType.PIERCING,
 		finesse: true,
 		light: true,
+		critRange: 19,
+	}),
+);
+itemManager.addItem(
+	new Weapon({
+		id: "shortsword",
+		spritePath: "assets/items/weapons/longsword.png",
+		damage: { count: 1, type: Dice.d6 },
+		weaponType: WeaponType.MELEE,
+		damageType: DamageType.PIERCING,
+		light: true,
+		critRange: 19,
 	}),
 );
 itemManager.addItem(
@@ -22,6 +36,7 @@ itemManager.addItem(
 		spritePath: "assets/items/weapons/longsword.png",
 		damage: { count: 2, type: Dice.d6 },
 		weaponType: WeaponType.MELEE,
+		damageType: DamageType.SLASHING,
 		heavy: true,
 	}),
 );

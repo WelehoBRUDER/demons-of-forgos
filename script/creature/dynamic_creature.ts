@@ -31,10 +31,30 @@ interface DynamicSpriteTextures {
 	items: Item[];
 }
 
+enum EquipmentSlot {
+	WEAPON = "weapon",
+	OFFHAND = "offhand",
+	ARMOR = "armor",
+	RING1 = "ring1",
+	RING2 = "ring2",
+	AMULET = "amulet",
+	HANDS = "hands",
+	FEET = "feet",
+	HEAD = "head",
+	CAPE = "cape",
+}
+
 interface EquipmentInterface {
 	weapon?: Weapon | null;
 	offhand?: Weapon | Armor | null;
 	armor?: Armor | null;
+	ring1?: Item | null;
+	ring2?: Item | null;
+	amulet?: Item | null;
+	hands?: Item | null;
+	feet?: Item | null;
+	head?: Item | null;
+	cape?: Item | null;
 }
 
 // All PCs use this class because their rendering starts from a base body sprite with hair, items etc layered on top.
@@ -85,8 +105,8 @@ class DynamicCreature extends Creature {
 		return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
 	}
 
-	equipItem(item: Item) {
-		super.equipItem(item);
+	equipItem(item: Item, slot: EquipmentSlot) {
+		super.equipItem(item, slot);
 		this.renderSprite(); // Re-render the sprite to reflect the equipped item
 	}
 

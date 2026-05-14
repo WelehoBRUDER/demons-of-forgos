@@ -25,4 +25,8 @@ class Equipment extends Item {
 	getModifiers(ctx: any): Modifier[] {
 		return [];
 	}
+
+	stacks(): boolean {
+		return false; // Equipment items do not stack by default, as each piece of equipment is unique and can only be equipped once
+	}
 }

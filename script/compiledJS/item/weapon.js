@@ -101,6 +101,7 @@ class Weapon extends Equipment {
     finesse;
     light;
     heavy;
+    composite;
     enhancementBonus;
     constructor(data) {
         super(data);
@@ -115,6 +116,7 @@ class Weapon extends Equipment {
         this.finesse = data.finesse || false;
         this.light = data.light || false;
         this.heavy = data.heavy || false;
+        this.composite = data.composite || false;
     }
     getDamage() {
         return this.damage;
@@ -124,6 +126,9 @@ class Weapon extends Equipment {
     }
     isFinesse() {
         return this.finesse;
+    }
+    isComposite() {
+        return this.composite;
     }
     isLight() {
         return this.light;
@@ -136,6 +141,12 @@ class Weapon extends Equipment {
     }
     getDamageType() {
         return this.damageType;
+    }
+    getCritRange() {
+        return this.critRange;
+    }
+    getCritMultiplier() {
+        return this.critMultiplier;
     }
     getModifiers(ctx) {
         return [];

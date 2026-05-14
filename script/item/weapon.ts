@@ -26,6 +26,7 @@ interface WeaponData extends EquipmentData {
 	critMultiplier?: number; // Damage multiplier for critical hits (e.g., 2 means double damage on a crit)
 	damageType?: DamageType; // Type of damage dealt by the weapon
 	finesse?: boolean;
+	composite?: boolean; // Indicates if the weapon is a composite bow, which allows adding strength bonus to damage for ranged attacks
 	light?: boolean;
 	heavy?: boolean;
 	anchorPoint?: AnchorPointType; // Optional, defaults to "weapon" if not provided
@@ -119,6 +120,7 @@ class Weapon extends Equipment {
 	finesse: boolean;
 	light: boolean;
 	heavy: boolean;
+	composite: boolean;
 	enhancementBonus: number;
 	constructor(data: WeaponData) {
 		super(data);
@@ -133,6 +135,7 @@ class Weapon extends Equipment {
 		this.finesse = data.finesse || false;
 		this.light = data.light || false;
 		this.heavy = data.heavy || false;
+		this.composite = data.composite || false;
 	}
 
 	getDamage(): DamageDieInfo {
@@ -145,6 +148,10 @@ class Weapon extends Equipment {
 
 	isFinesse(): boolean {
 		return this.finesse;
+	}
+
+	isComposite(): boolean {
+		return this.composite;
 	}
 
 	isLight(): boolean {
@@ -161,6 +168,14 @@ class Weapon extends Equipment {
 
 	getDamageType(): DamageType {
 		return this.damageType;
+	}
+
+	getCritRange(): number {
+		return this.critRange;
+	}
+
+	getCritMultiplier(): number {
+		return this.critMultiplier;
 	}
 
 	getModifiers(ctx: any): Modifier[] {

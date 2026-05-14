@@ -5,6 +5,19 @@ var BodyType;
     BodyType["A"] = "A";
     BodyType["B"] = "B";
 })(BodyType || (BodyType = {}));
+var EquipmentSlot;
+(function (EquipmentSlot) {
+    EquipmentSlot["WEAPON"] = "weapon";
+    EquipmentSlot["OFFHAND"] = "offhand";
+    EquipmentSlot["ARMOR"] = "armor";
+    EquipmentSlot["RING1"] = "ring1";
+    EquipmentSlot["RING2"] = "ring2";
+    EquipmentSlot["AMULET"] = "amulet";
+    EquipmentSlot["HANDS"] = "hands";
+    EquipmentSlot["FEET"] = "feet";
+    EquipmentSlot["HEAD"] = "head";
+    EquipmentSlot["CAPE"] = "cape";
+})(EquipmentSlot || (EquipmentSlot = {}));
 // All PCs use this class because their rendering starts from a base body sprite with hair, items etc layered on top.
 class DynamicCreature extends Creature {
     static nextId = 1; // Static property to keep track of the next available ID
@@ -48,8 +61,8 @@ class DynamicCreature extends Creature {
         // Slightly janky maybe, but this lines makes it so that dynamic creatures benefit from their full hit die at 1st level.
         return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
     }
-    equipItem(item) {
-        super.equipItem(item);
+    equipItem(item, slot) {
+        super.equipItem(item, slot);
         this.renderSprite(); // Re-render the sprite to reflect the equipped item
     }
     // Dynamic creatures must be tracked separately due to unique rendering.
