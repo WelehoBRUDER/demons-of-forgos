@@ -1,4 +1,11 @@
 "use strict";
+var Action;
+(function (Action) {
+    Action["STANDARD"] = "standard";
+    Action["MOVE"] = "move";
+    Action["FREE"] = "free";
+    Action["SWIFT"] = "swift";
+})(Action || (Action = {}));
 const defaultEquipment = {
     weapon: null,
     offhand: null,

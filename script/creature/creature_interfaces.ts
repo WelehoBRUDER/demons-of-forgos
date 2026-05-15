@@ -10,6 +10,7 @@ interface ICreature {
 	stats?: ICreatureStats;
 	inventory?: CreatureInventory;
 	combat?: ICreatureCombat;
+	ai?: CreatureAI;
 }
 
 interface ICreatureStats {
@@ -23,12 +24,27 @@ interface ICreatureStats {
 interface ICreatureCombat {
 	bab?: number;
 	initiative?: number;
+	actions?: Actions;
 
 	getAttackResults(): AttackResult[];
 	buildAttack(ctx: AttackContext): AttackResult;
 	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[];
 	handleDamageDieProgression(damage: DamageDieInfo): DamageDieInfo;
 	getStrengthBasedDamageBonus(ctx: AttackContext): number;
+}
+
+enum Action {
+	STANDARD = "standard",
+	MOVE = "move",
+	FREE = "free",
+	SWIFT = "swift",
+}
+
+interface Actions {
+	[Action.STANDARD]?: number; // Number of standard actions available (usually 1)
+	[Action.MOVE]?: number; // Number of move actions available (usually 1)
+	[Action.FREE]?: number; // Number of free actions available (can be more than 1)
+	[Action.SWIFT]?: number; // Number of swift actions available (usually 1)
 }
 
 interface IDynamicCreature extends ICreature {

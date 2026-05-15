@@ -16,6 +16,12 @@ class CombatManager {
 			this.addToCombat(creature);
 		});
 		this.drawInitiativeOrder();
+		this.getCurrentTurnCreature().ai.makeDecision(); // Trigger AI decision for the first creature in combat immediately
+	}
+
+	getCurrentTurnCreature(): Creature | undefined {
+		const currentUID = this.participants[this.turnIndex];
+		return entityManager.getCreatureByUID(currentUID);
 	}
 
 	nextTurn() {

@@ -12,6 +12,7 @@ class Pathfinding {
         const cameFrom = new Map();
         const gScore = new Map();
         const fScore = new Map();
+        const enterCost = new Map();
         const size = creature.stats.getSizeCategory();
         const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance);
         if (expandedGoals.length === 0) {
@@ -57,7 +58,7 @@ class Pathfinding {
                 let key = currentKey;
                 while (key) {
                     const [x, y] = key.split(",").map(Number);
-                    path.unshift({ x, y });
+                    path.unshift({ x, y, cost: enterCost.get(key) ?? 0 });
                     key = cameFrom.get(key) || "";
                 }
                 return path;
@@ -87,6 +88,7 @@ class Pathfinding {
                         cameFrom.set(neighborKey, currentKey);
                         gScore.set(neighborKey, tentativeGScore);
                         fScore.set(neighborKey, tentativeGScore + this.closestGoalHeuristic({ x: neighborX, y: neighborY }, expandedGoals));
+                        enterCost.set(neighborKey, cost);
                         if (!openSet.has(neighborKey)) {
                             openSet.add(neighborKey);
                         }
@@ -208,6 +210,9 @@ class Pathfinding {
             }
         }
         return 1; // Normal movement cost
+    }
+    totalPathCost(path) {
+        return path.reduce((total, step) => total + step.cost, 0);
     }
     findNearestUnoccupiedTile(target, map, creature, maxDistance = 5) {
         // First check the target tile itself

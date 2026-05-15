@@ -3,10 +3,19 @@ class CreatureCombat {
     owner;
     bab;
     initiative;
+    actions;
+    movement = 0;
     constructor(owner, combatData) {
         this.owner = owner;
         this.bab = combatData?.bab || 0;
         this.initiative = combatData?.initiative || -Infinity; // -Infinity means initiative has not been rolled yet
+        this.actions = combatData?.actions || {
+            [Action.STANDARD]: 1,
+            [Action.MOVE]: 1,
+            [Action.FREE]: 1,
+            [Action.SWIFT]: 1,
+        };
+        this.movement = this.owner.getMoveSpeed();
     }
     getBaseAttackBonus() {
         return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies

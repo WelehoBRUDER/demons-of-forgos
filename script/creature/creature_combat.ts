@@ -2,11 +2,20 @@ class CreatureCombat implements ICreatureCombat {
 	private owner: Creature;
 	bab: number;
 	initiative: number;
+	actions: Actions;
+	movement: number = 0;
 
 	constructor(owner: Creature, combatData: ICreatureCombat) {
 		this.owner = owner;
 		this.bab = combatData?.bab || 0;
 		this.initiative = combatData?.initiative || -Infinity; // -Infinity means initiative has not been rolled yet
+		this.actions = combatData?.actions || {
+			[Action.STANDARD]: 1,
+			[Action.MOVE]: 1,
+			[Action.FREE]: 1,
+			[Action.SWIFT]: 1,
+		};
+		this.movement = this.owner.getMoveSpeed();
 	}
 
 	getBaseAttackBonus(): number {

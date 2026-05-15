@@ -8,17 +8,18 @@ class Pathfinding {
 		map: WorldMap,
 		creature: Creature,
 		adjacencyTolerance: number = 1, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
-	): { x: number; y: number }[] | null {
+	): { x: number; y: number; cost: number }[] | null {
 		if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
 			return [];
 		}
 
-		const path: { x: number; y: number }[] = [];
+		const path: { x: number; y: number; cost: number }[] = [];
 		const openSet = new Set<string>();
 		const closedSet = new Set<string>();
 		const cameFrom = new Map<string, string>();
 		const gScore = new Map<string, number>();
 		const fScore = new Map<string, number>();
+		const enterCost = new Map<string, number>();
 		const size = creature.stats.getSizeCategory();
 
 		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance);
@@ -66,7 +67,7 @@ class Pathfinding {
 				let key = currentKey;
 				while (key) {
 					const [x, y] = key.split(",").map(Number);
-					path.unshift({ x, y });
+					path.unshift({ x, y, cost: enterCost.get(key) ?? 0 });
 					key = cameFrom.get(key) || "";
 				}
 				return path;
@@ -98,6 +99,7 @@ class Pathfinding {
 						cameFrom.set(neighborKey, currentKey);
 						gScore.set(neighborKey, tentativeGScore);
 						fScore.set(neighborKey, tentativeGScore + this.closestGoalHeuristic({ x: neighborX, y: neighborY }, expandedGoals));
+						enterCost.set(neighborKey, cost);
 
 						if (!openSet.has(neighborKey)) {
 							openSet.add(neighborKey);
@@ -226,6 +228,10 @@ class Pathfinding {
 		}
 
 		return 1; // Normal movement cost
+	}
+
+	totalPathCost(path: { x: number; y: number; cost: number }[]): number {
+		return path.reduce((total, step) => total + step.cost, 0);
 	}
 
 	findNearestUnoccupiedTile(

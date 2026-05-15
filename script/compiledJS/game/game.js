@@ -246,6 +246,9 @@ class Game {
         camera.move(camera.getVx() * dt, camera.getVy() * dt);
     }
     getAnimationSpeed() {
+        if (this.state === GameState.COMBAT) {
+            return 500 * this.animationSpeedMultiplier; // Slower animation speed in combat for better visibility of actions
+        }
         return 1000 * this.animationSpeedMultiplier; // Base speed is 1000 pixels per second, modified by the multiplier
     }
     getAnimationSpeedMultiplier() {

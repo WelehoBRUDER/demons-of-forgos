@@ -50,6 +50,7 @@ class Creature {
     feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
     inventory; // Inventory to hold items the creature is carrying, separate from equipped items
     combat; // Combat-related data and methods for the creature
+    ai; // AI-related data and methods for the creature
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
         this.id = data.id;
@@ -66,6 +67,7 @@ class Creature {
         this.initiative = data.initiative ?? -Infinity; // -Infinity outside combat
         this.feats = data.feats ?? [];
         this.bab = data.bab ?? 0;
+        this.ai = new CreatureAI(this); // Initialize AI, can be populated with data.ai if provided
         //this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
     }
     isInCombat() {
