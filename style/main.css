@@ -1,5 +1,10 @@
 :root {
 	font-size: 62.5%;
+
+	--hostile-color: #ff4d4d;
+	--neutral-color: #ffff4d;
+	--friendly-color: #4dff4d;
+	--player-color: #4d4dff;
 }
 
 body {
@@ -98,6 +103,58 @@ main.game {
 
 		&.ui-layer {
 			z-index: 6;
+		}
+	}
+}
+
+.initiative-row {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	max-width: 60%;
+	height: 10rem;
+	overflow: hidden;
+	overflow-x: auto;
+	background: rgb(36, 36, 36);
+	border-radius: 0rem 0rem 1rem 1rem;
+	z-index: 10;
+
+	.initiative-entry {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin: 0.5rem;
+		border: 0.2rem solid #fff;
+		border-radius: 0.5rem;
+		background: rgba(0, 0, 0, 0.6);
+
+		&.hostile {
+			border-color: var(--hostile-color);
+		}
+
+		&.neutral {
+			border-color: var(--neutral-color);
+		}
+
+		&.friendly {
+			border-color: var(--friendly-color);
+		}
+
+		&.player {
+			border-color: var(--player-color);
+		}
+
+		&.active {
+			transform: scale(1.1);
+		}
+
+		&:not(.active) {
+			opacity: 0.6;
+			transform: scale(1);
 		}
 	}
 }

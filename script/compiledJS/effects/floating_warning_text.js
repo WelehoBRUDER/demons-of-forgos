@@ -1,10 +1,12 @@
 "use strict";
 class FloatingWarningText {
+    id;
     x;
     y;
     text;
     opacity = 1;
     constructor(text, x, y) {
+        this.id = "fwt";
         this.text = text;
         this.x = x;
         this.y = y;

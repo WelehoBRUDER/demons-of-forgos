@@ -74,9 +74,30 @@ class Portrait {
 	}
 
 	updateHealth(hp: number, maxHp: number) {
-		const creature = entityManager.getCreatureByUID(this.creatureUID);
-		const attackResults = creature?.combat.getAttackResults();
+		//const creature = entityManager.getCreatureByUID(this.creatureUID);
+		//const attackResults = creature?.combat.getAttackResults();
 		this.healthText.textContent = `${hp}/${maxHp} HP`;
+	}
+}
+
+class PortraitImage {
+	private canvas: HTMLCanvasElement;
+	private ctx: CanvasRenderingContext2D;
+
+	constructor(creature: Creature, width: number = 64, height: number = 64) {
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = width;
+		this.canvas.height = height;
+		this.ctx = this.canvas.getContext("2d")!;
+		this.drawPortrait(creature);
+	}
+
+	drawPortrait(creature: Creature) {
+		mapRenderer.drawCreaturePortrait(creature, this.ctx, this.canvas.width);
+	}
+
+	getCanvas(): HTMLCanvasElement {
+		return this.canvas;
 	}
 }
 

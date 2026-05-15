@@ -67,9 +67,26 @@ class Portrait {
         this.acText.textContent = `AC: ${full} (Flat-Footed: ${flatFooted}, Touch: ${touch})`;
     }
     updateHealth(hp, maxHp) {
-        const creature = entityManager.getCreatureByUID(this.creatureUID);
-        const attackResults = creature?.combat.getAttackResults();
+        //const creature = entityManager.getCreatureByUID(this.creatureUID);
+        //const attackResults = creature?.combat.getAttackResults();
         this.healthText.textContent = `${hp}/${maxHp} HP`;
+    }
+}
+class PortraitImage {
+    canvas;
+    ctx;
+    constructor(creature, width = 64, height = 64) {
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.ctx = this.canvas.getContext("2d");
+        this.drawPortrait(creature);
+    }
+    drawPortrait(creature) {
+        mapRenderer.drawCreaturePortrait(creature, this.ctx, this.canvas.width);
+    }
+    getCanvas() {
+        return this.canvas;
     }
 }
 const portraitManager = new PortraitManager();

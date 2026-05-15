@@ -324,7 +324,7 @@ class Creature implements ICreature {
 		for (const pc of playerCharacters) {
 			for (const creature of hostileCreatures) {
 				const dist = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: pc.x, y: pc.y });
-				if (dist <= this.getAggroRange()) {
+				if (dist <= creature.getAggroRange()) {
 					game.setState(GameState.COMBAT);
 					combatManager.startCombat(playerCharacters.concat(hostileCreatures));
 					return;

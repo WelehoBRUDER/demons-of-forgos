@@ -1,10 +1,12 @@
 class FloatingWarningText implements Effect {
+	id: string;
 	x: number;
 	y: number;
 	private text: string;
 	private opacity: number = 1;
 
 	constructor(text: string, x: number, y: number) {
+		this.id = "fwt";
 		this.text = text;
 		this.x = x;
 		this.y = y;

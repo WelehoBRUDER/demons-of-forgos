@@ -157,7 +157,9 @@ class CreatureCombat implements ICreatureCombat {
 		const roll = DiceRoller.roll(Dice.d20)[0];
 		const initiative = roll + this.getInitiativeBonus();
 		this.initiative = initiative;
-		console.log(`${this.owner.id} rolled initiative: ${roll} + ${this.getInitiativeBonus()} = ${initiative}`);
+		const { x, y } = this.owner.getScreenPosition();
+		const { x: visualOffsetX, y: visualOffsetY } = this.owner.getVisualOffset();
+		effectManager.addEffect(new CustomFloatingText(`${initiative}`, x + visualOffsetX, y + visualOffsetY, 32, "yellow", 3000, 75));
 		return initiative;
 	}
 

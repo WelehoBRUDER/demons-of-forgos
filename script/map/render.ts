@@ -612,5 +612,8 @@ const devInit = () => {
 	mapRenderer.renderVisibleMap(camera);
 	mapRenderer.renderTileHighlight();
 	creature.stats.resetHP();
+	setTimeout(() => {
+		creature.combatStartCheck();
+	}, 300); // Delay combat check to ensure everything is rendered first
 	portraitManager.generateAllPortraits();
 };
