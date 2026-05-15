@@ -4,7 +4,6 @@ let tilesChecked = 0;
 enum GameState {
 	FREE_ROAM,
 	COMBAT,
-	PAUSED,
 }
 
 class Game {
@@ -65,6 +64,16 @@ class Game {
 	getControlledCreature(): Creature | null {
 		if (this.controlledCreatureId === null) return null;
 		return entityManager.getCreatureByUID(this.controlledCreatureId) || null;
+	}
+
+	getState(): GameState {
+		return this.state;
+	}
+
+	setState(newState: GameState) {
+		this.state = newState;
+		if (newState === GameState.COMBAT) {
+		}
 	}
 
 	togglePause() {
@@ -343,6 +352,7 @@ class Game {
 			${hoveredObject && hoveredObject.getDebugInfo() ? `<p>---- OBJECT ----</p><p>${hoveredObject.getDebugInfo()}</p>` : ""}
 			<p>---- MISC ----</p>
 			<p>Mouse: (${this.getWorldMousePosition().x.toFixed(2)} ${this.getWorldMousePosition().y.toFixed(2)})</p>
+			<p>Game state: ${GameState[this.state]}</p>
 			${!this.isInEditorMode() ? `<p>Path requests in queue: ${this.pathRequestQueue.length}</p>` : ""}
 			`;
 	}
@@ -410,6 +420,7 @@ class Game {
 	moveControlledCreature() {
 		const creature = this.getControlledCreature();
 		if (!creature) return;
+		if (!this.isControlledCreatureTurn()) return;
 		const goalTile: { x: number; y: number } | null = mapRenderer.getHighlightedTile();
 		const creatureAtGoal = entityManager
 			.getCreaturesBoundingWithPosition(creature.getMap(), goalTile?.x ?? 0, goalTile?.y ?? 0)
@@ -443,6 +454,13 @@ class Game {
 
 	setLastKeyHeldProcessed(timestamp: number) {
 		this.lastKeyHeldProcessed = timestamp;
+	}
+
+	isControlledCreatureTurn(): boolean {
+		if (this.getState() !== GameState.COMBAT) return true;
+		const creature = this.getControlledCreature();
+		if (!creature) return false;
+		return combatManager.isCreatureTurn(creature);
 	}
 }
 

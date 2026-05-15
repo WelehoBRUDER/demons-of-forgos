@@ -170,7 +170,6 @@ class Atlas {
 			if (item instanceof Armor) {
 				const equippableData = item.getEquippableItemData();
 				equippableData.forEach((data: EquippableItemData, index: number) => {
-					console.log(index, data);
 					const img = new Image();
 					img.onload = () => {
 						const x = (j % this.texturesPerRow) * this.getSpriteSize();

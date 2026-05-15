@@ -6,7 +6,7 @@ class CreatureCombat implements ICreatureCombat {
 	constructor(owner: Creature, combatData: ICreatureCombat) {
 		this.owner = owner;
 		this.bab = combatData?.bab || 0;
-		this.initiative = combatData?.initiative || 0;
+		this.initiative = combatData?.initiative || -Infinity; // -Infinity means initiative has not been rolled yet
 	}
 
 	getBaseAttackBonus(): number {
@@ -157,6 +157,15 @@ class CreatureCombat implements ICreatureCombat {
 		const roll = DiceRoller.roll(Dice.d20)[0];
 		const initiative = roll + this.getInitiativeBonus();
 		this.initiative = initiative;
+		console.log(`${this.owner.id} rolled initiative: ${roll} + ${this.getInitiativeBonus()} = ${initiative}`);
 		return initiative;
+	}
+
+	hasRolledInitiative(): boolean {
+		return this.initiative !== -Infinity; // Initiative is set to -Infinity by default, so if it's different, it means initiative has been rolled
+	}
+
+	resetInitiative(): void {
+		this.initiative = -Infinity; // Reset initiative to default state
 	}
 }

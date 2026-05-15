@@ -152,9 +152,11 @@ class EntityManager {
 		return this.creatures.get(uid);
 	}
 
-	getCreaturesByFaction(faction: Faction): Creature[] {
+	getCreaturesByFaction(faction: Faction, options?: { map?: string }): Creature[] {
 		const creaturesInFaction: Creature[] = [];
 		for (const creature of this.creatures.values()) {
+			if (options?.map && creature.getMap() !== options.map) continue;
+			//console.log(`Checking creature ${creature.id} with faction ${creature.stats.getFaction()} against requested faction ${faction}`);
 			if (creature.stats.getFaction() === faction) {
 				creaturesInFaction.push(creature);
 			}

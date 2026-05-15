@@ -5,7 +5,6 @@ var GameState;
 (function (GameState) {
     GameState[GameState["FREE_ROAM"] = 0] = "FREE_ROAM";
     GameState[GameState["COMBAT"] = 1] = "COMBAT";
-    GameState[GameState["PAUSED"] = 2] = "PAUSED";
 })(GameState || (GameState = {}));
 class Game {
     state = GameState.FREE_ROAM;
@@ -56,6 +55,14 @@ class Game {
         if (this.controlledCreatureId === null)
             return null;
         return entityManager.getCreatureByUID(this.controlledCreatureId) || null;
+    }
+    getState() {
+        return this.state;
+    }
+    setState(newState) {
+        this.state = newState;
+        if (newState === GameState.COMBAT) {
+        }
     }
     togglePause() {
         this.paused = !this.paused;
@@ -304,6 +311,7 @@ class Game {
 			${hoveredObject && hoveredObject.getDebugInfo() ? `<p>---- OBJECT ----</p><p>${hoveredObject.getDebugInfo()}</p>` : ""}
 			<p>---- MISC ----</p>
 			<p>Mouse: (${this.getWorldMousePosition().x.toFixed(2)} ${this.getWorldMousePosition().y.toFixed(2)})</p>
+			<p>Game state: ${GameState[this.state]}</p>
 			${!this.isInEditorMode() ? `<p>Path requests in queue: ${this.pathRequestQueue.length}</p>` : ""}
 			`;
     }
@@ -368,6 +376,8 @@ class Game {
         const creature = this.getControlledCreature();
         if (!creature)
             return;
+        if (!this.isControlledCreatureTurn())
+            return;
         const goalTile = mapRenderer.getHighlightedTile();
         const creatureAtGoal = entityManager
             .getCreaturesBoundingWithPosition(creature.getMap(), goalTile?.x ?? 0, goalTile?.y ?? 0)
@@ -400,6 +410,14 @@ class Game {
     }
     setLastKeyHeldProcessed(timestamp) {
         this.lastKeyHeldProcessed = timestamp;
+    }
+    isControlledCreatureTurn() {
+        if (this.getState() !== GameState.COMBAT)
+            return true;
+        const creature = this.getControlledCreature();
+        if (!creature)
+            return false;
+        return combatManager.isCreatureTurn(creature);
     }
 }
 const game = new Game();

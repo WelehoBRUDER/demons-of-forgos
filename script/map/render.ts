@@ -381,7 +381,8 @@ class MapRenderer {
 	renderTileHighlight() {
 		if (this.highlightedTile.x === -1 || this.highlightedTile.y === -1) return; // No tile to highlight
 		this.uiCtx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
-		if (game.isMouseHeldDown() && !game.isInEditorMode()) this.drawPathPrediction();
+		if ((game.isMouseHeldDown() && !game.isInEditorMode() && game.getState() !== GameState.COMBAT) || game.isControlledCreatureTurn())
+			this.drawPathPrediction();
 
 		const { cameraX, cameraY } = this.getScreenProperties(camera);
 		const zoom = camera.getZoom();
@@ -590,7 +591,7 @@ const devInit = () => {
 			},
 		},
 	});
-	testPlayer.stats.setFaction(Faction.FRIENDLY);
+	testPlayer.stats.setFaction(Faction.PLAYER);
 	testPlayer.classes.addClassLevel(classManager.getClass("fighter"), 1);
 
 	mapRenderer.setMapData(mapManager.getMap("dev_testing_area"));

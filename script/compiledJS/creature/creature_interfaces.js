@@ -31,6 +31,7 @@ var Faction;
     Faction[Faction["HOSTILE"] = 0] = "HOSTILE";
     Faction[Faction["NEUTRAL"] = 1] = "NEUTRAL";
     Faction[Faction["FRIENDLY"] = 2] = "FRIENDLY";
+    Faction[Faction["PLAYER"] = 3] = "PLAYER";
 })(Faction || (Faction = {}));
 var HitDice;
 (function (HitDice) {

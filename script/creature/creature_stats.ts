@@ -13,9 +13,10 @@ class CreatureStats implements ICreatureStats {
 			: {
 					...defaultAbilityScores,
 				};
-		this.faction = stats.faction || Faction.NEUTRAL;
-		this.sizeCategory = stats.sizeCategory || SizeCategory.MEDIUM;
-		this.saves = stats.saves || { [Save.FORTITUDE]: 0, [Save.REFLEX]: 0, [Save.WILL]: 0 };
+		//console.log("\u001b[1;36m Initializing CreatureStats with stats:", stats);
+		this.faction = stats.faction ?? Faction.NEUTRAL;
+		this.sizeCategory = stats.sizeCategory ?? SizeCategory.MEDIUM;
+		this.saves = stats.saves ?? { [Save.FORTITUDE]: 0, [Save.REFLEX]: 0, [Save.WILL]: 0 };
 
 		if (stats.hp !== undefined) {
 			this.hp = stats.hp;

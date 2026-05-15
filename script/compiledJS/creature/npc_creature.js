@@ -16,6 +16,7 @@ class NPCCreature extends Creature {
     modifiers; // Modifiers specific to this NPC, such as racial traits, class features, etc.
     constructor(data) {
         super(data);
+        //console.log("\u001b[1;35m Creating NPCCreature with data:", data);
         this.spritePath = data.spritePath;
         this.spritePosition = data.spritePosition ?? { x: -1, y: -1 };
         this.species = data.species;
@@ -49,6 +50,10 @@ class NPCCreature extends Creature {
             this.providers = baseProviders;
         }
         return baseProviders;
+    }
+    getAggroRange() {
+        // Example implementation, can be customized based on NPC type or other factors
+        return 8; // Default aggro range of 8 tiles
     }
     getEditorDynamicData() {
         return {

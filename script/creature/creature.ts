@@ -46,7 +46,7 @@ class Creature implements ICreature {
 	providersNeedUpdate: boolean = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
 	bab: number = 0; // Base Attack Bonus, can be calculated based on class levels for player characters or set as a static value for enemies
 
-	initiative: number = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
+	initiative: number = -Infinity; // Initiative score for turn order in combat, can be set based on stats or randomly
 	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
 	feats: string[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
 	inventory: CreatureInventory; // Inventory to hold items the creature is carrying, separate from equipped items
@@ -65,11 +65,15 @@ class Creature implements ICreature {
 		this.screenY = this.y;
 		this.lastMoved = Math.random();
 		this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
-		this.initiative = data.initiative ?? 0; // 0 outside combat
+		this.initiative = data.initiative ?? -Infinity; // -Infinity outside combat
 		this.feats = data.feats ?? [];
 		this.bab = data.bab ?? 0;
 
 		//this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+	}
+
+	isInCombat(): boolean {
+		return combatManager.hasParticipant(this.uid);
 	}
 
 	getInventory(): CreatureInventory {
@@ -260,6 +264,7 @@ class Creature implements ICreature {
 	move(newX: number, newY: number) {
 		this.x = newX;
 		this.y = newY;
+		this.combatStartCheck();
 		//mapRenderer.renderVisibleMap(camera); // Re-render the map to reflect the creature's new position
 	}
 
@@ -309,6 +314,25 @@ class Creature implements ICreature {
 		};
 	}
 
+	combatStartCheck() {
+		if (game.getState() === GameState.COMBAT) return; // Don't trigger combat if we're already in combat
+
+		const playerCharacters: Creature[] = entityManager.getCreaturesByFaction(Faction.PLAYER, { map: this.map });
+		const hostileCreatures: Creature[] = entityManager.getCreaturesByFaction(Faction.HOSTILE, { map: this.map });
+
+		console.log(playerCharacters, hostileCreatures);
+		for (const pc of playerCharacters) {
+			for (const creature of hostileCreatures) {
+				const dist = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: pc.x, y: pc.y });
+				if (dist <= this.getAggroRange()) {
+					game.setState(GameState.COMBAT);
+					combatManager.startCombat(playerCharacters.concat(hostileCreatures));
+					return;
+				}
+			}
+		}
+	}
+
 	moveOnPath(dt: number) {
 		this.handleMovementAnimation(dt);
 		if (this.currentPath.length === 0 || !this.hasFinishedMoving()) return;
@@ -326,6 +350,10 @@ class Creature implements ICreature {
 			}
 			this.move(nextTile.x, nextTile.y);
 		}
+	}
+
+	getAggroRange(): number {
+		return 5; // Default aggro range of 5 tiles, can be overridden by specific creature types
 	}
 
 	setVisualOffset(x: number, y: number) {

@@ -102,6 +102,7 @@ enum Faction {
 	HOSTILE = 0,
 	NEUTRAL = 1,
 	FRIENDLY = 2,
+	PLAYER = 3,
 }
 
 enum HitDice {

@@ -45,7 +45,7 @@ class Creature {
     providers = []; // This can hold references to various sources of modifiers, such as equipped items, active effects, etc.
     providersNeedUpdate = false; // Flag to indicate if providers need to be re-evaluated, for example after taking damage or equipping an item
     bab = 0; // Base Attack Bonus, can be calculated based on class levels for player characters or set as a static value for enemies
-    initiative = 0; // Initiative score for turn order in combat, can be set based on stats or randomly
+    initiative = -Infinity; // Initiative score for turn order in combat, can be set based on stats or randomly
     statusEffects = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
     feats = []; // List of feat identifiers that grant special abilities or modifiers to the creature
     inventory; // Inventory to hold items the creature is carrying, separate from equipped items
@@ -63,10 +63,13 @@ class Creature {
         this.screenY = this.y;
         this.lastMoved = Math.random();
         this.uid = data.uid ?? null; // UID will be set when the creature is added to the map
-        this.initiative = data.initiative ?? 0; // 0 outside combat
+        this.initiative = data.initiative ?? -Infinity; // -Infinity outside combat
         this.feats = data.feats ?? [];
         this.bab = data.bab ?? 0;
         //this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
+    }
+    isInCombat() {
+        return combatManager.hasParticipant(this.uid);
     }
     getInventory() {
         return this.inventory;
@@ -223,6 +226,7 @@ class Creature {
     move(newX, newY) {
         this.x = newX;
         this.y = newY;
+        this.combatStartCheck();
         //mapRenderer.renderVisibleMap(camera); // Re-render the map to reflect the creature's new position
     }
     takeDamage(amount) {
@@ -263,6 +267,23 @@ class Creature {
             isDifficultTerrain: MovementType.BLOCKED, // This can be explicitly changed for creatures that are unaffected by difficult terrain.
         };
     }
+    combatStartCheck() {
+        if (game.getState() === GameState.COMBAT)
+            return; // Don't trigger combat if we're already in combat
+        const playerCharacters = entityManager.getCreaturesByFaction(Faction.PLAYER, { map: this.map });
+        const hostileCreatures = entityManager.getCreaturesByFaction(Faction.HOSTILE, { map: this.map });
+        console.log(playerCharacters, hostileCreatures);
+        for (const pc of playerCharacters) {
+            for (const creature of hostileCreatures) {
+                const dist = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: pc.x, y: pc.y });
+                if (dist <= this.getAggroRange()) {
+                    game.setState(GameState.COMBAT);
+                    combatManager.startCombat(playerCharacters.concat(hostileCreatures));
+                    return;
+                }
+            }
+        }
+    }
     moveOnPath(dt) {
         this.handleMovementAnimation(dt);
         if (this.currentPath.length === 0 || !this.hasFinishedMoving())
@@ -281,6 +302,9 @@ class Creature {
             }
             this.move(nextTile.x, nextTile.y);
         }
+    }
+    getAggroRange() {
+        return 5; // Default aggro range of 5 tiles, can be overridden by specific creature types
     }
     setVisualOffset(x, y) {
         this.visualOffsetX = x;
