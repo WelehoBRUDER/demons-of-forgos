@@ -4,6 +4,7 @@ class CreatureStats {
     abilityScores;
     faction;
     sizeCategory;
+    saves;
     hp;
     constructor(owner, stats) {
         this.owner = owner;
@@ -14,6 +15,7 @@ class CreatureStats {
             };
         this.faction = stats.faction || Faction.NEUTRAL;
         this.sizeCategory = stats.sizeCategory || SizeCategory.MEDIUM;
+        this.saves = stats.saves || { [Save.FORTITUDE]: 0, [Save.REFLEX]: 0, [Save.WILL]: 0 };
         if (stats.hp !== undefined) {
             this.hp = stats.hp;
         }
@@ -42,6 +44,14 @@ class CreatureStats {
             wisdom: this.calcAbilityModifierFromScore(scores.wisdom),
             charisma: this.calcAbilityModifierFromScore(scores.charisma),
         };
+    }
+    getSaves() {
+        const saves = { ...this.saves };
+        for (const save in saves) {
+            const bonuses = modifierManager.getTotalModifier(save, this.owner, {});
+            saves[save] += bonuses;
+        }
+        return saves;
     }
     getSizeCategoryId() {
         return SizeCategory[this.sizeCategory];

@@ -65,13 +65,6 @@ class Armor extends Equipment {
 					evaluate: () => this.ac,
 					type: ModifierType.armor,
 				},
-				{
-					id: `${this.id}_debug_str`,
-					target: AbilityScore.STRENGTH,
-					operation: Operation.add,
-					evaluate: () => 5,
-					type: ModifierType.sacred,
-				},
 			];
 		}
 	}

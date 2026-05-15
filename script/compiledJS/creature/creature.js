@@ -1,4 +1,31 @@
 "use strict";
+const creatureDefaultModifiers = {
+    getModifiers(creature, ctx) {
+        return [
+            {
+                id: "base_fort_save",
+                target: Save.FORTITUDE,
+                operation: Operation.add,
+                evaluate: () => creature.stats.getAbilityScoreModifiers().constitution,
+                type: ModifierType.untyped,
+            },
+            {
+                id: "base_ref_save",
+                target: Save.REFLEX,
+                operation: Operation.add,
+                evaluate: () => creature.stats.getAbilityScoreModifiers().dexterity,
+                type: ModifierType.untyped,
+            },
+            {
+                id: "base_will_save",
+                target: Save.WILL,
+                operation: Operation.add,
+                evaluate: () => creature.stats.getAbilityScoreModifiers().wisdom,
+                type: ModifierType.untyped,
+            },
+        ];
+    },
+};
 let creatureIndex = 0;
 class Creature {
     _id;
@@ -97,6 +124,7 @@ class Creature {
             return this.providers;
         }
         const updatedProviders = [];
+        updatedProviders.push(creatureDefaultModifiers);
         updatedProviders.push(...this.inventory.getAllEquippedItems());
         updatedProviders.push(this.stats.getSizeProvider());
         updatedProviders.push(...this.getFeatProviders());

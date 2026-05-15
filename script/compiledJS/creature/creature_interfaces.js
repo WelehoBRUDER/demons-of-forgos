@@ -68,4 +68,27 @@ var EquipmentSlot;
     EquipmentSlot["HEAD"] = "head";
     EquipmentSlot["CAPE"] = "cape";
 })(EquipmentSlot || (EquipmentSlot = {}));
+var AttackIteration;
+(function (AttackIteration) {
+    AttackIteration["PRIMARY"] = "primary";
+    AttackIteration["OFFHAND"] = "offhand";
+    AttackIteration["PRIMARY_FULL"] = "primary_full";
+})(AttackIteration || (AttackIteration = {}));
+var BAB;
+(function (BAB) {
+    BAB[BAB["LOW"] = 0.5] = "LOW";
+    BAB[BAB["MEDIUM"] = 0.75] = "MEDIUM";
+    BAB[BAB["HIGH"] = 1] = "HIGH";
+})(BAB || (BAB = {}));
+var Save;
+(function (Save) {
+    Save["FORTITUDE"] = "fortitude";
+    Save["REFLEX"] = "reflex";
+    Save["WILL"] = "will";
+})(Save || (Save = {}));
+var SaveProgression;
+(function (SaveProgression) {
+    SaveProgression[SaveProgression["POOR"] = 0.3333333333333333] = "POOR";
+    SaveProgression[SaveProgression["GOOD"] = 0.5] = "GOOD";
+})(SaveProgression || (SaveProgression = {}));
 //# sourceMappingURL=creature_interfaces.js.map

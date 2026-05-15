@@ -1,5 +1,15 @@
 itemManager.addItem(
 	new Weapon({
+		id: "unarmed_strike",
+		spritePath: "assets/items/weapons/unarmed_strike.png",
+		damage: { count: 1, type: Dice.d3 },
+		weaponType: WeaponType.MELEE,
+		damageType: DamageType.BLUDGEONING,
+		light: true,
+	}),
+);
+itemManager.addItem(
+	new Weapon({
 		id: "longsword",
 		spritePath: "assets/items/weapons/longsword.png",
 		damage: { count: 1, type: Dice.d8 },

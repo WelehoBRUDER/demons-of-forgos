@@ -1,3 +1,31 @@
+const creatureDefaultModifiers: ModifierProvider = {
+	getModifiers(creature: Creature, ctx: any): Modifier[] {
+		return [
+			{
+				id: "base_fort_save",
+				target: Save.FORTITUDE,
+				operation: Operation.add,
+				evaluate: () => creature.stats.getAbilityScoreModifiers().constitution,
+				type: ModifierType.untyped,
+			},
+			{
+				id: "base_ref_save",
+				target: Save.REFLEX,
+				operation: Operation.add,
+				evaluate: () => creature.stats.getAbilityScoreModifiers().dexterity,
+				type: ModifierType.untyped,
+			},
+			{
+				id: "base_will_save",
+				target: Save.WILL,
+				operation: Operation.add,
+				evaluate: () => creature.stats.getAbilityScoreModifiers().wisdom,
+				type: ModifierType.untyped,
+			},
+		];
+	},
+};
+
 let creatureIndex = 0;
 class Creature implements ICreature {
 	_id: number;
@@ -116,6 +144,7 @@ class Creature implements ICreature {
 
 		const updatedProviders: ModifierProvider[] = [];
 
+		updatedProviders.push(creatureDefaultModifiers);
 		updatedProviders.push(...this.inventory.getAllEquippedItems());
 		updatedProviders.push(this.stats.getSizeProvider());
 		updatedProviders.push(...this.getFeatProviders());

@@ -69,7 +69,7 @@ class Portrait {
     updateHealth(hp, maxHp) {
         const creature = entityManager.getCreatureByUID(this.creatureUID);
         const attackResults = creature?.combat.getAttackResults();
-        this.healthText.textContent = `${hp}/${maxHp} HP \n${creature?.combat.formatAttackResult(attackResults?.[0])} \n${creature?.combat.formatAttackResult(attackResults?.[1])}`;
+        this.healthText.textContent = `${hp}/${maxHp} HP`;
     }
 }
 const portraitManager = new PortraitManager();

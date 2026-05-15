@@ -97,6 +97,30 @@ class CreatureCombat {
         }
         return damage;
     }
+    getAttackIterations() {
+        const attackCount = {
+            [AttackIteration.PRIMARY]: 0,
+            [AttackIteration.OFFHAND]: 0,
+            [AttackIteration.PRIMARY_FULL]: 0,
+        };
+        const bab = this.getBaseAttackBonus();
+        const iterations = Math.max(Math.floor((bab - 1) / 5) + 1, 1); // One attack at BAB +0, and an additional attack for every 5 BAB
+        console.log(`Base Attack Bonus: ${bab}, Primary Attacks: ${iterations}`);
+        const offhand = this.owner.inventory.getWeaponInSlot(EquipmentSlot.OFFHAND);
+        console.log(`Off-hand weapon: ${offhand ? offhand.getId() : "None"}`);
+        if (offhand) {
+            const maxOffhandIterations = modifierManager.getTotalModifier(AttackIteration.OFFHAND, this.owner, {});
+            attackCount[AttackIteration.OFFHAND] = maxOffhandIterations + 1;
+        }
+        const primaryFullIterations = modifierManager.getTotalModifier(AttackIteration.PRIMARY_FULL, this.owner, {});
+        attackCount[AttackIteration.PRIMARY_FULL] = primaryFullIterations;
+        attackCount[AttackIteration.PRIMARY] = iterations;
+        return attackCount;
+    }
+    getNumberOfAttacks() {
+        const iterations = this.getAttackIterations();
+        return iterations[AttackIteration.PRIMARY] + iterations[AttackIteration.OFFHAND] + iterations[AttackIteration.PRIMARY_FULL];
+    }
     getInitiative() {
         return this.initiative;
     }

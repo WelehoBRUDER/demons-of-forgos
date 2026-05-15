@@ -17,6 +17,7 @@ interface ICreatureStats {
 	faction?: Faction;
 	sizeCategory?: SizeCategory;
 	hp?: number;
+	saves?: Saves;
 }
 
 interface ICreatureCombat {
@@ -37,6 +38,7 @@ interface IDynamicCreature extends ICreature {
 	eyes?: number; // optional, for future use when we add eye style variations
 	mouth?: number; // optional, for future use when we add mouth style variations
 	uid: string; // Unique identifier for the dynamic creature, used for referencing in the map and editor
+	classes?: CreatureClasses; // Optional class and level information for the creature, which can affect stats and combat
 }
 
 interface INPCCreature extends ICreature {
@@ -204,4 +206,56 @@ interface ICreatureEquipment {
 	feet?: Item | null;
 	head?: Item | null;
 	cape?: Item | null;
+}
+
+enum AttackIteration {
+	PRIMARY = "primary",
+	OFFHAND = "offhand", // By default, offhand attacks can at most 1 iteration
+	PRIMARY_FULL = "primary_full", // Extra primary attack at full BAB
+}
+
+interface CreatureFullAttackCount {
+	[AttackIteration.PRIMARY]: number;
+	[AttackIteration.OFFHAND]: number;
+	[AttackIteration.PRIMARY_FULL]: number;
+}
+
+enum BAB {
+	LOW = 1 / 2,
+	MEDIUM = 3 / 4,
+	HIGH = 1,
+}
+
+interface ICreatureClass {
+	id: string;
+	bab: BAB;
+	hitDie: HitDice;
+	saves: { [key in Save]: SaveProgression };
+}
+
+interface ICreatureClasses {
+	classes: ICreatureClassLevel[];
+}
+
+interface ICreatureClassLevel {
+	class: CreatureClass;
+	level: number;
+	isPrimary: boolean; // Whether or not this was the first class taken
+}
+
+enum Save {
+	FORTITUDE = "fortitude",
+	REFLEX = "reflex",
+	WILL = "will",
+}
+
+interface Saves {
+	[Save.FORTITUDE]: number;
+	[Save.REFLEX]: number;
+	[Save.WILL]: number;
+}
+
+enum SaveProgression {
+	POOR = 1 / 3,
+	GOOD = 1 / 2,
 }

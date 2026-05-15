@@ -86,3 +86,41 @@ featManager.addFeat(
 		],
 	}),
 );
+featManager.addFeat(
+	new Feat({
+		id: "improved_two_weapon_fighting",
+		modifiers: [
+			{
+				id: "improved_two_weapon_fighting_bonus",
+				target: AttackIteration.OFFHAND,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: AttackContext) => {
+					if (ctx.isDualWielding) {
+						return 1; // Extra off-hand attack iteration
+					}
+					return 0;
+				},
+				type: ModifierType.untyped,
+			},
+		],
+	}),
+);
+featManager.addFeat(
+	new Feat({
+		id: "greater_two_weapon_fighting",
+		modifiers: [
+			{
+				id: "greater_two_weapon_fighting_bonus",
+				target: AttackIteration.OFFHAND,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: AttackContext) => {
+					if (ctx.isDualWielding) {
+						return 1; // Extra off-hand attack iteration
+					}
+					return 0;
+				},
+				type: ModifierType.untyped,
+			},
+		],
+	}),
+);

@@ -7,6 +7,7 @@ class DynamicCreature extends Creature {
     hair;
     eyes;
     mouth;
+    classes;
     constructor(data) {
         super(data);
         this._id = DynamicCreature.nextId++; // Assign the current value of nextId to _id, then increment nextId
@@ -19,6 +20,7 @@ class DynamicCreature extends Creature {
         this.uid = data.uid; // Set the UID from the data, which should be unique for each dynamic creature
         this.stats = new DynamicCreatureStats(this, data.stats);
         this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
+        this.classes = new CreatureClasses(this, data.classes);
         this.renderSprite();
     }
     // Dynamic creatures are rendered on their own atlas with separate textures for each customization option.
@@ -36,6 +38,9 @@ class DynamicCreature extends Creature {
             mouth: `assets/sprites/player_character/mouth/nose_mouth_${this.mouth}.png`,
             items: this.inventory.getAllEquippedItems(),
         };
+    }
+    getHitDice() {
+        return this.classes ? this.classes.getHitDice() : [];
     }
     // Dynamic creatures must be tracked separately due to unique rendering.
     getIndex() {
@@ -55,9 +60,18 @@ class DynamicCreatureStats extends CreatureStats {
     }
     getMaxHP() {
         let base = super.getMaxHP();
-        let firstHitDie = this.owner.getHitDice()[0]; // Assuming the first hit die is the one to use for base HP calculation
+        const hitDieDifference = this.owner?.classes?.getPrimaryClassHitDieDifference();
         // Slightly janky maybe, but this lines makes it so that dynamic creatures benefit from their full hit die at 1st level.
-        return Math.floor(base + firstHitDie.type - (firstHitDie.type / 2 + 1));
+        return Math.floor(base + hitDieDifference);
+    }
+    getSaves() {
+        const saves = super.getSaves();
+        const classSaves = this.owner.classes ? this.owner.classes.getTotalSaves() : { [Save.FORTITUDE]: 0, [Save.REFLEX]: 0, [Save.WILL]: 0 };
+        return {
+            [Save.FORTITUDE]: saves[Save.FORTITUDE] + classSaves[Save.FORTITUDE],
+            [Save.REFLEX]: saves[Save.REFLEX] + classSaves[Save.REFLEX],
+            [Save.WILL]: saves[Save.WILL] + classSaves[Save.WILL],
+        };
     }
     getSizeCategory() {
         return speciesManager.getSpeciesById(this.owner.species)?.size || SizeCategory.MEDIUM;

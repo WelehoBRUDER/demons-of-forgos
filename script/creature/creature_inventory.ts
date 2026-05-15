@@ -63,8 +63,8 @@ class CreatureInventory {
 	}
 
 	equipWeapon(weapon: Weapon, slot: EquipmentSlot) {
-		const primary = this.getPrimaryWeapon();
-		const secondary = this.getSecondaryWeapon();
+		const primary = this.getWeaponInSlot(EquipmentSlot.WEAPON);
+		const secondary = this.getWeaponInSlot(EquipmentSlot.OFFHAND);
 
 		if (weapon.getWeaponType() === WeaponType.RANGED || weapon.isHeavy()) {
 			if (primary) {
@@ -103,26 +103,38 @@ class CreatureInventory {
 		}
 	}
 
-	getPrimaryWeapon(): Weapon | null {
-		if (this.equipment.weapon) {
-			return this.equipment.weapon;
+	getWeaponInSlot(slot: EquipmentSlot): Weapon | null {
+		const item = this.getEquippedItem(slot);
+		if (item instanceof Weapon) {
+			return item;
 		}
-		return null;
-	}
-
-	getSecondaryWeapon(): Weapon | null {
-		if (this.equipment.offhand && this.equipment.offhand instanceof Weapon) {
-			return this.equipment.offhand;
+		if (!this.getEquippedItem(EquipmentSlot.WEAPON) && !this.getEquippedItem(EquipmentSlot.OFFHAND)) {
+			return itemManager.getItem("unarmed_strike") as Weapon; // Return unarmed strike if no weapons are equipped
 		}
 		return null;
 	}
 
 	getEquippedWeapons(): AttackContext[] {
-		const primary = this.getPrimaryWeapon();
-		const secondary = this.getSecondaryWeapon();
+		const primary = this.getWeaponInSlot(EquipmentSlot.WEAPON);
+		const secondary = this.getWeaponInSlot(EquipmentSlot.OFFHAND);
 
 		if (!primary && !secondary) {
-			return [];
+			return [
+				{
+					weapon: itemManager.getItem("unarmed_strike") as Weapon, // Default to unarmed strike if no weapons are equipped
+					isPrimary: true,
+					isOffHand: false,
+					heldInTwoHands: false,
+					isDualWielding: true,
+				},
+				{
+					weapon: itemManager.getItem("unarmed_strike") as Weapon, // Off-hand unarmed strike for dual-wielding context
+					isPrimary: false,
+					isOffHand: true,
+					heldInTwoHands: false,
+					isDualWielding: true,
+				},
+			];
 		}
 
 		if (primary && !secondary) {
