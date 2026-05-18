@@ -45,6 +45,10 @@ class CreatureCombat implements ICreatureCombat {
 		};
 	}
 
+	hasPerformedAction() {
+		return false;
+	}
+
 	getAttackResults(): AttackResult[] {
 		return this.owner.inventory.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
 	}

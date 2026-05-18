@@ -20,6 +20,7 @@ class Camera {
         this.x = x;
         this.y = y;
         this.zoom = zoom;
+        combatEvents.on(CombatEventId.TURN_STARTED, this.onTurnStarted.bind(this));
     }
     getVx() {
         return this.vx;
@@ -53,6 +54,12 @@ class Camera {
     }
     setY(y) {
         this.y = y;
+    }
+    onTurnStarted({ creatureUID }) {
+        const creature = entityManager.getCreatureByUID(creatureUID);
+        if (creature) {
+            this.setTracking(creature);
+        }
     }
     move(dx, dy) {
         const prevX = this.x;

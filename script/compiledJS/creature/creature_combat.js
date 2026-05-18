@@ -37,6 +37,9 @@ class CreatureCombat {
             criticalMultiplier: critMultiplier,
         };
     }
+    hasPerformedAction() {
+        return false;
+    }
     getAttackResults() {
         return this.owner.inventory.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
     }

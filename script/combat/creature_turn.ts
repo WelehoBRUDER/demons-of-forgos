@@ -16,5 +16,25 @@ class CreatureTurnController {
 		});
 	}
 
-	async endTurn(): Promise<void> {}
+	async endTurn(): Promise<void> {
+		return new Promise((resolve) => {
+			// Simulate end-of-turn processing time (e.g., for animations, effects, etc.)
+			setTimeout(() => {
+				resolve();
+			}, 100); // Adjust the delay as needed
+		});
+	}
+
+	awaitPlayerInput(): Promise<void> {
+		return new Promise((resolve) => {
+			const checkForInput = () => {
+				if (this.owner.combat.hasPerformedAction()) {
+					resolve();
+				} else {
+					requestAnimationFrame(checkForInput);
+				}
+			};
+			checkForInput();
+		});
+	}
 }

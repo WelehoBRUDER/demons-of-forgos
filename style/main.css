@@ -132,6 +132,10 @@ main.game {
 		border: 0.2rem solid #fff;
 		background: rgba(0, 0, 0, 0.6);
 		position: relative;
+		transition: 0.4s ease;
+		width: 6.5rem;
+		height: 6.5rem;
+		overflow: hidden;
 
 		&.hostile {
 			border-color: var(--hostile-color);
@@ -153,6 +157,10 @@ main.game {
 			top: 0.8rem;
 			width: 8rem;
 			height: 8rem;
+
+			canvas {
+				transform: scale(1.25);
+			}
 		}
 
 		&:not(.active) {

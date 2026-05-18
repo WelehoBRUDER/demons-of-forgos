@@ -1,0 +1,51 @@
+class InitiativeOrderUI {
+	initiativeRow: HTMLDivElement;
+
+	constructor() {
+		this.initiativeRow = document.querySelector(".initiative-row") as HTMLDivElement;
+
+		combatEvents.on(CombatEventId.TURN_STARTED, this.updateActiveTurn.bind(this));
+	}
+
+	drawInitiativeOrder() {
+		this.initiativeRow.innerHTML = "";
+		combatManager.initiativeOrder.forEach((ctx, index) => {
+			const creature = entityManager.getCreatureByUID(ctx.uid);
+			if (creature) {
+				const initiativeEntry = document.createElement("div");
+				const portraitImage = new PortraitImage(creature, 64, 64);
+				initiativeEntry.classList.add("initiative-entry");
+				initiativeEntry.classList.add(Faction[creature.stats.getFaction()].toLowerCase());
+				initiativeEntry.classList.add(creature.getUID()); // Add creature UID as a class for easy targeting when removing from initiative order
+				if (ctx.uid === combatManager.activeTurnContext?.uid) {
+					initiativeEntry.classList.add("active");
+				}
+				initiativeEntry.appendChild(portraitImage.getCanvas());
+				this.initiativeRow.appendChild(initiativeEntry);
+			}
+		});
+	}
+
+	updateActiveTurn() {
+		const entries = this.initiativeRow.querySelectorAll(".initiative-entry");
+		entries.forEach((entry, index) => {
+			const ctx = combatManager.initiativeOrder[index];
+			if (ctx.uid === combatManager.activeTurnContext?.uid) {
+				entry.classList.add("active");
+			} else {
+				entry.classList.remove("active");
+			}
+		});
+	}
+
+	removeFromInitiativeOrder({ creatureUID }: CombatEvents[CombatEventId.CREATURE_DIED]) {
+		const entries = this.initiativeRow.querySelectorAll(".initiative-entry");
+		entries.forEach((entry) => {
+			if (entry.classList.contains(creatureUID)) {
+				entry.remove();
+			}
+		});
+	}
+}
+
+const initiativeOrderUI = new InitiativeOrderUI();

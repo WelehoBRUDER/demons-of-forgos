@@ -38,33 +38,34 @@ class CombatManager {
 	initiativeOrder: CombatParticipant[] = []; // Array of creature UIDs participating in combat, sorted by initiative order
 	round: number = 0; // Current round of combat, can be used for tracking effects that last a certain number of rounds, etc.
 	activeTurnContext: TurnContext | null = null; // Context for the currently active turn, can be used to track state and pending actions for the current creature's turn
-	initiativeRow: HTMLDivElement;
 
-	constructor() {
-		this.initiativeRow = document.querySelector(".initiative-row") as HTMLDivElement;
-	}
+	constructor() {}
 
 	startCombat(creatures: Creature[], ctx?: any) {
 		this.round = ctx?.round ?? 1;
 		this.activeTurnContext = null;
-		this.initiativeRow.innerHTML = ""; // Clear previous initiative display
 		creatures.map((creature) => {
 			this.addToCombat(creature);
 		});
 		this.activeTurnContext = new TurnContext(this.initiativeOrder[0].uid); // Set active turn context to the first creature in initiative order
-		this.drawInitiativeOrder();
+
 		//this.getCurrentTurnCreature().ai.makeDecision(); // Trigger AI decision for the first creature in combat immediately
+		initiativeOrderUI.drawInitiativeOrder(); // Draw initiative order UI immediately after starting combat
 		this.startTurn(); // Start the first turn immediately after setting up combat
 	}
 
 	async startTurn() {
 		const creature = this.getCurrentTurnCreature();
 
+		combatEvents.emit(CombatEventId.TURN_STARTED, { creatureUID: creature?.getUID(), round: this.round });
+
 		await creature.turn.beginTurn();
 
 		if (creature.isAI()) {
 			await creature.ai.makeDecision();
 		} else {
+			this.activeTurnContext!.state = TurnState.AwaitingInput; // Set turn state to awaiting input for player-controlled creatures
+			await creature.turn.awaitPlayerInput(); // Wait for player input to resolve the turn
 		}
 
 		await creature.turn.endTurn();
@@ -94,17 +95,6 @@ class CombatManager {
 		return entityManager.getCreatureByUID(currentUID);
 	}
 
-	// nextTurn() {
-	// 	if (this.participants.length === 0) {
-	// 		return; // No participants in combat
-	// 	}
-	// 	this.turnIndex = (this.turnIndex + 1) % this.participants.length;
-	// 	if (this.turnIndex === 0) {
-	// 		this.round++; // Increment round when we loop back to the first participant
-	// 	}
-	// 	this.drawInitiativeOrder();
-	// }
-
 	addToCombat(creature: Creature) {
 		if (!this.initiativeOrder.some((p) => p.uid === creature.getUID())) {
 			if (!creature.combat.hasRolledInitiative()) {
@@ -120,25 +110,6 @@ class CombatManager {
 			creature.setPath([]); // Clear any existing path to prevent movement during combat
 			this.sortParticipantsByInitiative();
 		}
-	}
-
-	drawInitiativeOrder() {
-		this.initiativeRow.innerHTML = "";
-		this.initiativeOrder.forEach((ctx, index) => {
-			const creature = entityManager.getCreatureByUID(ctx.uid);
-			if (creature) {
-				const initiativeEntry = document.createElement("div");
-				const portraitImage = new PortraitImage(creature, 64, 64);
-				initiativeEntry.classList.add("initiative-entry");
-				initiativeEntry.classList.add(Faction[creature.stats.getFaction()].toLowerCase());
-				if (ctx.uid === this.activeTurnContext?.uid) {
-					initiativeEntry.classList.add("active");
-				}
-				//initiativeEntry.textContent = `${creature.getTemplateId()} (Init: ${creature.combat.getInitiative()})`;
-				initiativeEntry.appendChild(portraitImage.getCanvas());
-				this.initiativeRow.appendChild(initiativeEntry);
-			}
-		});
 	}
 
 	hasParticipant(uid: string): boolean {
@@ -159,14 +130,6 @@ class CombatManager {
 			}
 			return 0;
 		});
-		this.makeCameraFollowCurrentTurn();
-	}
-
-	makeCameraFollowCurrentTurn() {
-		const creature = this.getCurrentTurnCreature();
-		if (creature) {
-			camera.setTracking(creature);
-		}
 	}
 
 	isCreatureTurn(creature: Creature): boolean {
