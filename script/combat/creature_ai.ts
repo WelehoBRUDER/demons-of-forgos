@@ -4,7 +4,7 @@ class CreatureAI {
 		this.owner = owner;
 	}
 
-	makeDecision() {
+	async makeDecision(): Promise<void> {
 		// Placeholder for AI decision-making logic
 		// For now, just find nearest hostile creature and move towards it
 		let hostiles: Creature[] = [];
@@ -41,5 +41,11 @@ class CreatureAI {
 			}
 		}
 		this.owner.setPath(bestPath);
+		return new Promise((resolve) => {
+			// Simulate thinking time
+			setTimeout(() => {
+				resolve();
+			}, 500); // Adjust the delay as needed
+		});
 	}
 }

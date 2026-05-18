@@ -26,6 +26,21 @@ const creatureDefaultModifiers: ModifierProvider = {
 	},
 };
 
+// Player characters don't die immediately at 0 hp.
+const dynamicCreatureDefaultModifiers: ModifierProvider = {
+	getModifiers(creature: DynamicCreature, ctx: any): Modifier[] {
+		return [
+			{
+				id: "greater_death_threshold",
+				target: "deathThreshold",
+				operation: Operation.add,
+				evaluate: () => creature.stats.getAbilityScores().constitution,
+				type: ModifierType.untyped,
+			},
+		];
+	},
+};
+
 let creatureIndex = 0;
 class Creature implements ICreature {
 	_id: number;
@@ -52,6 +67,7 @@ class Creature implements ICreature {
 	inventory: CreatureInventory; // Inventory to hold items the creature is carrying, separate from equipped items
 	combat: CreatureCombat; // Combat-related data and methods for the creature
 	ai: CreatureAI; // AI-related data and methods for the creature
+	turn: CreatureTurnController; // Turn controller to manage the creature's turn in combat
 
 	constructor(data: ICreature) {
 		this._id = creatureIndex++; // Assign a unique ID to each creature
@@ -70,6 +86,7 @@ class Creature implements ICreature {
 		this.feats = data.feats ?? [];
 		this.bab = data.bab ?? 0;
 		this.ai = new CreatureAI(this); // Initialize AI, can be populated with data.ai if provided
+		this.turn = new CreatureTurnController(this); // Initialize turn controller, can be populated with data.turn if provided
 
 		//this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
 	}
@@ -154,6 +171,10 @@ class Creature implements ICreature {
 		updatedProviders.push(...this.inventory.getAllEquippedItems());
 		updatedProviders.push(this.stats.getSizeProvider());
 		updatedProviders.push(...this.getFeatProviders());
+
+		if (this instanceof DynamicCreature) {
+			updatedProviders.push(dynamicCreatureDefaultModifiers);
+		}
 		// TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
 
 		this.providers = updatedProviders;
@@ -404,6 +425,12 @@ class Creature implements ICreature {
 			x: this.x,
 			y: this.y,
 		};
+	}
+
+	isAI(): boolean {
+		console.log("Checking if creature is AI-controlled. UID:", this.uid, "Faction:", this.stats.getFaction());
+		console.log(this.uid, this.stats.getFaction());
+		return this.stats.getFaction() !== Faction.PLAYER;
 	}
 }
 

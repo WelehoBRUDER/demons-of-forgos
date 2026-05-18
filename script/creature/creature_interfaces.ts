@@ -11,6 +11,7 @@ interface ICreature {
 	inventory?: CreatureInventory;
 	combat?: ICreatureCombat;
 	ai?: CreatureAI;
+	turn?: CreatureTurnController;
 }
 
 interface ICreatureStats {

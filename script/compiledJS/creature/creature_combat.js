@@ -153,5 +153,13 @@ class CreatureCombat {
     resetInitiative() {
         this.initiative = -Infinity; // Reset initiative to default state
     }
+    resetActions() {
+        this.actions = {
+            [Action.STANDARD]: 1,
+            [Action.MOVE]: 1,
+            [Action.FREE]: 1,
+            [Action.SWIFT]: 1,
+        };
+    }
 }
 //# sourceMappingURL=creature_combat.js.map

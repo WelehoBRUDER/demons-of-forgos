@@ -102,6 +102,14 @@ class CreatureStats implements ICreatureStats {
 		return Math.max(0, this.hp / this.getMaxHP());
 	}
 
+	isAlive(): boolean {
+		return this.hp > this.getDeathThreshold();
+	}
+
+	isDisabled(): boolean {
+		return this.hp > this.getDeathThreshold() && this.hp <= 0;
+	}
+
 	setHP(amount: number) {
 		this.hp = amount;
 		this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
@@ -109,6 +117,11 @@ class CreatureStats implements ICreatureStats {
 
 	resetHP() {
 		this.setHP(this.getMaxHP());
+	}
+
+	getDeathThreshold(): number {
+		const bonus: number = modifierManager.getTotalModifier("deathThreshold", this.owner, {}) as number;
+		return 0 - bonus; // Base death threshold is 0, can be modified by effects that lower or raise it
 	}
 
 	getHP(): number {

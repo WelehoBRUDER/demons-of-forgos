@@ -179,4 +179,13 @@ class CreatureCombat implements ICreatureCombat {
 	resetInitiative(): void {
 		this.initiative = -Infinity; // Reset initiative to default state
 	}
+
+	resetActions(): void {
+		this.actions = {
+			[Action.STANDARD]: 1,
+			[Action.MOVE]: 1,
+			[Action.FREE]: 1,
+			[Action.SWIFT]: 1,
+		};
+	}
 }

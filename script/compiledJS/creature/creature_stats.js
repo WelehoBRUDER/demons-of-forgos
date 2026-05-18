@@ -87,12 +87,22 @@ class CreatureStats {
     getHpPercentage() {
         return Math.max(0, this.hp / this.getMaxHP());
     }
+    isAlive() {
+        return this.hp > this.getDeathThreshold();
+    }
+    isDisabled() {
+        return this.hp > this.getDeathThreshold() && this.hp <= 0;
+    }
     setHP(amount) {
         this.hp = amount;
         this.hp = Math.min(this.hp, this.getMaxHP()); // Ensure HP does not exceed max HP
     }
     resetHP() {
         this.setHP(this.getMaxHP());
+    }
+    getDeathThreshold() {
+        const bonus = modifierManager.getTotalModifier("deathThreshold", this.owner, {});
+        return 0 - bonus; // Base death threshold is 0, can be modified by effects that lower or raise it
     }
     getHP() {
         return this.hp;

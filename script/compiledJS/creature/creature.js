@@ -26,6 +26,20 @@ const creatureDefaultModifiers = {
         ];
     },
 };
+// Player characters don't die immediately at 0 hp.
+const dynamicCreatureDefaultModifiers = {
+    getModifiers(creature, ctx) {
+        return [
+            {
+                id: "greater_death_threshold",
+                target: "deathThreshold",
+                operation: Operation.add,
+                evaluate: () => creature.stats.getAbilityScores().constitution,
+                type: ModifierType.untyped,
+            },
+        ];
+    },
+};
 let creatureIndex = 0;
 class Creature {
     _id;
@@ -51,6 +65,7 @@ class Creature {
     inventory; // Inventory to hold items the creature is carrying, separate from equipped items
     combat; // Combat-related data and methods for the creature
     ai; // AI-related data and methods for the creature
+    turn; // Turn controller to manage the creature's turn in combat
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
         this.id = data.id;
@@ -68,6 +83,7 @@ class Creature {
         this.feats = data.feats ?? [];
         this.bab = data.bab ?? 0;
         this.ai = new CreatureAI(this); // Initialize AI, can be populated with data.ai if provided
+        this.turn = new CreatureTurnController(this); // Initialize turn controller, can be populated with data.turn if provided
         //this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
     }
     isInCombat() {
@@ -133,6 +149,9 @@ class Creature {
         updatedProviders.push(...this.inventory.getAllEquippedItems());
         updatedProviders.push(this.stats.getSizeProvider());
         updatedProviders.push(...this.getFeatProviders());
+        if (this instanceof DynamicCreature) {
+            updatedProviders.push(dynamicCreatureDefaultModifiers);
+        }
         // TODO - Add active effects, status effects, feats, racial traits, class features, etc. as providers
         this.providers = updatedProviders;
         this.providersNeedUpdate = false;
@@ -347,6 +366,11 @@ class Creature {
             x: this.x,
             y: this.y,
         };
+    }
+    isAI() {
+        console.log("Checking if creature is AI-controlled. UID:", this.uid, "Faction:", this.stats.getFaction());
+        console.log(this.uid, this.stats.getFaction());
+        return this.stats.getFaction() !== Faction.PLAYER;
     }
 }
 const creatures = [];
