@@ -17,7 +17,7 @@ class CreatureTurnController {
 	}
 
 	async endTurn(): Promise<void> {
-		await this.owner.movementFollowPath(); // Ensure any movement along a path is completed at the start of the turn
+		await this.owner.animationFinished(); // Ensure any movement along a path is completed at the start of the turn
 		return new Promise((resolve) => {
 			// Simulate end-of-turn processing time (e.g., for animations, effects, etc.)
 			setTimeout(() => {
@@ -29,7 +29,7 @@ class CreatureTurnController {
 	awaitPlayerInput(): Promise<void> {
 		return new Promise((resolve) => {
 			const checkForInput = () => {
-				if (this.owner.combat.hasPerformedAction()) {
+				if (this.owner.combat.hasEndedTurn()) {
 					resolve();
 				} else {
 					requestAnimationFrame(checkForInput);

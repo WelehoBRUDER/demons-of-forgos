@@ -35,6 +35,7 @@ class CreatureAI {
             }
         }
         this.owner.setPath(bestPath);
+        await this.owner.animationFinished(); // Wait for movement to finish before ending the turn
         return new Promise((resolve) => {
             resolve();
         });

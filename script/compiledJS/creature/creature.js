@@ -327,6 +327,12 @@ class Creature {
                 }
                 return;
             }
+            this.combat.applyMovementCost(cost);
+            if (this.combat.movement < 0) {
+                this.combat.movement += cost; // Refund movement since we can't actually move there
+                this.currentPath = []; // Clear the path if we have run out of movement
+                return;
+            }
             this.move(nextTile.x, nextTile.y);
         }
         else {
@@ -385,10 +391,9 @@ class Creature {
     hasFinishedMovingOnPath() {
         return !this.isMoving && this.getPath().length === 0; // Consider movement finished when the creature is not currently moving and has no remaining path to follow
     }
-    async movementFollowPath() {
+    async animationFinished() {
         return new Promise((resolve) => {
             const checkMovementCompletion = () => {
-                console.log("Checking movement completion for creature", this.id, "isMoving:", this.isMoving, "remaining path length:", this.getPath().length);
                 if (this.hasFinishedMovingOnPath()) {
                     resolve();
                 }
@@ -398,6 +403,14 @@ class Creature {
             };
             checkMovementCompletion();
         });
+    }
+    update(dt) {
+        if (this.currentPath.length > 0) {
+            this.moveOnPath(dt);
+        }
+        if (this.hasFinishedMoving()) {
+            this.isMoving = false; // Clear moving flag when movement is finished
+        }
     }
 }
 const creatures = [];

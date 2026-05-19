@@ -3,6 +3,7 @@ class CreatureCombat implements ICreatureCombat {
 	bab: number;
 	initiative: number;
 	actions: Actions;
+	turnEnd: boolean; // This is used by the player to indicate they have finished their turn
 	movement: number = 0;
 
 	constructor(owner: Creature, combatData: ICreatureCombat) {
@@ -15,6 +16,7 @@ class CreatureCombat implements ICreatureCombat {
 			[Action.FREE]: 1,
 			[Action.SWIFT]: 1,
 		};
+		this.turnEnd = false; // This is used by the player
 		this.movement = this.owner.getMoveSpeed();
 	}
 
@@ -47,6 +49,10 @@ class CreatureCombat implements ICreatureCombat {
 
 	hasPerformedAction() {
 		return false;
+	}
+
+	hasEndedTurn() {
+		return this.turnEnd;
 	}
 
 	getAttackResults(): AttackResult[] {
@@ -184,6 +190,19 @@ class CreatureCombat implements ICreatureCombat {
 		this.initiative = -Infinity; // Reset initiative to default state
 	}
 
+	applyMovementCost(cost: number): void {
+		this.movement -= cost;
+		if (this.owner.getMoveSpeed() - this.movement > 1 && this.actions[Action.MOVE] > 0) {
+			console.log(`${this.owner.getUID()} used move action`);
+			this.actions[Action.MOVE] = 0; // If the creature has moved more than 1 cell, it has used its move action for the turn
+		}
+		if (this.movement <= 0 && this.actions[Action.STANDARD] > 0) {
+			console.log(`${this.owner.getUID()} used standard action by moving beyond movement speed`);
+			this.movement += this.owner.getMoveSpeed();
+			this.actions[Action.STANDARD] = 0; // The creature must dash if it tries to move beyond its movement speed, which means it cannot take a standard action after moving its full movement
+		}
+	}
+
 	resetActions(): void {
 		this.actions = {
 			[Action.STANDARD]: 1,
@@ -191,5 +210,7 @@ class CreatureCombat implements ICreatureCombat {
 			[Action.FREE]: 1,
 			[Action.SWIFT]: 1,
 		};
+		this.movement = this.owner.getMoveSpeed();
+		this.turnEnd = false; // Reset turn end status at the start of the turn
 	}
 }

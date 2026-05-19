@@ -347,7 +347,7 @@ class Game {
     checkHotkeys(key) {
         if (this.isInEditorMode())
             return; // Disable hotkeys in editor mode to prevent conflicts with editor controls
-        if (key === " ") {
+        if (key === "p") {
             this.togglePause();
         }
         if (key === "r") {
@@ -355,6 +355,14 @@ class Game {
         }
         if (key === "e") {
             this.objectInteractionCheck();
+        }
+        if (key === " ") {
+            const creature = this.getControlledCreature();
+            if (creature) {
+                if (this.state === GameState.COMBAT && combatManager.isCreatureTurn(creature)) {
+                    creature.combat.turnEnd = true;
+                }
+            }
         }
     }
     handleClick(worldX, worldY) {
@@ -370,12 +378,7 @@ class Game {
         if (!map)
             return;
         for (const creature of entityManager.getCreaturesOnMap(map.id)) {
-            if (creature.currentPath.length > 0) {
-                creature.moveOnPath(dt);
-            }
-            else {
-                creature.isMoving = false; // Ensure isMoving is false when there is no path to follow
-            }
+            creature.update(dt); // Update creature state, which can affect movement
         }
     }
     moveControlledCreature() {
