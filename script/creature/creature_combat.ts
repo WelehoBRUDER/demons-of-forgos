@@ -1,5 +1,5 @@
 class CreatureCombat implements ICreatureCombat {
-	private owner: Creature;
+	owner: Creature;
 	bab: number;
 	initiative: number;
 	actions: Actions;
@@ -35,6 +35,10 @@ class CreatureCombat implements ICreatureCombat {
 
 		const critRange = weapon.getCritRange();
 		const critMultiplier = weapon.getCritMultiplier();
+
+		console.log(
+			`BUILDING ATTACK: Weapon: ${weapon.getId()}, Attack Bonus: ${attackBonus}, Damage: ${damageMin}-${damageMax} ${weapon.getDamageType()}, Crit Range: ${critRange}-20, Crit Multiplier: x${critMultiplier} | CREATURE: ${this.owner.getUID()}`,
+		);
 
 		return {
 			weapon,
@@ -88,6 +92,13 @@ class CreatureCombat implements ICreatureCombat {
 
 		// Modifiers from feats, equipment, buffs, etc.
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
+
+		console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
+		console.log("IS DUAL WIELDING:", ctx.isDualWielding);
+		console.log(
+			`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}, Penalty: ${penalty}`,
+		);
+		console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
 		return baseAttackBonus + abilityModifier + modBonuses + penalty;
 	}
 

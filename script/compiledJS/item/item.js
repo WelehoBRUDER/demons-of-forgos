@@ -6,6 +6,7 @@ var AnchorPointType;
     AnchorPointType["legs"] = "legs";
     AnchorPointType["feet"] = "feet";
     AnchorPointType["weapon"] = "weapon";
+    AnchorPointType["offhand"] = "offhand";
 })(AnchorPointType || (AnchorPointType = {}));
 class Item {
     id;

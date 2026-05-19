@@ -149,7 +149,7 @@ class Creature {
         }
         const updatedProviders = [];
         updatedProviders.push(creatureDefaultModifiers);
-        updatedProviders.push(...this.inventory.getAllEquippedItems());
+        updatedProviders.push(...this.inventory.getAllEquippedItems().map((eq) => eq.item));
         updatedProviders.push(this.stats.getSizeProvider());
         updatedProviders.push(...this.getFeatProviders());
         if (this instanceof DynamicCreature) {
@@ -175,7 +175,7 @@ class Creature {
         this.screenY = y * atlas.getTileSize();
     }
     dexToACLimit() {
-        const items = this.inventory.getAllEquippedItems();
+        const items = this.inventory.getAllEquippedItems().map((e) => e.item);
         let maxDexLimit = -Infinity;
         for (const item of items) {
             if (item instanceof Armor) {

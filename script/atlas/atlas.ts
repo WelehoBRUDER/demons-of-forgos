@@ -250,22 +250,43 @@ class Atlas {
 			ctx.drawImage(img, x, y, spriteSize, spriteSize);
 		}
 
-		items.forEach((item: Item) => {
+		items.forEach((eq) => {
+			const item = eq.item;
+			const slot = eq.slot;
 			const position = itemManager.getItem(item.getId())?.getSpritePosition();
+			ctx.save();
 			if (item instanceof Weapon) {
 				const { width, height } = item.getSizeOnRender();
-				const anchor = species.getAnchorPoints()[item.getAnchorPoint()];
-				ctx.drawImage(
-					this.itemSprites,
-					position.x,
-					position.y,
-					this.getSpriteSize(),
-					this.getSpriteSize(),
-					x + anchor.x - width / 2,
-					y + anchor.y - height / 2,
-					width,
-					height,
-				);
+				let anchor = species.getAnchorPoints()[item.getAnchorPoint()];
+				// if equipment is in offhand, its sprite should be flipped
+				if (slot === EquipmentSlot.OFFHAND) {
+					anchor = species.getAnchorPoints().offhand;
+					ctx.translate(x + anchor.x, 0);
+					ctx.scale(-1, 1);
+					ctx.drawImage(
+						this.itemSprites,
+						position.x,
+						position.y,
+						this.getSpriteSize(),
+						this.getSpriteSize(),
+						-width / 2,
+						y + anchor.y - height / 2,
+						width,
+						height,
+					);
+				} else {
+					ctx.drawImage(
+						this.itemSprites,
+						position.x,
+						position.y,
+						this.getSpriteSize(),
+						this.getSpriteSize(),
+						x + anchor.x - width / 2,
+						y + anchor.y - height / 2,
+						width,
+						height,
+					);
+				}
 			}
 			if (item instanceof Armor) {
 				const equippableData = item.getEquippableItemData();
@@ -285,6 +306,7 @@ class Atlas {
 					);
 				});
 			}
+			ctx.restore();
 		});
 
 		portraitManager.generateAllPortraits();

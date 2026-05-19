@@ -21,6 +21,7 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 		this.stats = new DynamicCreatureStats(this, data.stats);
 		this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
 		this.classes = new CreatureClasses(this, data.classes);
+		this.combat = new DynamicCreatureCombat(this, data.combat);
 		this.renderSprite();
 	}
 
@@ -87,6 +88,19 @@ class DynamicCreatureStats extends CreatureStats {
 
 	getSizeCategory(): number {
 		return speciesManager.getSpeciesById(this.owner.species)?.size || SizeCategory.MEDIUM;
+	}
+}
+
+class DynamicCreatureCombat extends CreatureCombat {
+	declare owner: DynamicCreature;
+
+	constructor(owner: DynamicCreature, combat?: ICreatureCombat) {
+		super(owner, combat);
+		this.owner = owner;
+	}
+
+	getBaseAttackBonus(): number {
+		return this.owner.classes.getBaseAttackBonus();
 	}
 }
 

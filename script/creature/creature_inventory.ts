@@ -22,7 +22,9 @@ class CreatureInventory {
 	}
 
 	getAllItems(): Item[] {
-		return this.getAllEquippedItems().concat(this.getItems());
+		return this.getAllEquippedItems()
+			.map((eq) => eq.item)
+			.concat(this.getItems());
 	}
 
 	getInstanceCount(id: string): number {
@@ -41,12 +43,12 @@ class CreatureInventory {
 		return this.getItemById(id) !== undefined;
 	}
 
-	getAllEquippedItems(): Item[] {
-		const items: Item[] = [];
+	getAllEquippedItems(): { item: Item; slot: EquipmentSlot }[] {
+		const items: { item: Item; slot: EquipmentSlot }[] = [];
 		for (const slot in this.equipment) {
 			const equippedItem = this.equipment[slot as keyof ICreatureEquipment];
 			if (equippedItem) {
-				items.push(equippedItem);
+				items.push({ item: equippedItem, slot: slot as EquipmentSlot });
 			}
 		}
 		return items;
@@ -105,6 +107,8 @@ class CreatureInventory {
 
 	getWeaponInSlot(slot: EquipmentSlot): Weapon | null {
 		const item = this.getEquippedItem(slot);
+		console.log(`Checking for weapon in slot ${slot}:`, item);
+		console.log(item instanceof Weapon);
 		if (item instanceof Weapon) {
 			return item;
 		}

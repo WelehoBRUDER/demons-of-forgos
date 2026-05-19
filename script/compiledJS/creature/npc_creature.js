@@ -28,6 +28,15 @@ class NPCCreature extends Creature {
             const provider = new BaseCreatureModifierProvider(data.modifiers);
             this.modifiers = provider;
         }
+        if (data.equipment) {
+            for (const slot in data.equipment) {
+                const item = data.equipment[slot];
+                if (item) {
+                    this.inventory.equipItem(item, slot);
+                }
+            }
+        }
+        this.combat.bab = data.bab ?? 0;
         this.stats.setHP(data?.stats?.hp ?? this.stats.getMaxHP()); // Set HP to provided value or max HP if not provided
         this.providersNeedUpdate = true; // Mark providers as needing update to ensure modifiers are included in calculations
     }

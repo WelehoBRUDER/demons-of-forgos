@@ -17,11 +17,25 @@ const sizeCategoryModifiers = {
             evaluate: () => 2,
             type: ModifierType.size,
         },
+        {
+            id: "tiny_size_modifier",
+            target: "meleeAtk",
+            operation: Operation.add,
+            evaluate: () => 2,
+            type: ModifierType.size,
+        },
     ],
     SMALL: [
         {
             id: "small_size_modifier",
             target: "ac",
+            operation: Operation.add,
+            evaluate: () => 1,
+            type: ModifierType.size,
+        },
+        {
+            id: "small_size_modifier",
+            target: "meleeAtk",
             operation: Operation.add,
             evaluate: () => 1,
             type: ModifierType.size,
@@ -44,6 +58,13 @@ const sizeCategoryModifiers = {
             evaluate: () => -1,
             type: ModifierType.size,
         },
+        {
+            id: "large_size_modifier",
+            target: "meleeAtk",
+            operation: Operation.add,
+            evaluate: () => -1,
+            type: ModifierType.size,
+        },
     ],
     HUGE: [
         {
@@ -53,11 +74,25 @@ const sizeCategoryModifiers = {
             evaluate: () => -2,
             type: ModifierType.size,
         },
+        {
+            id: "huge_size_modifier",
+            target: "meleeAtk",
+            operation: Operation.add,
+            evaluate: () => -2,
+            type: ModifierType.size,
+        },
     ],
     GARGANTUAN: [
         {
             id: "gargantuan_size_modifier",
             target: "ac",
+            operation: Operation.add,
+            evaluate: () => -4,
+            type: ModifierType.size,
+        },
+        {
+            id: "gargantuan_size_modifier",
+            target: "meleeAtk",
             operation: Operation.add,
             evaluate: () => -4,
             type: ModifierType.size,

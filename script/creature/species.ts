@@ -34,6 +34,7 @@ class Species implements ModifierProvider {
 		legs: { x: 122, y: 157 },
 		feet: { x: 122, y: 220 },
 		weapon: { x: 36, y: 105 },
+		offhand: { x: 210, y: 102 },
 	};
 
 	constructor(data: SpeciesData) {

@@ -16,22 +16,27 @@ entityManager.addEnemyTemplate(
 			},
 		},
 		baseHitDice: [{ type: HitDice.D10, count: 1 }],
-		modifiers: [
-			{
-				id: "goblin_armor",
-				target: "ac",
-				operation: Operation.add,
-				evaluate: () => 2,
-				type: ModifierType.armor,
-			},
-			{
-				id: "goblin_shield",
-				target: "ac",
-				operation: Operation.add,
-				evaluate: () => 1,
-				type: ModifierType.shield,
-			},
-		],
+		// modifiers: [
+		// 	{
+		// 		id: "goblin_armor",
+		// 		target: "ac",
+		// 		operation: Operation.add,
+		// 		evaluate: () => 2,
+		// 		type: ModifierType.armor,
+		// 	},
+		// 	{
+		// 		id: "goblin_shield",
+		// 		target: "ac",
+		// 		operation: Operation.add,
+		// 		evaluate: () => 1,
+		// 		type: ModifierType.shield,
+		// 	},
+		// ],
+		equipment: {
+			weapon: itemManager.getItem("shortsword")! as Weapon,
+			offhand: itemManager.getItem("scrap_shield")! as Armor,
+			armor: itemManager.getItem("leather_armor")! as Armor,
+		},
 		feats: ["improved_initiative"],
 		bab: 1,
 	}),

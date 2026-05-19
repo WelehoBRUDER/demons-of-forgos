@@ -21,6 +21,7 @@ class DynamicCreature extends Creature {
         this.stats = new DynamicCreatureStats(this, data.stats);
         this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
         this.classes = new CreatureClasses(this, data.classes);
+        this.combat = new DynamicCreatureCombat(this, data.combat);
         this.renderSprite();
     }
     // Dynamic creatures are rendered on their own atlas with separate textures for each customization option.
@@ -75,6 +76,15 @@ class DynamicCreatureStats extends CreatureStats {
     }
     getSizeCategory() {
         return speciesManager.getSpeciesById(this.owner.species)?.size || SizeCategory.MEDIUM;
+    }
+}
+class DynamicCreatureCombat extends CreatureCombat {
+    constructor(owner, combat) {
+        super(owner, combat);
+        this.owner = owner;
+    }
+    getBaseAttackBonus() {
+        return this.owner.classes.getBaseAttackBonus();
     }
 }
 class DynamicCreatureInventory extends CreatureInventory {

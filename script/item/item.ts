@@ -11,6 +11,7 @@ enum AnchorPointType {
 	legs = "legs",
 	feet = "feet",
 	weapon = "weapon",
+	offhand = "offhand",
 }
 
 class Item implements ModifierProvider {

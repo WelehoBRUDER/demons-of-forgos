@@ -63,6 +63,7 @@ interface INPCCreature extends ICreature {
 	spritePath: string;
 	spritePosition?: { x: number; y: number };
 	baseHitDice: HitDieInfo[]; // Optional hit dice information for the NPC, can be used to calculate HP and other stats
+	equipment?: ICreatureEquipment; // Optional starting equipment for the NPC
 	modifiers?: Modifier[]; // Optional array of modifiers specific to this NPC, such as racial traits, class features, etc.
 }
 
@@ -189,6 +190,7 @@ interface AnchorPoint {
 	legs: { x: number; y: number };
 	feet: { x: number; y: number };
 	weapon: { x: number; y: number };
+	offhand: { x: number; y: number };
 }
 
 interface DynamicSpriteTextures {
@@ -197,7 +199,7 @@ interface DynamicSpriteTextures {
 	eyes: string;
 	mouth: string;
 	ears: string;
-	items: Item[];
+	items: { item: Item; slot: EquipmentSlot }[];
 }
 
 enum EquipmentSlot {

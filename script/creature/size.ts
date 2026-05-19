@@ -7,11 +7,18 @@ enum SizeCategory {
 	GARGANTUAN = 4,
 }
 
-const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
+const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 	TINY: [
 		{
 			id: "tiny_size_modifier",
 			target: "ac",
+			operation: Operation.add,
+			evaluate: () => 2,
+			type: ModifierType.size,
+		},
+		{
+			id: "tiny_size_modifier",
+			target: "meleeAtk",
 			operation: Operation.add,
 			evaluate: () => 2,
 			type: ModifierType.size,
@@ -21,6 +28,13 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 		{
 			id: "small_size_modifier",
 			target: "ac",
+			operation: Operation.add,
+			evaluate: () => 1,
+			type: ModifierType.size,
+		},
+		{
+			id: "small_size_modifier",
+			target: "meleeAtk",
 			operation: Operation.add,
 			evaluate: () => 1,
 			type: ModifierType.size,
@@ -43,6 +57,13 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			evaluate: () => -1,
 			type: ModifierType.size,
 		},
+		{
+			id: "large_size_modifier",
+			target: "meleeAtk",
+			operation: Operation.add,
+			evaluate: () => -1,
+			type: ModifierType.size,
+		},
 	],
 	HUGE: [
 		{
@@ -52,11 +73,25 @@ const sizeCategoryModifiers: { [key: string]: [Modifier] } = {
 			evaluate: () => -2,
 			type: ModifierType.size,
 		},
+		{
+			id: "huge_size_modifier",
+			target: "meleeAtk",
+			operation: Operation.add,
+			evaluate: () => -2,
+			type: ModifierType.size,
+		},
 	],
 	GARGANTUAN: [
 		{
 			id: "gargantuan_size_modifier",
 			target: "ac",
+			operation: Operation.add,
+			evaluate: () => -4,
+			type: ModifierType.size,
+		},
+		{
+			id: "gargantuan_size_modifier",
+			target: "meleeAtk",
 			operation: Operation.add,
 			evaluate: () => -4,
 			type: ModifierType.size,

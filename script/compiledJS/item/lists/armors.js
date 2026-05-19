@@ -56,12 +56,27 @@ itemManager.addItem(new Armor({
         {
             texturePath: "assets/items/armor/iron_armor.png",
             sizeOnRender: { width: 150, height: 140 },
-            anchorPoint: AnchorPointType.body,
+            anchorPoint: AnchorPointType.offhand,
             texturePosition: { x: 0, y: 0 },
         },
     ],
     shield: true,
     ac: 2,
+    dexLimit: 0, // This is anyway ignored for shields
+}));
+itemManager.addItem(new Armor({
+    id: "scrap_shield",
+    spritePath: "assets/items/armor/iron_armor.png",
+    equippable: [
+        {
+            texturePath: "assets/items/armor/iron_armor.png",
+            sizeOnRender: { width: 150, height: 140 },
+            anchorPoint: AnchorPointType.offhand,
+            texturePosition: { x: 0, y: 0 },
+        },
+    ],
+    shield: true,
+    ac: 1,
     dexLimit: 0, // This is anyway ignored for shields
 }));
 //# sourceMappingURL=armors.js.map

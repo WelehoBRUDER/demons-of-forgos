@@ -172,7 +172,7 @@ class Creature implements ICreature {
 		const updatedProviders: ModifierProvider[] = [];
 
 		updatedProviders.push(creatureDefaultModifiers);
-		updatedProviders.push(...this.inventory.getAllEquippedItems());
+		updatedProviders.push(...this.inventory.getAllEquippedItems().map((eq) => eq.item));
 		updatedProviders.push(this.stats.getSizeProvider());
 		updatedProviders.push(...this.getFeatProviders());
 
@@ -205,7 +205,7 @@ class Creature implements ICreature {
 	}
 
 	dexToACLimit(): number {
-		const items: Item[] = this.inventory.getAllEquippedItems();
+		const items: Item[] = this.inventory.getAllEquippedItems().map((e) => e.item);
 		let maxDexLimit = -Infinity;
 		for (const item of items) {
 			if (item instanceof Armor) {
