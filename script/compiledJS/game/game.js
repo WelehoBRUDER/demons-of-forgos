@@ -406,6 +406,24 @@ class Game {
             return;
         creature.setPath(path);
     }
+    // Performs an attack on the creature occupying the currently highlighted tile, if any
+    attackControlledCreature() {
+        const creature = this.getControlledCreature();
+        if (!creature || this.state !== GameState.COMBAT)
+            return;
+        if (!combatManager.isCreatureTurn(creature))
+            return; // Can only attack if it's the creature's turn in combat
+        if (pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y }) > 1) {
+            return; // Can only attack adjacent tiles
+        }
+        const goalTile = mapRenderer.getHighlightedTile();
+        const targetCreature = entityManager
+            .getCreaturesBoundingWithPosition(creature.getMap(), goalTile?.x ?? 0, goalTile?.y ?? 0)
+            .find((c) => c._id !== creature._id);
+        if (targetCreature) {
+            creature.combat.attack(targetCreature, goalTile);
+        }
+    }
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -460,6 +478,7 @@ window.addEventListener("mouseup", (e) => {
     if (!(e.target instanceof HTMLCanvasElement))
         return;
     game.moveControlledCreature();
+    game.attackControlledCreature();
     game.selectTile();
     mapRenderer.clearPathPrediction();
     mapRenderer.renderTileHighlight();

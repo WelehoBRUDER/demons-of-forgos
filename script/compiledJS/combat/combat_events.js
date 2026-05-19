@@ -4,6 +4,7 @@ var CombatEventId;
     CombatEventId["TURN_STARTED"] = "turnStarted";
     CombatEventId["TURN_ENDED"] = "turnEnded";
     CombatEventId["ACTION_STARTED"] = "actionStarted";
+    CombatEventId["STAT_CHANGED"] = "statChanged";
     CombatEventId["DAMAGE_TAKEN"] = "damageTaken";
     CombatEventId["CREATURE_DIED"] = "creatureDied";
 })(CombatEventId || (CombatEventId = {}));

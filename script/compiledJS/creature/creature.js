@@ -68,6 +68,7 @@ class Creature {
     turn; // Turn controller to manage the creature's turn in combat
     // Animation states
     isMoving = false; // Flag to indicate if the creature is currently moving
+    isAttacking = false; // Flag to indicate if the creature is currently performing an attack animation
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
         this.id = data.id;
@@ -257,6 +258,11 @@ class Creature {
         if (this.stats.getHP() <= 0) {
             //this.die();
         }
+        combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.getUID() }); // Emit stat changed event to update UI
+        if (!this.stats.isAlive()) {
+            combatEvents.emit(CombatEventId.CREATURE_DIED, { creatureUID: this.getUID() }); // Emit creature died event for any additional logic that needs to happen on death
+            effectManager.addEffect(new CustomFloatingText(`💀`, this.screenX, this.screenY + 100, 24, "red", 1500, 50)); // Show damage taken as floating text
+        }
     }
     getHitDice() {
         return [{ type: HitDice.D6, count: 1 }]; // Default to 1 D6 for now, should be overridden by specific creature types
@@ -331,6 +337,7 @@ class Creature {
             if (this.combat.movement < 0) {
                 this.combat.movement += cost; // Refund movement since we can't actually move there
                 this.currentPath = []; // Clear the path if we have run out of movement
+                combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.getUID() }); // Emit stat changed event to update UI
                 return;
             }
             this.move(nextTile.x, nextTile.y);
@@ -348,6 +355,42 @@ class Creature {
     }
     getVisualOffset() {
         return { x: this.visualOffsetX, y: this.visualOffsetY };
+    }
+    async playMeleeAttackAnimation(target, targetTile, ctx) {
+        //if (this.isAttacking) return; // Prevent starting another attack animation if one is already in progress
+        this.isAttacking = true;
+        combatEvents.emit(CombatEventId.ACTION_STARTED, { creatureUID: this.getUID(), actionId: "melee_attack" }); // Emit action started event to trigger UI updates
+        await this.moveTowardsTarget(targetTile, 0.7); // Move halfway towards the target for the attack animation
+        this.combat.executeAttack(target, ctx);
+        await this.moveTowardsTarget({ x: this.x, y: this.y }, 1);
+        this.isAttacking = false;
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    async moveTowardsTarget(targetTile, progress) {
+        return new Promise((resolve) => {
+            const startX = this.screenX;
+            const startY = this.screenY;
+            const targetScreenX = targetTile.x * atlas.getTileSize();
+            const targetScreenY = targetTile.y * atlas.getTileSize();
+            const deltaX = targetScreenX - startX;
+            const deltaY = targetScreenY - startY;
+            const animationDuration = game.getAnimationSpeed() / 4;
+            const startTime = performance.now();
+            const animate = (currentTime) => {
+                const elapsedTime = currentTime - startTime;
+                const animationProgress = Math.min(elapsedTime / animationDuration, 1) * progress;
+                this.setScreenPosition(startX + deltaX * animationProgress, startY + deltaY * animationProgress);
+                if (elapsedTime < animationDuration) {
+                    requestAnimationFrame(animate);
+                }
+                else {
+                    resolve();
+                }
+            };
+            requestAnimationFrame(animate);
+        });
     }
     handleMovementAnimation(dt) {
         const progress = this.movementProgressToNextTile();
@@ -370,6 +413,7 @@ class Creature {
     }
     setPath(path) {
         this.isMoving = true; // Set moving flag when a new path is assigned
+        path.shift(); // Remove the first tile in the path since it's the tile we're currently on
         this.currentPath = path;
     }
     getPath() {

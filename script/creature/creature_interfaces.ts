@@ -37,14 +37,14 @@ interface ICreatureCombat {
 enum Action {
 	STANDARD = "standard",
 	MOVE = "move",
-	FREE = "free",
+	FULL_ROUND = "fullRound",
 	SWIFT = "swift",
 }
 
 interface Actions {
 	[Action.STANDARD]?: number; // Number of standard actions available (usually 1)
 	[Action.MOVE]?: number; // Number of move actions available (usually 1)
-	[Action.FREE]?: number; // Number of free actions available (can be more than 1)
+	[Action.FULL_ROUND]?: number; // Number of full-round actions available (can be more than 1)
 	[Action.SWIFT]?: number; // Number of swift actions available (usually 1)
 }
 

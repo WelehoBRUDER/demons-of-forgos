@@ -209,6 +209,8 @@ class MapRenderer {
         const dynamicSpriteAtlas = atlas.getDynamicSpriteAtlas();
         this.creatureCtx.clearRect(0, 0, this.creatureCanvas.width, this.creatureCanvas.height);
         for (const creature of entityManager.getCreaturesOnMap(this.map.id)) {
+            if (!creature.stats.isAlive())
+                continue; // Skip rendering dead creatures
             const { x, y } = creature.getScreenPosition();
             const sizeCategory = creature.stats.getSizeCategory();
             const creatureSize = size * sizeCategory;
@@ -466,7 +468,7 @@ const devInit = () => {
         species: "human",
         bodyType: BodyType.A,
         uid: "player_character:001", // Unique identifier for the player character
-        feats: [],
+        feats: ["two_weapon_fighting"],
         bab: 1,
         stats: {
             abilityScores: {
@@ -484,7 +486,7 @@ const devInit = () => {
     mapRenderer.setMapData(mapManager.getMap("dev_testing_area"));
     const creature = entityManager.addCreature(testPlayer, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
-    //creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
+    creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
     creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
     game.setControlledCreatureId(creature.getUID());
     mapRenderer.renderVisibleMap(camera);

@@ -57,6 +57,11 @@ class CombatManager {
 	async startTurn() {
 		const creature = this.getCurrentTurnCreature();
 
+		if (!creature.stats.isAlive()) {
+			this.advanceTurn();
+			return;
+		}
+
 		combatEvents.emit(CombatEventId.TURN_STARTED, { creatureUID: creature?.getUID(), round: this.round });
 
 		await creature.turn.beginTurn();

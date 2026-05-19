@@ -4,6 +4,7 @@ class InitiativeOrderUI {
     constructor() {
         this.initiativeRow = document.querySelector(".initiative-row");
         combatEvents.on(CombatEventId.TURN_STARTED, this.updateActiveTurn.bind(this));
+        combatEvents.on(CombatEventId.CREATURE_DIED, this.removeFromInitiativeOrder.bind(this));
     }
     drawInitiativeOrder() {
         this.initiativeRow.innerHTML = "";
@@ -39,7 +40,7 @@ class InitiativeOrderUI {
         const entries = this.initiativeRow.querySelectorAll(".initiative-entry");
         entries.forEach((entry) => {
             if (entry.classList.contains(creatureUID)) {
-                entry.remove();
+                entry.classList.add("hidden");
             }
         });
     }

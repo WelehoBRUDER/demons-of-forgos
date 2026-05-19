@@ -4,6 +4,10 @@ class PortraitManager {
 
 	constructor() {
 		this.generateAllPortraits();
+
+		combatEvents.on("statChanged", (payload) => {
+			this.updatePortrait(payload.creatureUID);
+		});
 	}
 
 	updatePortrait(creatureUID: string) {

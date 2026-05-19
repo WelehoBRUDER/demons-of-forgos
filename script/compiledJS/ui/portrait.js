@@ -4,6 +4,9 @@ class PortraitManager {
     portraits = new Map();
     constructor() {
         this.generateAllPortraits();
+        combatEvents.on("statChanged", (payload) => {
+            this.updatePortrait(payload.creatureUID);
+        });
     }
     updatePortrait(creatureUID) {
         const portrait = this.portraits.get(creatureUID);

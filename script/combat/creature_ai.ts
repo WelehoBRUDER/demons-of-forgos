@@ -44,6 +44,13 @@ class CreatureAI {
 
 		await this.owner.animationFinished(); // Wait for movement to finish before ending the turn
 
+		await sleep(200); // Small delay before attacking
+
+		if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile!.x, y: nearestHostile!.y }) <= 1) {
+			await this.owner.combat.attack(nearestHostile!, { x: nearestHostile!.x, y: nearestHostile!.y });
+			//nearestHostile!.takeDamage(10); // Placeholder damage value
+		}
+
 		return new Promise((resolve) => {
 			resolve();
 		});

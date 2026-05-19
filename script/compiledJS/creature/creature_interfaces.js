@@ -3,7 +3,7 @@ var Action;
 (function (Action) {
     Action["STANDARD"] = "standard";
     Action["MOVE"] = "move";
-    Action["FREE"] = "free";
+    Action["FULL_ROUND"] = "fullRound";
     Action["SWIFT"] = "swift";
 })(Action || (Action = {}));
 const defaultEquipment = {

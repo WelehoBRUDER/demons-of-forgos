@@ -109,6 +109,7 @@ class EntityManager {
 	getCreaturesBoundingWithPosition(mapId: string, x: number, y: number, print: boolean = false): Creature[] {
 		const boundingCreatures: Creature[] = [];
 		for (const creature of this.creatures.values()) {
+			if (!creature.stats.isAlive()) continue; // Skip dead creatures when checking for bounding
 			if (creature.getMap() === mapId) {
 				const creatureBoundingArea = creature.getOccupiedArea();
 				if (print) {

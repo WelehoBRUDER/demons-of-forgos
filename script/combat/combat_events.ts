@@ -13,6 +13,10 @@ type CombatEvents = {
 		creatureUID: string;
 	};
 
+	statChanged: {
+		creatureUID: string; // just triggers ui updates
+	};
+
 	damageTaken: {
 		sourceUID: string;
 		targetUID: string;
@@ -28,6 +32,7 @@ enum CombatEventId {
 	TURN_STARTED = "turnStarted",
 	TURN_ENDED = "turnEnded",
 	ACTION_STARTED = "actionStarted",
+	STAT_CHANGED = "statChanged",
 	DAMAGE_TAKEN = "damageTaken",
 	CREATURE_DIED = "creatureDied",
 }

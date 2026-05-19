@@ -33,4 +33,66 @@ class DiceRoller {
 		const dieInstance = new Die(die);
 		return dieInstance.rollMultiple(times);
 	}
+
+	static attackRoll(attacker: Creature, target: Creature, ctx: AttackResult): AttackRollResult {
+		const d20Roll = this.roll(Dice.d20)[0];
+		const attackBonus = ctx.attackBonus;
+		const totalRoll = d20Roll + attackBonus;
+		const targetAC = target.stats.getAC().full; // Should consider touch and flat-footed but development first, will add later
+		const isCriticalThreat = d20Roll >= ctx.weapon.getCritRange();
+
+		let criticalThreatResult: CriticalThreatResult = {
+			isCriticalThreat: isCriticalThreat,
+		};
+
+		if (isCriticalThreat) {
+			const confirmationRoll = this.critConfirmationRoll(attacker, target, ctx);
+			criticalThreatResult.confirmationRoll = confirmationRoll.confirmationRoll;
+			criticalThreatResult.isConfirmed = confirmationRoll.isConfirmed;
+			criticalThreatResult.confirmationModifier = confirmationRoll.modifier;
+		}
+
+		return {
+			attackRoll: d20Roll,
+			modifier: attackBonus,
+			totalRoll: totalRoll,
+			isHit: totalRoll >= targetAC,
+			isCritical: criticalThreatResult,
+		};
+	}
+
+	static critConfirmationRoll(
+		attacker: Creature,
+		target: Creature,
+		ctx: AttackResult,
+	): { confirmationRoll: number; isConfirmed: boolean; modifier: number } {
+		const d20Roll = this.roll(Dice.d20)[0];
+		const attackBonus = ctx.attackBonus;
+		const totalRoll = d20Roll + attackBonus;
+		const targetAC = target.stats.getAC().full; // Should consider touch and flat-footed but development first, will add later
+		return {
+			confirmationRoll: totalRoll,
+			isConfirmed: totalRoll >= targetAC,
+			modifier: attackBonus,
+		};
+	}
+
+	static rollBetween(min: number, max: number): number {
+		return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
+}
+
+interface AttackRollResult {
+	attackRoll: number;
+	modifier: number;
+	totalRoll: number;
+	isHit: boolean;
+	isCritical: CriticalThreatResult;
+}
+
+interface CriticalThreatResult {
+	isCriticalThreat: boolean;
+	confirmationRoll?: number;
+	isConfirmed?: boolean;
+	confirmationModifier?: number;
 }

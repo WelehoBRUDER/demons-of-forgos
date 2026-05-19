@@ -137,6 +137,10 @@ main.game {
 		height: 6.5rem;
 		overflow: hidden;
 
+		&.hidden {
+			width: 0;
+		}
+
 		&.hostile {
 			border-color: var(--hostile-color);
 		}
@@ -200,5 +204,38 @@ main.game {
 			border-radius: 4rem;
 			border: 0.2rem solid #fff;
 		}
+	}
+}
+
+.hotbar {
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	max-width: 80%;
+	height: 8rem;
+	overflow: hidden;
+	overflow-x: auto;
+	background: rgb(36, 36, 36);
+	border-radius: 1rem 1rem 0rem 0rem;
+	z-index: 10;
+	padding: 0.5rem;
+
+	&.locked {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+
+	.hotbar-item {
+		color: white;
+		font-size: 1.6rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin: 0.5rem;
+		border: 0.2rem solid #fff;
 	}
 }

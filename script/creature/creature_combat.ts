@@ -13,7 +13,7 @@ class CreatureCombat implements ICreatureCombat {
 		this.actions = combatData?.actions || {
 			[Action.STANDARD]: 1,
 			[Action.MOVE]: 1,
-			[Action.FREE]: 1,
+			[Action.FULL_ROUND]: 1,
 			[Action.SWIFT]: 1,
 		};
 		this.turnEnd = false; // This is used by the player
@@ -193,24 +193,80 @@ class CreatureCombat implements ICreatureCombat {
 	applyMovementCost(cost: number): void {
 		this.movement -= cost;
 		if (this.owner.getMoveSpeed() - this.movement > 1 && this.actions[Action.MOVE] > 0) {
-			console.log(`${this.owner.getUID()} used move action`);
-			this.actions[Action.MOVE] = 0; // If the creature has moved more than 1 cell, it has used its move action for the turn
+			this.spendAction(Action.MOVE); // If the creature has moved more than 1 cell, it has used its move action for the turn
 		}
-		if (this.movement <= 0 && this.actions[Action.STANDARD] > 0) {
-			console.log(`${this.owner.getUID()} used standard action by moving beyond movement speed`);
+		if (this.movement < 0 && this.actions[Action.STANDARD] > 0) {
 			this.movement += this.owner.getMoveSpeed();
-			this.actions[Action.STANDARD] = 0; // The creature must dash if it tries to move beyond its movement speed, which means it cannot take a standard action after moving its full movement
+			this.spendAction(Action.STANDARD); // The creature must dash if it tries to move beyond its movement speed, which means it cannot take a standard action after moving its full movement
 		}
+		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
 	}
 
 	resetActions(): void {
 		this.actions = {
 			[Action.STANDARD]: 1,
 			[Action.MOVE]: 1,
-			[Action.FREE]: 1,
+			[Action.FULL_ROUND]: 1,
 			[Action.SWIFT]: 1,
 		};
 		this.movement = this.owner.getMoveSpeed();
+		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
 		this.turnEnd = false; // Reset turn end status at the start of the turn
+	}
+
+	spendAction(actionType: Action): void {
+		if (this.actions[actionType] > 0) {
+			this.actions[actionType]--;
+
+			if (actionType === Action.FULL_ROUND) {
+				this.actions[Action.STANDARD] = 0;
+				this.actions[Action.MOVE] = 0;
+			} else if (actionType !== Action.SWIFT) {
+				this.actions[Action.FULL_ROUND] = 0;
+			}
+
+			combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
+		}
+	}
+
+	async attack(target: Creature, tile: { x: number; y: number }) {
+		if (this.actions[Action.FULL_ROUND] > 0) {
+			this.spendAction(Action.FULL_ROUND);
+			const attackIterations = this.getAttackIterations();
+			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY]; i++) {
+				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
+				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+			}
+			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY_FULL]; i++) {
+				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
+				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+			}
+			for (let i = 0; i < attackIterations[AttackIteration.OFFHAND]; i++) {
+				const ctx = this.owner.inventory.getEquippedWeapons()[1]; // Assuming the second equipped weapon is the off-hand weapon, this can be improved by checking which weapon is actually being used for the attack
+				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+			}
+		} else if (this.actions[Action.STANDARD] > 0) {
+			this.spendAction(Action.STANDARD);
+			const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
+			await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+		}
+	}
+
+	executeAttack(target: Creature, ctx: AttackContext) {
+		const attackResult: AttackResult = this.buildAttack(ctx);
+		const attackRollResult: AttackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
+		console.log(
+			`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${target.stats.getAC().full}`,
+		);
+
+		if (attackRollResult.isHit) {
+			const damage: number = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);
+			console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
+			target.takeDamage(damage);
+			effectManager.addEffect(new CustomFloatingText(`Hit! -${damage}`, target.screenX, target.screenY, 24, "red", 1500, 50));
+		} else {
+			effectManager.addEffect(new CustomFloatingText("Miss!", target.screenX, target.screenY, 24, "gold", 1500, 50));
+			return;
+		}
 	}
 }
