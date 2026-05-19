@@ -416,6 +416,8 @@ class Game {
 		for (const creature of entityManager.getCreaturesOnMap(map.id)) {
 			if (creature.currentPath.length > 0) {
 				creature.moveOnPath(dt);
+			} else {
+				creature.isMoving = false; // Ensure isMoving is false when there is no path to follow
 			}
 		}
 	}

@@ -66,6 +66,8 @@ class Creature {
     combat; // Combat-related data and methods for the creature
     ai; // AI-related data and methods for the creature
     turn; // Turn controller to manage the creature's turn in combat
+    // Animation states
+    isMoving = false; // Flag to indicate if the creature is currently moving
     constructor(data) {
         this._id = creatureIndex++; // Assign a unique ID to each creature
         this.id = data.id;
@@ -307,7 +309,11 @@ class Creature {
     }
     moveOnPath(dt) {
         this.handleMovementAnimation(dt);
-        if (this.currentPath.length === 0 || !this.hasFinishedMoving())
+        if (this.currentPath.length === 0) {
+            this.isMoving = false;
+            return;
+        }
+        if (!this.hasFinishedMoving())
             return;
         const nextTile = this.currentPath.shift();
         if (nextTile) {
@@ -322,6 +328,9 @@ class Creature {
                 return;
             }
             this.move(nextTile.x, nextTile.y);
+        }
+        else {
+            this.isMoving = false; // Clear moving flag when we have reached the end of the path
         }
     }
     getAggroRange() {
@@ -354,6 +363,7 @@ class Creature {
         return this.movementProgressToNextTile() >= 1; // Consider movement finished when the creature has reached or passed the target tile
     }
     setPath(path) {
+        this.isMoving = true; // Set moving flag when a new path is assigned
         this.currentPath = path;
     }
     getPath() {
@@ -368,9 +378,26 @@ class Creature {
         };
     }
     isAI() {
-        console.log("Checking if creature is AI-controlled. UID:", this.uid, "Faction:", this.stats.getFaction());
-        console.log(this.uid, this.stats.getFaction());
+        // console.log("Checking if creature is AI-controlled. UID:", this.uid, "Faction:", this.stats.getFaction());
+        // console.log(this.uid, this.stats.getFaction());
         return this.stats.getFaction() !== Faction.PLAYER;
+    }
+    hasFinishedMovingOnPath() {
+        return !this.isMoving && this.getPath().length === 0; // Consider movement finished when the creature is not currently moving and has no remaining path to follow
+    }
+    async movementFollowPath() {
+        return new Promise((resolve) => {
+            const checkMovementCompletion = () => {
+                console.log("Checking movement completion for creature", this.id, "isMoving:", this.isMoving, "remaining path length:", this.getPath().length);
+                if (this.hasFinishedMovingOnPath()) {
+                    resolve();
+                }
+                else {
+                    requestAnimationFrame(checkMovementCompletion);
+                }
+            };
+            checkMovementCompletion();
+        });
     }
 }
 const creatures = [];

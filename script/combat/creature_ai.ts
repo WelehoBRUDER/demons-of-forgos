@@ -42,10 +42,7 @@ class CreatureAI {
 		}
 		this.owner.setPath(bestPath);
 		return new Promise((resolve) => {
-			// Simulate thinking time
-			setTimeout(() => {
-				resolve();
-			}, 500); // Adjust the delay as needed
+			resolve();
 		});
 	}
 }
