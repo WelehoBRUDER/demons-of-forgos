@@ -2,7 +2,8 @@
 class Pathfinding {
     constructor() { }
     // A* pathfinding algorithm
-    AStar(start, goal, map, creature, adjacencyTolerance = 1) {
+    AStar(start, goal, map, creature, adjacencyTolerance = 1, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
+    adjacencyPreference = 0) {
         if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
             return [];
         }
@@ -14,7 +15,7 @@ class Pathfinding {
         const fScore = new Map();
         const enterCost = new Map();
         const size = creature.stats.getSizeCategory();
-        const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance);
+        const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance, adjacencyPreference);
         if (expandedGoals.length === 0) {
             return [];
         }
@@ -98,24 +99,24 @@ class Pathfinding {
         }
         return path;
     }
-    findExpandedGoalNodes(goal, map, creature, adjacencyTolerance) {
+    findExpandedGoalNodes(goal, map, creature, adjacencyTolerance, adjacencyPreference = 0) {
         const size = creature.stats.getSizeCategory();
         const expandedGoals = [];
         for (const g of goal) {
-            if (this.costToEnter(g.x, g.y, map, creature, size) !== Infinity) {
-                expandedGoals.push(g);
-            }
-            else {
-                for (let dx = -adjacencyTolerance; dx <= adjacencyTolerance; dx++) {
-                    for (let dy = -adjacencyTolerance; dy <= adjacencyTolerance; dy++) {
-                        const expandedX = g.x + dx;
-                        const expandedY = g.y + dy;
-                        if (!map.inBounds(expandedX, expandedY))
-                            continue;
-                        if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity)
-                            continue;
-                        expandedGoals.push({ x: expandedX, y: expandedY });
-                    }
+            for (let dx = -adjacencyTolerance; dx <= adjacencyTolerance; dx++) {
+                for (let dy = -adjacencyTolerance; dy <= adjacencyTolerance; dy++) {
+                    const expandedX = g.x + dx;
+                    const expandedY = g.y + dy;
+                    if (!map.inBounds(expandedX, expandedY))
+                        continue;
+                    const dist = Math.max(Math.abs(dx), Math.abs(dy));
+                    if (dist > adjacencyTolerance)
+                        continue; // Outside of tolerance radius
+                    if (dist < adjacencyPreference)
+                        continue; // Outside of preference radius
+                    if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity)
+                        continue;
+                    expandedGoals.push({ x: expandedX, y: expandedY });
                 }
             }
         }

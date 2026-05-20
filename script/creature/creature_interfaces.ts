@@ -171,6 +171,7 @@ interface AttackContext {
 interface AttackResult {
 	weapon: Weapon;
 	attackBonus: number;
+	attackRange: number; // e.g. 1 for melee, 10 for short range, 20 for long range
 	damageMin: number;
 	damageMax: number;
 	damageType: string;
@@ -278,4 +279,15 @@ interface Saves {
 enum SaveProgression {
 	POOR = 1 / 3,
 	GOOD = 1 / 2,
+}
+
+enum AttackBonusType {
+	MELEE = "melee",
+	RANGED = "ranged",
+	WEAPON = "weapon",
+	MELEE_REACH = "melee_reach",
+	RANGED_TOUCH = "ranged_touch",
+	MELEE_DAMAGE = "melee_damage",
+	RANGED_DAMAGE = "ranged_damage",
+	WEAPON_DAMAGE = "weapon_damage",
 }

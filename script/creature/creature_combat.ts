@@ -20,6 +20,15 @@ class CreatureCombat implements ICreatureCombat {
 		this.movement = this.owner.getMoveSpeed();
 	}
 
+	getAttackRange(weapon: Weapon): number {
+		const weaponRange: number = weapon.getRange();
+		if (weapon.getWeaponType() === WeaponType.RANGED) {
+			return weaponRange;
+		}
+		const bonusRange = modifierManager.getTotalModifier(AttackBonusType.MELEE_REACH, this.owner, {}) as number;
+		return weaponRange + bonusRange;
+	}
+
 	getBaseAttackBonus(): number {
 		return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
 	}
@@ -43,6 +52,7 @@ class CreatureCombat implements ICreatureCombat {
 		return {
 			weapon,
 			attackBonus,
+			attackRange: this.getAttackRange(weapon),
 			damageMin,
 			damageMax,
 			damageType: weapon.getDamageType(),
@@ -73,7 +83,7 @@ class CreatureCombat implements ICreatureCombat {
 	getWeaponAttackBonus(ctx: AttackContext): number {
 		const weapon = ctx.weapon;
 		const weaponType = weapon.getWeaponType();
-		const attackType = weaponType === WeaponType.MELEE ? "meleeAtk" : "rangedAtk";
+		const attackType = weaponType === WeaponType.MELEE ? AttackBonusType.MELEE : AttackBonusType.RANGED;
 
 		// BAB
 		const baseAttackBonus = this.getBaseAttackBonus();
@@ -92,6 +102,7 @@ class CreatureCombat implements ICreatureCombat {
 
 		// Modifiers from feats, equipment, buffs, etc.
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
+		const weaponBonuses: number = modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx) as number;
 
 		console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
 		console.log("IS DUAL WIELDING:", ctx.isDualWielding);
@@ -99,16 +110,19 @@ class CreatureCombat implements ICreatureCombat {
 			`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}, Penalty: ${penalty}`,
 		);
 		console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
-		return baseAttackBonus + abilityModifier + modBonuses + penalty;
+		console.log(`Weapon Bonuses: ${weaponBonuses}`);
+		return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penalty;
 	}
 
 	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[] {
 		const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
 		const maxDamage = dice.count * dice.type; // Maximum damage is the number of dice times the type (e.g. 2d6 has a maximum of 12)
 		let bonusDamage = 0; // This will be calculated from ability modifiers, feats, equipment, etc.
-		const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? "meleeDmg" : "rangedDmg";
+		const attackType = ctx.weapon.getWeaponType() === WeaponType.MELEE ? AttackBonusType.MELEE_DAMAGE : AttackBonusType.RANGED_DAMAGE;
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
+		const weaponBonuses: number = modifierManager.getTotalModifier(AttackBonusType.WEAPON_DAMAGE, this.owner, ctx) as number;
 		bonusDamage += modBonuses;
+		bonusDamage += weaponBonuses;
 		bonusDamage += this.getStrengthBasedDamageBonus(ctx); // Calculate strength-based damage bonus based on attack context
 		const totalMinDamage = minDamage + bonusDamage;
 		const totalMaxDamage = maxDamage + bonusDamage;
@@ -244,23 +258,67 @@ class CreatureCombat implements ICreatureCombat {
 		if (this.actions[Action.FULL_ROUND] > 0) {
 			this.spendAction(Action.FULL_ROUND);
 			const attackIterations = this.getAttackIterations();
+
 			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY]; i++) {
+				if (!target) break;
 				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
 				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				if (!this.checkIfAttackTargetValid(target)) {
+					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
+					tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+				}
 			}
+
 			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY_FULL]; i++) {
+				if (!target) break;
 				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
 				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				if (!this.checkIfAttackTargetValid(target)) {
+					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
+					tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+				}
 			}
+
 			for (let i = 0; i < attackIterations[AttackIteration.OFFHAND]; i++) {
+				if (!target) break;
 				const ctx = this.owner.inventory.getEquippedWeapons()[1]; // Assuming the second equipped weapon is the off-hand weapon, this can be improved by checking which weapon is actually being used for the attack
 				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				if (!this.checkIfAttackTargetValid(target)) {
+					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
+					tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+				}
 			}
 		} else if (this.actions[Action.STANDARD] > 0) {
 			this.spendAction(Action.STANDARD);
 			const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
 			await this.owner.playMeleeAttackAnimation(target, tile, ctx);
 		}
+	}
+
+	checkIfAttackTargetValid(target: Creature): boolean {
+		return target !== null && target !== undefined && target.stats.isAlive();
+	}
+
+	findNearestHostileWithinRange(range: number): Creature | null {
+		const hostiles = entityManager.getCreaturesByFaction(
+			this.owner.stats.getFaction() === Faction.PLAYER ? Faction.HOSTILE : Faction.PLAYER,
+			{ map: this.owner.getMap() },
+		);
+		if (hostiles.length === 0) {
+			return null; // No hostiles to target
+		}
+
+		let nearestHostile: Creature | null = null;
+		let nearestDistance = Infinity;
+		for (const hostile of hostiles) {
+			if (!hostile.stats.isAlive()) continue; // Skip dead hostiles
+			const dist = pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: hostile.x, y: hostile.y });
+			if (dist < nearestDistance && dist <= range) {
+				nearestDistance = dist;
+				nearestHostile = hostile;
+			}
+		}
+		return nearestHostile;
 	}
 
 	executeAttack(target: Creature, ctx: AttackContext) {

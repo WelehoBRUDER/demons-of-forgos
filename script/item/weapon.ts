@@ -29,6 +29,7 @@ interface WeaponData extends EquipmentData {
 	composite?: boolean; // Indicates if the weapon is a composite bow, which allows adding strength bonus to damage for ranged attacks
 	light?: boolean;
 	heavy?: boolean;
+	range?: number; // Optional range for ranged weapons, defaults to 1 for most melee weapons
 	anchorPoint?: AnchorPointType; // Optional, defaults to "weapon" if not provided
 }
 
@@ -122,6 +123,7 @@ class Weapon extends Equipment {
 	heavy: boolean;
 	composite: boolean;
 	enhancementBonus: number;
+	range?: number; // Optional range for ranged weapons, defaults to 1 for most melee weapons
 	constructor(data: WeaponData) {
 		super(data);
 		this.type = "Weapon";
@@ -136,6 +138,7 @@ class Weapon extends Equipment {
 		this.light = data.light || false;
 		this.heavy = data.heavy || false;
 		this.composite = data.composite || false;
+		this.range = data.range ?? 1;
 	}
 
 	getDamage(): DamageDieInfo {
@@ -176,6 +179,10 @@ class Weapon extends Equipment {
 
 	getCritMultiplier(): number {
 		return this.critMultiplier;
+	}
+
+	getRange(): number {
+		return this.range;
 	}
 
 	getModifiers(ctx: any): Modifier[] {

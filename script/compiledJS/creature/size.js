@@ -19,7 +19,7 @@ const sizeCategoryModifiers = {
         },
         {
             id: "tiny_size_modifier",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: () => 2,
             type: ModifierType.size,
@@ -35,7 +35,7 @@ const sizeCategoryModifiers = {
         },
         {
             id: "small_size_modifier",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: () => 1,
             type: ModifierType.size,
@@ -60,9 +60,16 @@ const sizeCategoryModifiers = {
         },
         {
             id: "large_size_modifier",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: () => -1,
+            type: ModifierType.size,
+        },
+        {
+            id: "large_size_modifier_reach",
+            target: AttackBonusType.MELEE_REACH,
+            operation: Operation.add,
+            evaluate: () => 1, // Grant 1 cell of reach for large creatures
             type: ModifierType.size,
         },
     ],
@@ -76,9 +83,16 @@ const sizeCategoryModifiers = {
         },
         {
             id: "huge_size_modifier",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: () => -2,
+            type: ModifierType.size,
+        },
+        {
+            id: "huge_size_modifier_reach",
+            target: AttackBonusType.MELEE_REACH,
+            operation: Operation.add,
+            evaluate: () => 2, // Grant 2 cells of reach for huge creatures
             type: ModifierType.size,
         },
     ],
@@ -92,9 +106,16 @@ const sizeCategoryModifiers = {
         },
         {
             id: "gargantuan_size_modifier",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: () => -4,
+            type: ModifierType.size,
+        },
+        {
+            id: "gargantuan_size_modifier_reach",
+            target: AttackBonusType.MELEE_REACH,
+            operation: Operation.add,
+            evaluate: () => 3, // Grant 3 cells of reach for gargantuan creatures
             type: ModifierType.size,
         },
     ],

@@ -20,6 +20,8 @@ class CreatureAI {
 			return; // No hostiles to target
 		}
 
+		const attackRange: number = this.owner.combat.getAttackRange(this.owner.inventory.getEquippedItem(EquipmentSlot.WEAPON) as Weapon);
+
 		let nearestHostile: Creature | null = null;
 		let nearestDistance = Infinity;
 		let bestPath: { x: number; y: number }[] = [];
@@ -31,6 +33,8 @@ class CreatureAI {
 					[{ x: hostile.x, y: hostile.y }],
 					mapManager.getMap(this.owner.getMap()),
 					this.owner,
+					attackRange,
+					attackRange, // For now, treat preference the same as tolerance so it will prefer to stop at max attack range instead of trying to get closer
 				);
 				const pathCost = path ? pathfinder.totalPathCost(path) : Infinity;
 				if (pathCost < nearestDistance) {
@@ -46,7 +50,7 @@ class CreatureAI {
 
 		await sleep(200); // Small delay before attacking
 
-		if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile!.x, y: nearestHostile!.y }) <= 1) {
+		if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile!.x, y: nearestHostile!.y }) <= attackRange) {
 			await this.owner.combat.attack(nearestHostile!, { x: nearestHostile!.x, y: nearestHostile!.y });
 			//nearestHostile!.takeDamage(10); // Placeholder damage value
 		}

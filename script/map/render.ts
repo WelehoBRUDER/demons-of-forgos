@@ -580,7 +580,6 @@ const devInit = () => {
 		bodyType: BodyType.A,
 		uid: "player_character:001", // Unique identifier for the player character
 		feats: ["two_weapon_fighting"],
-		bab: 1,
 		stats: {
 			abilityScores: {
 				strength: 16,

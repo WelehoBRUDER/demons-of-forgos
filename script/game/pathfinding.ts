@@ -8,6 +8,7 @@ class Pathfinding {
 		map: WorldMap,
 		creature: Creature,
 		adjacencyTolerance: number = 1, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
+		adjacencyPreference: number = 0, // If same as tolerance, essentially means "prefer to stop immediately at tolerance limit" instead of going as close as possible
 	): { x: number; y: number; cost: number }[] | null {
 		if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
 			return [];
@@ -22,7 +23,7 @@ class Pathfinding {
 		const enterCost = new Map<string, number>();
 		const size = creature.stats.getSizeCategory();
 
-		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance);
+		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance, adjacencyPreference);
 		if (expandedGoals.length === 0) {
 			return [];
 		}
@@ -116,21 +117,22 @@ class Pathfinding {
 		map: WorldMap,
 		creature: Creature,
 		adjacencyTolerance: number,
+		adjacencyPreference: number = 0,
 	): { x: number; y: number }[] {
 		const size = creature.stats.getSizeCategory();
 		const expandedGoals: { x: number; y: number }[] = [];
 		for (const g of goal) {
-			if (this.costToEnter(g.x, g.y, map, creature, size) !== Infinity) {
-				expandedGoals.push(g);
-			} else {
-				for (let dx = -adjacencyTolerance; dx <= adjacencyTolerance; dx++) {
-					for (let dy = -adjacencyTolerance; dy <= adjacencyTolerance; dy++) {
-						const expandedX = g.x + dx;
-						const expandedY = g.y + dy;
-						if (!map.inBounds(expandedX, expandedY)) continue;
-						if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity) continue;
-						expandedGoals.push({ x: expandedX, y: expandedY });
-					}
+			for (let dx = -adjacencyTolerance; dx <= adjacencyTolerance; dx++) {
+				for (let dy = -adjacencyTolerance; dy <= adjacencyTolerance; dy++) {
+					const expandedX = g.x + dx;
+					const expandedY = g.y + dy;
+					if (!map.inBounds(expandedX, expandedY)) continue;
+
+					const dist = Math.max(Math.abs(dx), Math.abs(dy));
+					if (dist > adjacencyTolerance) continue; // Outside of tolerance radius
+					if (dist < adjacencyPreference) continue; // Outside of preference radius
+					if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity) continue;
+					expandedGoals.push({ x: expandedX, y: expandedY });
 				}
 			}
 		}

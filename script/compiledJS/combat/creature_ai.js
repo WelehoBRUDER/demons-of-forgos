@@ -19,13 +19,14 @@ class CreatureAI {
         if (hostiles.length === 0) {
             return; // No hostiles to target
         }
+        const attackRange = this.owner.combat.getAttackRange(this.owner.inventory.getEquippedItem(EquipmentSlot.WEAPON));
         let nearestHostile = null;
         let nearestDistance = Infinity;
         let bestPath = [];
         for (const hostile of hostiles) {
             const dist = pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: hostile.x, y: hostile.y });
             if (dist < nearestDistance) {
-                const path = pathfinder.AStar({ x: this.owner.x, y: this.owner.y }, [{ x: hostile.x, y: hostile.y }], mapManager.getMap(this.owner.getMap()), this.owner);
+                const path = pathfinder.AStar({ x: this.owner.x, y: this.owner.y }, [{ x: hostile.x, y: hostile.y }], mapManager.getMap(this.owner.getMap()), this.owner, attackRange, attackRange);
                 const pathCost = path ? pathfinder.totalPathCost(path) : Infinity;
                 if (pathCost < nearestDistance) {
                     bestPath = path;
@@ -37,7 +38,7 @@ class CreatureAI {
         this.owner.setPath(bestPath);
         await this.owner.animationFinished(); // Wait for movement to finish before ending the turn
         await sleep(200); // Small delay before attacking
-        if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile.x, y: nearestHostile.y }) <= 1) {
+        if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile.x, y: nearestHostile.y }) <= attackRange) {
             await this.owner.combat.attack(nearestHostile, { x: nearestHostile.x, y: nearestHostile.y });
             //nearestHostile!.takeDamage(10); // Placeholder damage value
         }

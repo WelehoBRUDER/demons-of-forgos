@@ -99,4 +99,15 @@ var SaveProgression;
     SaveProgression[SaveProgression["POOR"] = 0.3333333333333333] = "POOR";
     SaveProgression[SaveProgression["GOOD"] = 0.5] = "GOOD";
 })(SaveProgression || (SaveProgression = {}));
+var AttackBonusType;
+(function (AttackBonusType) {
+    AttackBonusType["MELEE"] = "melee";
+    AttackBonusType["RANGED"] = "ranged";
+    AttackBonusType["WEAPON"] = "weapon";
+    AttackBonusType["MELEE_REACH"] = "melee_reach";
+    AttackBonusType["RANGED_TOUCH"] = "ranged_touch";
+    AttackBonusType["MELEE_DAMAGE"] = "melee_damage";
+    AttackBonusType["RANGED_DAMAGE"] = "ranged_damage";
+    AttackBonusType["WEAPON_DAMAGE"] = "weapon_damage";
+})(AttackBonusType || (AttackBonusType = {}));
 //# sourceMappingURL=creature_interfaces.js.map

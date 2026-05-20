@@ -103,6 +103,7 @@ class Weapon extends Equipment {
     heavy;
     composite;
     enhancementBonus;
+    range; // Optional range for ranged weapons, defaults to 1 for most melee weapons
     constructor(data) {
         super(data);
         this.type = "Weapon";
@@ -117,6 +118,7 @@ class Weapon extends Equipment {
         this.light = data.light || false;
         this.heavy = data.heavy || false;
         this.composite = data.composite || false;
+        this.range = data.range ?? 1;
     }
     getDamage() {
         return this.damage;
@@ -147,6 +149,9 @@ class Weapon extends Equipment {
     }
     getCritMultiplier() {
         return this.critMultiplier;
+    }
+    getRange() {
+        return this.range;
     }
     getModifiers(ctx) {
         return [];

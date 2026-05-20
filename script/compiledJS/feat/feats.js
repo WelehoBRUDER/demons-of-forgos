@@ -30,7 +30,7 @@ featManager.addFeat(new Feat({
     modifiers: [
         {
             id: "power_attack_penalty",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: (creature, ctx) => {
                 const bab = creature.combat.getBaseAttackBonus();
@@ -40,7 +40,7 @@ featManager.addFeat(new Feat({
         },
         {
             id: "power_attack_damage",
-            target: "meleeDmg",
+            target: AttackBonusType.MELEE_DAMAGE,
             operation: Operation.add,
             evaluate: (creature, ctx) => {
                 const bab = creature.combat.getBaseAttackBonus();
@@ -64,7 +64,7 @@ featManager.addFeat(new Feat({
     modifiers: [
         {
             id: "two_weapon_fighting_bonus",
-            target: "meleeAtk",
+            target: AttackBonusType.MELEE,
             operation: Operation.add,
             evaluate: (creature, ctx) => {
                 if (ctx.isDualWielding) {
