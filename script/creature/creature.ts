@@ -355,7 +355,9 @@ class Creature implements ICreature {
 
 		console.log(playerCharacters, hostileCreatures);
 		for (const pc of playerCharacters) {
+			if (!pc.stats.isAlive()) continue;
 			for (const creature of hostileCreatures) {
+				if (!creature.stats.isAlive()) continue;
 				const dist = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: pc.x, y: pc.y });
 				if (dist <= creature.getAggroRange()) {
 					game.setState(GameState.COMBAT);
@@ -386,12 +388,14 @@ class Creature implements ICreature {
 				return;
 			}
 
-			this.combat.applyMovementCost(cost);
-			if (this.combat.movement < 0) {
-				this.combat.movement += cost; // Refund movement since we can't actually move there
-				this.currentPath = []; // Clear the path if we have run out of movement
-				combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.getUID() }); // Emit stat changed event to update UI
-				return;
+			if (game.getState() === GameState.COMBAT) {
+				this.combat.applyMovementCost(cost);
+				if (this.combat.movement < 0) {
+					this.combat.movement += cost; // Refund movement since we can't actually move there
+					this.currentPath = []; // Clear the path if we have run out of movement
+					combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.getUID() }); // Emit stat changed event to update UI
+					return;
+				}
 			}
 
 			this.move(nextTile.x, nextTile.y);

@@ -26,6 +26,10 @@ type CombatEvents = {
 	creatureDied: {
 		creatureUID: string;
 	};
+
+	combatEnded: {
+		winningFaction: Faction;
+	};
 };
 
 enum CombatEventId {
@@ -35,6 +39,7 @@ enum CombatEventId {
 	STAT_CHANGED = "statChanged",
 	DAMAGE_TAKEN = "damageTaken",
 	CREATURE_DIED = "creatureDied",
+	COMBAT_ENDED = "combatEnded",
 }
 
 class EventBus<TEvents extends Record<string, any>> {

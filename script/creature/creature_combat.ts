@@ -246,6 +246,7 @@ class CreatureCombat implements ICreatureCombat {
 			if (actionType === Action.FULL_ROUND) {
 				this.actions[Action.STANDARD] = 0;
 				this.actions[Action.MOVE] = 0;
+				this.movement = Math.min(this.movement, 1); // If a full-round action is taken, movement is set to 1 and move action is lost
 			} else if (actionType !== Action.SWIFT) {
 				this.actions[Action.FULL_ROUND] = 0;
 			}

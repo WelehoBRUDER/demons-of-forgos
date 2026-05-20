@@ -7,6 +7,7 @@ var CombatEventId;
     CombatEventId["STAT_CHANGED"] = "statChanged";
     CombatEventId["DAMAGE_TAKEN"] = "damageTaken";
     CombatEventId["CREATURE_DIED"] = "creatureDied";
+    CombatEventId["COMBAT_ENDED"] = "combatEnded";
 })(CombatEventId || (CombatEventId = {}));
 class EventBus {
     listeners = {};

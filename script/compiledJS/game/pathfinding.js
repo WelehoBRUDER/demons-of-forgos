@@ -2,8 +2,8 @@
 class Pathfinding {
     constructor() { }
     // A* pathfinding algorithm
-    AStar(start, goal, map, creature, adjacencyTolerance = 1, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
-    adjacencyPreference = 0) {
+    AStar(start, goal, map, creature, maxTolerance = 0, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
+    preferredDistance = 0) {
         if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
             return [];
         }
@@ -15,7 +15,7 @@ class Pathfinding {
         const fScore = new Map();
         const enterCost = new Map();
         const size = creature.stats.getSizeCategory();
-        const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, adjacencyTolerance, adjacencyPreference);
+        const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, maxTolerance, preferredDistance);
         if (expandedGoals.length === 0) {
             return [];
         }
@@ -73,7 +73,8 @@ class Pathfinding {
                     if (dx === 0 && dy === 0)
                         continue; // Skip the current node
                     //if (diagonalMoves.includes(`${dx},${dy}`)) continue; // just for testing animations
-                    const costMultiplier = diagonalMoves.includes(`${dx},${dy}`) ? 1.414 : 1;
+                    const isDiagonal = diagonalMoves.includes(`${dx},${dy}`);
+                    const costMultiplier = isDiagonal ? 1.414 : 1;
                     const neighborX = currentX + dx;
                     const neighborY = currentY + dy;
                     const neighborKey = `${neighborX},${neighborY}`;
@@ -81,6 +82,13 @@ class Pathfinding {
                         continue; // Skip out of bounds
                     if (closedSet.has(neighborKey))
                         continue; // Skip already evaluated nodes
+                    if (isDiagonal) {
+                        const side1Cost = this.costToEnter(currentX + dx, currentY, map, creature, size);
+                        const side2Cost = this.costToEnter(currentX, currentY + dy, map, creature, size);
+                        if (side1Cost === Infinity && side2Cost === Infinity) {
+                            continue;
+                        }
+                    }
                     const cost = this.costToEnter(neighborX, neighborY, map, creature, size);
                     if (cost === Infinity)
                         continue; // Skip impassable tiles
@@ -99,27 +107,34 @@ class Pathfinding {
         }
         return path;
     }
-    findExpandedGoalNodes(goal, map, creature, adjacencyTolerance, adjacencyPreference = 0) {
+    findExpandedGoalNodes(goal, map, creature, maxTolerance, preferredDistance) {
         const size = creature.stats.getSizeCategory();
         const expandedGoals = [];
         for (const g of goal) {
-            for (let dx = -adjacencyTolerance; dx <= adjacencyTolerance; dx++) {
-                for (let dy = -adjacencyTolerance; dy <= adjacencyTolerance; dy++) {
+            for (let dx = -maxTolerance; dx <= maxTolerance; dx++) {
+                for (let dy = -maxTolerance; dy <= maxTolerance; dy++) {
                     const expandedX = g.x + dx;
                     const expandedY = g.y + dy;
                     if (!map.inBounds(expandedX, expandedY))
                         continue;
-                    const dist = Math.max(Math.abs(dx), Math.abs(dy));
-                    if (dist > adjacencyTolerance)
-                        continue; // Outside of tolerance radius
-                    if (dist < adjacencyPreference)
-                        continue; // Outside of preference radius
+                    const currentDist = Math.max(Math.abs(dx), Math.abs(dy));
+                    if (currentDist > maxTolerance)
+                        continue;
                     if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity)
                         continue;
                     expandedGoals.push({ x: expandedX, y: expandedY });
                 }
             }
         }
+        // Sort expanded goals by distance to original goal, preferring those closest to the preferred distance
+        expandedGoals.sort((a, b) => {
+            const distA = Math.max(Math.abs(a.x - goal[0].x), Math.abs(a.y - goal[0].y));
+            const distB = Math.max(Math.abs(b.x - goal[0].x), Math.abs(b.y - goal[0].y));
+            const diffA = Math.abs(distA - preferredDistance);
+            const diffB = Math.abs(distB - preferredDistance);
+            return diffA - diffB;
+        });
+        console.log(expandedGoals);
         return expandedGoals;
     }
     heuristic(a, b) {

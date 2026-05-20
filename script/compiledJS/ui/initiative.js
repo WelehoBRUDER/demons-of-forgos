@@ -5,9 +5,15 @@ class InitiativeOrderUI {
         this.initiativeRow = document.querySelector(".initiative-row");
         combatEvents.on(CombatEventId.TURN_STARTED, this.updateActiveTurn.bind(this));
         combatEvents.on(CombatEventId.CREATURE_DIED, this.removeFromInitiativeOrder.bind(this));
+        combatEvents.on(CombatEventId.COMBAT_ENDED, this.hide.bind(this));
+    }
+    hide() {
+        this.initiativeRow.innerHTML = "";
+        this.initiativeRow.style.display = "none";
     }
     drawInitiativeOrder() {
         this.initiativeRow.innerHTML = "";
+        this.initiativeRow.style.display = "flex"; // Show the initiative row when drawing it
         combatManager.initiativeOrder.forEach((ctx, index) => {
             const creature = entityManager.getCreatureByUID(ctx.uid);
             if (creature) {

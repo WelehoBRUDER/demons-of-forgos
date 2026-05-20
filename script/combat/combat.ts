@@ -39,7 +39,9 @@ class CombatManager {
 	round: number = 0; // Current round of combat, can be used for tracking effects that last a certain number of rounds, etc.
 	activeTurnContext: TurnContext | null = null; // Context for the currently active turn, can be used to track state and pending actions for the current creature's turn
 
-	constructor() {}
+	constructor() {
+		combatEvents.on(CombatEventId.CREATURE_DIED, ({ creatureUID }) => this.checkEndCombat(creatureUID));
+	}
 
 	startCombat(creatures: Creature[], ctx?: any) {
 		this.round = ctx?.round ?? 1;
@@ -52,6 +54,22 @@ class CombatManager {
 		//this.getCurrentTurnCreature().ai.makeDecision(); // Trigger AI decision for the first creature in combat immediately
 		initiativeOrderUI.drawInitiativeOrder(); // Draw initiative order UI immediately after starting combat
 		this.startTurn(); // Start the first turn immediately after setting up combat
+	}
+
+	checkEndCombat(creatureUID: string) {
+		const participant = this.initiativeOrder.find((p) => p.uid === creatureUID);
+		if (participant) {
+			participant.isAlive = false; // Mark the participant as dead in the initiative order
+		}
+		const factionsInCombat = this.getFactionsInCombat();
+		console.log(factionsInCombat);
+		if (factionsInCombat.size <= 1) {
+			combatEvents.emit(CombatEventId.COMBAT_ENDED, { winningFaction: factionsInCombat.values().next().value });
+			this.initiativeOrder = [];
+			this.activeTurnContext = null;
+			this.round = 0;
+			game.setState(GameState.FREE_ROAM); // Transition back to exploration state after combat ends
+		}
 	}
 
 	async startTurn() {
@@ -119,6 +137,20 @@ class CombatManager {
 
 	hasParticipant(uid: string): boolean {
 		return this.initiativeOrder.some((p) => p.uid === uid);
+	}
+
+	getParticipantsByFaction(faction: Faction): CombatParticipant[] {
+		return this.initiativeOrder.filter((p) => p.faction === faction);
+	}
+
+	getFactionsInCombat(): Set<Faction> {
+		const factions = new Set<Faction>();
+		this.initiativeOrder.forEach((p) => {
+			if (p.isAlive) {
+				factions.add(p.faction);
+			}
+		});
+		return factions;
 	}
 
 	removeFromCombat(creature: Creature) {

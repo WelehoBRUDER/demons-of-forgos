@@ -5,11 +5,16 @@ class HotbarManager {
     actionsElement;
     constructor() {
         this.hotbarElement = document.querySelector(".hotbar");
-        combatEvents.on("turnStarted", () => this.create());
-        combatEvents.on("statChanged", () => this.update());
+        combatEvents.on(CombatEventId.TURN_STARTED, () => this.create());
+        combatEvents.on(CombatEventId.STAT_CHANGED, () => this.update());
+        combatEvents.on(CombatEventId.COMBAT_ENDED, () => this.hide());
+    }
+    hide() {
+        this.hotbarElement.style.display = "none";
     }
     create() {
         this.hotbarElement.innerHTML = "";
+        this.hotbarElement.style.display = "flex"; // Show the hotbar when creating it
         const controlledCreature = game.getControlledCreature();
         if (!controlledCreature)
             return;
