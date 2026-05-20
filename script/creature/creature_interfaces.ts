@@ -56,6 +56,7 @@ interface IDynamicCreature extends ICreature {
 	mouth?: number; // optional, for future use when we add mouth style variations
 	uid: string; // Unique identifier for the dynamic creature, used for referencing in the map and editor
 	classes?: CreatureClasses; // Optional class and level information for the creature, which can affect stats and combat
+	name?: string; // Optional name for the creature, can be used in the UI and for flavor
 }
 
 interface INPCCreature extends ICreature {

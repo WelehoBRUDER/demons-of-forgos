@@ -7,6 +7,7 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 	eyes: number;
 	mouth: number;
 	classes: CreatureClasses;
+	name: string = "Player Character";
 
 	constructor(data: IDynamicCreature) {
 		super(data);
@@ -17,6 +18,7 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 		this.eyes = data.eyes || 1;
 		this.mouth = data.mouth || 1;
 		this.baseClass = "DynamicCreature";
+		this.name = data.name || this.name; // Use provided name or default to "Player Character"
 		this.uid = data.uid; // Set the UID from the data, which should be unique for each dynamic creature
 		this.stats = new DynamicCreatureStats(this, data.stats);
 		this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
@@ -41,6 +43,10 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 			mouth: `assets/sprites/player_character/mouth/nose_mouth_${this.mouth}.png`,
 			items: this.inventory.getAllEquippedItems(),
 		};
+	}
+
+	getName(): string {
+		return this.name;
 	}
 
 	getHitDice(): HitDieInfo[] {

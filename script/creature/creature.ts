@@ -404,6 +404,10 @@ class Creature implements ICreature {
 		}
 	}
 
+	getName(): string {
+		return Lang.get(this.id) || this.id; // Fallback to ID if no localized name is found
+	}
+
 	getAggroRange(): number {
 		return 5; // Default aggro range of 5 tiles, can be overridden by specific creature types
 	}

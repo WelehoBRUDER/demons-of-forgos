@@ -352,6 +352,9 @@ class Creature {
             this.isMoving = false; // Clear moving flag when we have reached the end of the path
         }
     }
+    getName() {
+        return Lang.get(this.id) || this.id; // Fallback to ID if no localized name is found
+    }
     getAggroRange() {
         return 5; // Default aggro range of 5 tiles, can be overridden by specific creature types
     }

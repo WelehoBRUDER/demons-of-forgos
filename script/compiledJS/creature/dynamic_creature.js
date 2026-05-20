@@ -8,6 +8,7 @@ class DynamicCreature extends Creature {
     eyes;
     mouth;
     classes;
+    name = "Player Character";
     constructor(data) {
         super(data);
         this._id = DynamicCreature.nextId++; // Assign the current value of nextId to _id, then increment nextId
@@ -17,6 +18,7 @@ class DynamicCreature extends Creature {
         this.eyes = data.eyes || 1;
         this.mouth = data.mouth || 1;
         this.baseClass = "DynamicCreature";
+        this.name = data.name || this.name; // Use provided name or default to "Player Character"
         this.uid = data.uid; // Set the UID from the data, which should be unique for each dynamic creature
         this.stats = new DynamicCreatureStats(this, data.stats);
         this.inventory = new DynamicCreatureInventory(this, data.inventory || { items: [], equipment: {} });
@@ -39,6 +41,9 @@ class DynamicCreature extends Creature {
             mouth: `assets/sprites/player_character/mouth/nose_mouth_${this.mouth}.png`,
             items: this.inventory.getAllEquippedItems(),
         };
+    }
+    getName() {
+        return this.name;
     }
     getHitDice() {
         return this.classes ? this.classes.getHitDice() : [];

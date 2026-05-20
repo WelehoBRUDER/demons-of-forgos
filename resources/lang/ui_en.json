@@ -1,0 +1,7 @@
+{
+	"attack": "Attack",
+	"attack_roll": "Attack Roll",
+	"attack_event_desc": "{source.getName()} attacks {target.getName()} with {weapon.getName()}. {resultText}",
+	"attack_damage_event_desc": "{source.getName()} deals {damage} damage to {target.getName()}.",
+	"creature_died_event_desc": "{creature.getName()} has died!"
+}
