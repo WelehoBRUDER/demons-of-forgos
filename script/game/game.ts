@@ -547,7 +547,6 @@ window.addEventListener("mousedown", (e: MouseEvent) => {
 window.addEventListener("mouseup", (e: MouseEvent) => {
 	game.setMouseHeldDown(false);
 	if (drag.dragging) {
-		console.log("DRAGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
 		drag.releaseElement(e);
 		return;
 	}

@@ -28,6 +28,12 @@ class InitiativeOrderUI {
 				if (ctx.uid === combatManager.activeTurnContext?.uid) {
 					initiativeEntry.classList.add("active");
 				}
+				initiativeEntry.addEventListener("click", (e: MouseEvent) => {
+					if (e.button === 1) {
+						// Middle-click to open creature sheet
+						creature.createSheet();
+					}
+				});
 				initiativeEntry.appendChild(portraitImage.getCanvas());
 				this.initiativeRow.appendChild(initiativeEntry);
 			}

@@ -541,6 +541,7 @@ class Creature implements ICreature {
 
 	createSheet(): void {
 		const sheet = new CreatureSheet(this.uid);
+		windowManager.addWindow(`creature_sheet_${this.uid}`, sheet, 80, 65);
 	}
 }
 

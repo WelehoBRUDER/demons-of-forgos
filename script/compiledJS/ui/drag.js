@@ -56,8 +56,4 @@ class Drag {
     }
 }
 const drag = new Drag();
-const test = document.createElement("div");
-test.classList.add("test");
-document.body.appendChild(test);
-drag.add(test, [], () => console.log("clicked"), () => console.log("released"));
 //# sourceMappingURL=drag.js.map

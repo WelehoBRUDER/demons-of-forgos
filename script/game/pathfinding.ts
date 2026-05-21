@@ -1,3 +1,8 @@
+interface Coordinate {
+	x: number;
+	y: number;
+}
+
 class Pathfinding {
 	constructor() {}
 
@@ -285,6 +290,29 @@ class Pathfinding {
 			}
 		}
 		return null; // No unoccupied tile found within maxDistance
+	}
+
+	line(start: Coordinate, end: Coordinate): Coordinate[] {
+		const points: Coordinate[] = [];
+		const dx = Math.abs(end.x - start.x);
+		const dy = Math.abs(end.y - start.y);
+		const sx = start.x < end.x ? 1 : -1;
+		const sy = start.y < end.y ? 1 : -1;
+		let err = dx - dy;
+		while (true) {
+			points.push({ x: start.x, y: start.y });
+			if (start.x === end.x && start.y === end.y) break;
+			const e2 = 2 * err;
+			if (e2 > -dy) {
+				err -= dy;
+				start.x += sx;
+			}
+			if (e2 < dx) {
+				err += dx;
+				start.y += sy;
+			}
+		}
+		return points;
 	}
 }
 

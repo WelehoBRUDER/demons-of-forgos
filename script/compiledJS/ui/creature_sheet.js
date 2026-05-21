@@ -6,9 +6,11 @@ class CreatureSheet {
         this.creatureUID = creatureUID;
         this.element = document.createElement("div");
         this.element.classList.add("creature-sheet");
-        drag.add(this.element, [], () => this.update());
-        document.body.appendChild(this.element);
         this.update();
+        combatEvents.on(CombatEventId.STAT_CHANGED, this.update.bind(this));
+    }
+    getElement() {
+        return this.element;
     }
     getCreature() {
         return entityManager.getCreatureByUID(this.creatureUID);
@@ -20,27 +22,40 @@ class CreatureSheet {
             return;
         }
         const attributes = creature.stats.getAbilityScores();
+        const mods = creature.stats.getAbilityScoreModifiers();
         const saves = creature.stats.getSaves();
+        const ac = creature.stats.getAC();
+        const attacks = creature.combat.getAttackResults();
+        console.log("Attacks:", attacks);
+        let attacksText = "";
+        attacks.forEach((attack, index) => {
+            const formattedAttack = creature.combat.formatAttackResult(attack);
+            console.log(`Formatted Attack ${index + 1}:`, formattedAttack);
+            attacksText += `${formattedAttack}<br>`;
+        });
         this.element.innerHTML = `
       <h2>${creature.getName()}</h2>
       <p>HP: ${creature.stats.getHP()}/${creature.stats.getMaxHP()}</p>
-      <p>AC: ${creature.stats.getAC()}</p>
+      <p>AC: ${ac.full} / Flat-footed: ${ac.flatFooted} / Touch: ${ac.touch}</p>
+			<h3>Attributes</h3>
       <div class="attributes">
-        <p>STR: ${attributes.strength}</p>
-        <p>DEX: ${attributes.dexterity}</p>
-        <p>CON: ${attributes.constitution}</p>
-        <p>INT: ${attributes.intelligence}</p>
-        <p>WIS: ${attributes.wisdom}</p>
-        <p>CHA: ${attributes.charisma}</p>
+        <p>STR: ${attributes.strength} (${mods.strength >= 0 ? "+" : ""}${mods.strength})</p>
+        <p>DEX: ${attributes.dexterity} (${mods.dexterity >= 0 ? "+" : ""}${mods.dexterity})</p>
+        <p>CON: ${attributes.constitution} (${mods.constitution >= 0 ? "+" : ""}${mods.constitution})</p>
+        <p>INT: ${attributes.intelligence} (${mods.intelligence >= 0 ? "+" : ""}${mods.intelligence})</p>
+        <p>WIS: ${attributes.wisdom} (${mods.wisdom >= 0 ? "+" : ""}${mods.wisdom})</p>
+        <p>CHA: ${attributes.charisma} (${mods.charisma >= 0 ? "+" : ""}${mods.charisma})</p>
       </div>
+			<h3>Saves</h3>
       <div class="saves">
         <p>Fortitude: ${saves.fortitude}</p>
         <p>Reflex: ${saves.reflex}</p>
         <p>Will: ${saves.will}</p>
       </div>
       <p>Feats: ${creature.getFeats().join(", ")}</p>
-      <p>Status Effects: ${creature.statusEffects.join(", ")}</p>
-      
+			<p>BAB: ${creature.combat.getBaseAttackBonus()}</p>
+      <p>Attacks:</p>
+      <p>${attacksText}</p>
     `;
     }
 }

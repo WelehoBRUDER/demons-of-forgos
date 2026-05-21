@@ -251,28 +251,94 @@ main.game {
 	z-index: 10;
 }
 
-.creature-sheet {
+.movable-window {
 	position: absolute;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
 	align-items: center;
-	width: 30rem;
-	height: 40rem;
-	background: rgba(0, 0, 0, 0.8);
+	background: rgb(31, 31, 31);
+	--w: 30rem;
+	--h: 20rem;
+	width: var(--w);
+	height: var(--h);
 	border: 0.2rem solid #fff;
-	top: 0;
-	left: 0;
 	z-index: 20;
 
-	h2 {
-		color: white;
-		font-size: 3rem;
+	.window-top-bar {
+		width: 100%;
+		height: 4rem;
+		background: #222;
+
+		.window-close-button {
+			position: absolute;
+			top: 0.2rem;
+			right: 0.2rem;
+			width: 3rem;
+			height: 3rem;
+			background: #ff4d4d;
+			border-radius: 50%;
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+
+			&::before,
+			&::after {
+				content: "";
+				position: absolute;
+				width: 0.4rem;
+				height: 2rem;
+				background-color: white;
+				transform-origin: center;
+			}
+
+			&::before {
+				transform: rotate(45deg);
+			}
+
+			&::after {
+				transform: rotate(-45deg);
+			}
+		}
 	}
 
-	p {
-		color: white;
-		font-size: 2rem;
-		margin: 0.5rem 0;
+	&.hidden {
+		display: none;
+	}
+
+	.creature-sheet {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		padding: 2rem;
+		box-sizing: border-box;
+		background: rgba(0, 0, 0, 0.8);
+		width: 100%;
+		height: 100%;
+
+		.attributes,
+		.saves {
+			display: flex;
+			gap: 1rem;
+			width: 100%;
+		}
+
+		h2,
+		h3,
+		p {
+			padding: 0;
+			margin: 0;
+		}
+
+		h2 {
+			color: white;
+			font-size: 3rem;
+		}
+
+		p {
+			color: white;
+			font-size: 2rem;
+			margin: 0.5rem 0;
+		}
 	}
 }

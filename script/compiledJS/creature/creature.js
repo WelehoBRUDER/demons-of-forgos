@@ -467,6 +467,7 @@ class Creature {
     }
     createSheet() {
         const sheet = new CreatureSheet(this.uid);
+        windowManager.addWindow(`creature_sheet_${this.uid}`, sheet, 80, 65);
     }
 }
 const creatures = [];
