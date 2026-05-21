@@ -27,11 +27,18 @@ class CreatureCombat {
         const bonusRange = modifierManager.getTotalModifier(AttackBonusType.MELEE_REACH, this.owner, {});
         return weaponRange + bonusRange;
     }
+    getThreatRange() {
+        const ctx = this.owner.inventory.getEquippedWeapons()[0]; // If dual wielding: both weapons will have equal range. If using reach weapon: can't dual wield.
+        return ctx.weapon.getWeaponType() === WeaponType.MELEE ? this.getAttackRange(ctx.weapon) : 0; // Ranged weapons don't threaten, so return 0 for ranged attacks
+    }
     getBaseAttackBonus() {
         return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
     }
-    buildAttack(ctx) {
+    buildAttack(ctx, targetCreature) {
         const weapon = ctx.weapon;
+        if (targetCreature) {
+            ctx.targetCreature = targetCreature;
+        }
         const damageDice = this.handleDamageDieProgression(weapon.getDamage());
         const attackBonus = this.getWeaponAttackBonus(ctx);
         const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
@@ -260,7 +267,7 @@ class CreatureCombat {
         return target !== null && target !== undefined && target.stats.isAlive();
     }
     findNearestHostileWithinRange(range) {
-        const hostiles = entityManager.getCreaturesByFaction(this.owner.stats.getFaction() === Faction.PLAYER ? Faction.HOSTILE : Faction.PLAYER, { map: this.owner.getMap() });
+        const hostiles = entityManager.getCreaturesByFaction(this.owner.stats.getHostileFactions(), { map: this.owner.getMap() });
         if (hostiles.length === 0) {
             return null; // No hostiles to target
         }
@@ -278,17 +285,18 @@ class CreatureCombat {
         return nearestHostile;
     }
     executeAttack(target, ctx) {
-        const attackResult = this.buildAttack(ctx);
+        const attackResult = this.buildAttack(ctx, target);
         const attackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
         console.log(`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${target.stats.getAC().full}`);
+        const randomVariance = DiceRoller.rollBetween(-40, 40); // Add some random variance to the screen position of the floating text to prevent it from stacking perfectly when multiple attacks hit at the same time
         if (attackRollResult.isHit) {
             const damage = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);
             console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
             target.takeDamage(damage);
-            effectManager.addEffect(new CustomFloatingText(`Hit! -${damage}`, target.screenX, target.screenY, 24, "red", 1500, 50));
+            effectManager.addEffect(new CustomFloatingText(`Hit! -${damage}`, target.screenX + randomVariance, target.screenY + randomVariance, 24, "red", 1500, 50));
         }
         else {
-            effectManager.addEffect(new CustomFloatingText("Miss!", target.screenX, target.screenY, 24, "gold", 1500, 50));
+            effectManager.addEffect(new CustomFloatingText("Miss!", target.screenX + randomVariance, target.screenY + randomVariance, 24, "gold", 1500, 50));
             return;
         }
     }

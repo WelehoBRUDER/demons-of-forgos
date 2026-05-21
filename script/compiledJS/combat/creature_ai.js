@@ -8,14 +8,14 @@ class CreatureAI {
         // Placeholder for AI decision-making logic
         // For now, just find nearest hostile creature and move towards it
         let hostiles = [];
-        if (this.owner.stats.getFaction() !== Faction.HOSTILE) {
-            hostiles = entityManager.getCreaturesByFaction(Faction.HOSTILE, { map: this.owner.getMap() });
-        }
-        else {
-            hostiles = entityManager.getCreaturesByFaction(Faction.PLAYER, { map: this.owner.getMap() });
-            hostiles = hostiles.concat(entityManager.getCreaturesByFaction(Faction.NEUTRAL, { map: this.owner.getMap() }));
-            hostiles = hostiles.concat(entityManager.getCreaturesByFaction(Faction.FRIENDLY, { map: this.owner.getMap() }));
-        }
+        hostiles = entityManager.getCreaturesByFaction(this.owner.stats.getHostileFactions(), { map: this.owner.getMap() });
+        // if (this.owner.stats.getFaction() !== Faction.HOSTILE) {
+        // 	hostiles = entityManager.getCreaturesByFaction([Faction.HOSTILE], { map: this.owner.getMap() });
+        // } else {
+        // 	hostiles = entityManager.getCreaturesByFaction(Faction.PLAYER, { map: this.owner.getMap() });
+        // 	hostiles = hostiles.concat(entityManager.getCreaturesByFaction(Faction.NEUTRAL, { map: this.owner.getMap() }));
+        // 	hostiles = hostiles.concat(entityManager.getCreaturesByFaction(Faction.FRIENDLY, { map: this.owner.getMap() }));
+        // }
         if (hostiles.length === 0) {
             return; // No hostiles to target
         }

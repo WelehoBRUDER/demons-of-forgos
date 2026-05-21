@@ -22,6 +22,24 @@ const creatureDefaultModifiers: ModifierProvider = {
 				evaluate: () => creature.stats.getAbilityScoreModifiers().wisdom,
 				type: ModifierType.untyped,
 			},
+			{
+				id: "flanking_bonus",
+				target: AttackBonusType.MELEE,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					if (!ctx.targetCreature) return 0;
+					const threateningCreatures = entityManager.getThreateningCreatures(ctx.targetCreature);
+					console.log(
+						`Calculating flanking bonus for creature ${creature.id}, found ${threateningCreatures.length} threatening creatures:`,
+						threateningCreatures,
+					);
+					if (threateningCreatures.length >= 2) {
+						return 2; // +2 to attack rolls when flanking
+					}
+					return 0;
+				},
+				type: ModifierType.untyped,
+			},
 		];
 	},
 };
@@ -355,8 +373,8 @@ class Creature implements ICreature {
 	combatStartCheck() {
 		if (game.getState() === GameState.COMBAT) return; // Don't trigger combat if we're already in combat
 
-		const playerCharacters: Creature[] = entityManager.getCreaturesByFaction(Faction.PLAYER, { map: this.map });
-		const hostileCreatures: Creature[] = entityManager.getCreaturesByFaction(Faction.HOSTILE, { map: this.map });
+		const playerCharacters: Creature[] = entityManager.getCreaturesByFaction([Faction.PLAYER], { map: this.map });
+		const hostileCreatures: Creature[] = entityManager.getCreaturesByFaction([Faction.HOSTILE], { map: this.map });
 
 		console.log(playerCharacters, hostileCreatures);
 		for (const pc of playerCharacters) {

@@ -75,6 +75,13 @@ class CreatureStats implements ICreatureStats {
 		return this.faction;
 	}
 
+	getHostileFactions(): Faction[] {
+		if (this.faction === Faction.HOSTILE) {
+			return [Faction.PLAYER, Faction.NEUTRAL, Faction.FRIENDLY];
+		}
+		return [Faction.HOSTILE];
+	}
+
 	setFaction(faction: Faction) {
 		this.faction = faction;
 	}

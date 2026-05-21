@@ -29,12 +29,21 @@ class CreatureCombat implements ICreatureCombat {
 		return weaponRange + bonusRange;
 	}
 
+	getThreatRange(): number {
+		const ctx = this.owner.inventory.getEquippedWeapons()[0]; // If dual wielding: both weapons will have equal range. If using reach weapon: can't dual wield.
+		return ctx.weapon.getWeaponType() === WeaponType.MELEE ? this.getAttackRange(ctx.weapon) : 0; // Ranged weapons don't threaten, so return 0 for ranged attacks
+	}
+
 	getBaseAttackBonus(): number {
 		return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
 	}
 
-	buildAttack(ctx: AttackContext): AttackResult {
+	buildAttack(ctx: AttackContext, targetCreature?: Creature): AttackResult {
 		const weapon = ctx.weapon;
+
+		if (targetCreature) {
+			ctx.targetCreature = targetCreature;
+		}
 
 		const damageDice = this.handleDamageDieProgression(weapon.getDamage());
 
@@ -301,10 +310,8 @@ class CreatureCombat implements ICreatureCombat {
 	}
 
 	findNearestHostileWithinRange(range: number): Creature | null {
-		const hostiles = entityManager.getCreaturesByFaction(
-			this.owner.stats.getFaction() === Faction.PLAYER ? Faction.HOSTILE : Faction.PLAYER,
-			{ map: this.owner.getMap() },
-		);
+		const hostiles = entityManager.getCreaturesByFaction(this.owner.stats.getHostileFactions(), { map: this.owner.getMap() });
+
 		if (hostiles.length === 0) {
 			return null; // No hostiles to target
 		}
@@ -323,19 +330,25 @@ class CreatureCombat implements ICreatureCombat {
 	}
 
 	executeAttack(target: Creature, ctx: AttackContext) {
-		const attackResult: AttackResult = this.buildAttack(ctx);
+		const attackResult: AttackResult = this.buildAttack(ctx, target);
 		const attackRollResult: AttackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
 		console.log(
 			`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${target.stats.getAC().full}`,
 		);
 
+		const randomVariance = DiceRoller.rollBetween(-40, 40); // Add some random variance to the screen position of the floating text to prevent it from stacking perfectly when multiple attacks hit at the same time
+
 		if (attackRollResult.isHit) {
 			const damage: number = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);
 			console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
 			target.takeDamage(damage);
-			effectManager.addEffect(new CustomFloatingText(`Hit! -${damage}`, target.screenX, target.screenY, 24, "red", 1500, 50));
+			effectManager.addEffect(
+				new CustomFloatingText(`Hit! -${damage}`, target.screenX + randomVariance, target.screenY + randomVariance, 24, "red", 1500, 50),
+			);
 		} else {
-			effectManager.addEffect(new CustomFloatingText("Miss!", target.screenX, target.screenY, 24, "gold", 1500, 50));
+			effectManager.addEffect(
+				new CustomFloatingText("Miss!", target.screenX + randomVariance, target.screenY + randomVariance, 24, "gold", 1500, 50),
+			);
 			return;
 		}
 	}

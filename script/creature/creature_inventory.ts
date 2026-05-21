@@ -107,8 +107,6 @@ class CreatureInventory {
 
 	getWeaponInSlot(slot: EquipmentSlot): Weapon | null {
 		const item = this.getEquippedItem(slot);
-		console.log(`Checking for weapon in slot ${slot}:`, item);
-		console.log(item instanceof Weapon);
 		if (item instanceof Weapon) {
 			return item;
 		}

@@ -167,6 +167,7 @@ interface AttackContext {
 	heldInTwoHands: boolean;
 	isDualWielding: boolean;
 	offhandIsLight?: boolean;
+	targetCreature?: Creature;
 }
 
 interface AttackResult {

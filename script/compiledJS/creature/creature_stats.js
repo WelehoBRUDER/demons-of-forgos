@@ -66,6 +66,12 @@ class CreatureStats {
     getFaction() {
         return this.faction;
     }
+    getHostileFactions() {
+        if (this.faction === Faction.HOSTILE) {
+            return [Faction.PLAYER, Faction.NEUTRAL, Faction.FRIENDLY];
+        }
+        return [Faction.HOSTILE];
+    }
     setFaction(faction) {
         this.faction = faction;
     }

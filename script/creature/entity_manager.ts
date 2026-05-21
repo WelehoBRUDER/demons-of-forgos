@@ -153,16 +153,33 @@ class EntityManager {
 		return this.creatures.get(uid);
 	}
 
-	getCreaturesByFaction(faction: Faction, options?: { map?: string }): Creature[] {
+	getCreaturesByFaction(factions: Faction[], options?: { map?: string }): Creature[] {
 		const creaturesInFaction: Creature[] = [];
 		for (const creature of this.creatures.values()) {
 			if (options?.map && creature.getMap() !== options.map) continue;
 			//console.log(`Checking creature ${creature.id} with faction ${creature.stats.getFaction()} against requested faction ${faction}`);
-			if (creature.stats.getFaction() === faction) {
+			if (factions.includes(creature.stats.getFaction())) {
 				creaturesInFaction.push(creature);
 			}
 		}
 		return creaturesInFaction;
+	}
+
+	// Finds each creature threatening the target creature (i.e. any creature that has the target within its attack range). This is used for determining opportunity attacks when a creature tries to move away from an adjacent enemy or makes a ranged attack while adjacent to an enemy, as well as flanking.
+	getThreateningCreatures(target: Creature): Creature[] {
+		const threateningCreatures: Creature[] = [];
+		const hostileFactions = target.stats.getHostileFactions();
+		const hostiles = this.getCreaturesByFaction(hostileFactions, { map: target.getMap() });
+		for (const creature of hostiles) {
+			if (creature.getMap() !== target.getMap()) continue; // A creature can't threaten itself or creatures on other maps
+			const threatRange = creature.combat.getThreatRange();
+			if (threatRange <= 0) continue; // If the creature has no melee attack, it can't threaten
+			const distanceToTarget = pathfinder.heuristic(creature.getPosition(), target.getPosition());
+			if (distanceToTarget <= threatRange) {
+				threateningCreatures.push(creature);
+			}
+		}
+		return threateningCreatures;
 	}
 }
 

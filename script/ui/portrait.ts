@@ -21,7 +21,7 @@ class PortraitManager {
 
 	generateAllPortraits() {
 		this.portraitContainer.innerHTML = "";
-		const creatures = entityManager.getCreaturesByFaction(Faction.PLAYER);
+		const creatures = entityManager.getCreaturesByFaction([Faction.PLAYER]);
 		creatures.forEach((creature) => {
 			const portrait = this.generatePortrait(creature);
 			this.portraitContainer.append(portrait.getElement());
