@@ -538,6 +538,10 @@ class Creature implements ICreature {
 			this.isMoving = false; // Clear moving flag when movement is finished
 		}
 	}
+
+	createSheet(): void {
+		const sheet = new CreatureSheet(this.uid);
+	}
 }
 
 const creatures: Creature[] = [];

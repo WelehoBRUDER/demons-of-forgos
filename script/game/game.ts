@@ -361,9 +361,13 @@ class Game {
 	}
 
 	updateMousePosition(e: MouseEvent) {
-		if (!(e.target instanceof HTMLCanvasElement)) return;
 		this.mouseX = e.clientX;
 		this.mouseY = e.clientY;
+		if (drag.element) {
+			drag.dragElement(e);
+			return;
+		}
+		if (!(e.target instanceof HTMLCanvasElement)) return;
 		const worldPos = this.getWorldMousePosition();
 		if (mapRenderer.highlightHasChanged(worldPos)) {
 			mapRenderer.checkMouseHover(worldPos);
@@ -473,6 +477,16 @@ class Game {
 		}
 	}
 
+	openCreatureSheet() {
+		const creature = this.getControlledCreature();
+		const goalTile = mapRenderer.getHighlightedTile();
+		const targetCreature = entityManager.getCreaturesBoundingWithPosition(creature.getMap(), goalTile?.x ?? 0, goalTile?.y ?? 0)[0];
+		console.log("Opening creature sheet for creature at highlighted tile:", targetCreature);
+		if (targetCreature) {
+			targetCreature.createSheet();
+		}
+	}
+
 	clamp(value: number, min: number, max: number): number {
 		return Math.max(min, Math.min(max, value));
 	}
@@ -520,6 +534,10 @@ window.addEventListener("mousemove", (e: MouseEvent) => {
 });
 
 window.addEventListener("mousedown", (e: MouseEvent) => {
+	if (e.button !== 0) return; // Only respond to left-clicks
+	if (drag.element) {
+		return;
+	}
 	game.setMouseHeldDown(true);
 	if (game.isInEditorMode()) editor.handleClick();
 	if (!(e.target instanceof HTMLCanvasElement)) return;
@@ -528,9 +546,19 @@ window.addEventListener("mousedown", (e: MouseEvent) => {
 
 window.addEventListener("mouseup", (e: MouseEvent) => {
 	game.setMouseHeldDown(false);
+	if (drag.dragging) {
+		console.log("DRAGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+		drag.releaseElement(e);
+		return;
+	}
 	if (!(e.target instanceof HTMLCanvasElement)) return;
 	game.moveControlledCreature();
-	game.attackControlledCreature();
+	console.log(e.button);
+	if (e.button === 1) {
+		game.openCreatureSheet();
+	} else {
+		game.attackControlledCreature();
+	}
 	game.selectTile();
 	mapRenderer.clearPathPrediction();
 	mapRenderer.renderTileHighlight();

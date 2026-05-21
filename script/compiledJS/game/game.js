@@ -319,10 +319,14 @@ class Game {
 			`;
     }
     updateMousePosition(e) {
-        if (!(e.target instanceof HTMLCanvasElement))
-            return;
         this.mouseX = e.clientX;
         this.mouseY = e.clientY;
+        if (drag.element) {
+            drag.dragElement(e);
+            return;
+        }
+        if (!(e.target instanceof HTMLCanvasElement))
+            return;
         const worldPos = this.getWorldMousePosition();
         if (mapRenderer.highlightHasChanged(worldPos)) {
             mapRenderer.checkMouseHover(worldPos);
@@ -424,6 +428,15 @@ class Game {
             creature.combat.attack(targetCreature, goalTile);
         }
     }
+    openCreatureSheet() {
+        const creature = this.getControlledCreature();
+        const goalTile = mapRenderer.getHighlightedTile();
+        const targetCreature = entityManager.getCreaturesBoundingWithPosition(creature.getMap(), goalTile?.x ?? 0, goalTile?.y ?? 0)[0];
+        console.log("Opening creature sheet for creature at highlighted tile:", targetCreature);
+        if (targetCreature) {
+            targetCreature.createSheet();
+        }
+    }
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -466,6 +479,11 @@ window.addEventListener("mousemove", (e) => {
     game.updateMousePosition(e);
 });
 window.addEventListener("mousedown", (e) => {
+    if (e.button !== 0)
+        return; // Only respond to left-clicks
+    if (drag.element) {
+        return;
+    }
     game.setMouseHeldDown(true);
     if (game.isInEditorMode())
         editor.handleClick();
@@ -475,10 +493,21 @@ window.addEventListener("mousedown", (e) => {
 });
 window.addEventListener("mouseup", (e) => {
     game.setMouseHeldDown(false);
+    if (drag.dragging) {
+        console.log("DRAGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+        drag.releaseElement(e);
+        return;
+    }
     if (!(e.target instanceof HTMLCanvasElement))
         return;
     game.moveControlledCreature();
-    game.attackControlledCreature();
+    console.log(e.button);
+    if (e.button === 1) {
+        game.openCreatureSheet();
+    }
+    else {
+        game.attackControlledCreature();
+    }
     game.selectTile();
     mapRenderer.clearPathPrediction();
     mapRenderer.renderTileHighlight();

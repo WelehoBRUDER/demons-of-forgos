@@ -465,6 +465,9 @@ class Creature {
             this.isMoving = false; // Clear moving flag when movement is finished
         }
     }
+    createSheet() {
+        const sheet = new CreatureSheet(this.uid);
+    }
 }
 const creatures = [];
 //# sourceMappingURL=creature.js.map
