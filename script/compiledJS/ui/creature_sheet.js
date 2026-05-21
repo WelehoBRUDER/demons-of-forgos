@@ -26,17 +26,30 @@ class CreatureSheet {
         const saves = creature.stats.getSaves();
         const ac = creature.stats.getAC();
         const attacks = creature.combat.getAttackResults();
-        console.log("Attacks:", attacks);
+        const initiativeBonus = creature.combat.getInitiativeBonus();
+        const feats = creature.getFeats();
         let attacksText = "";
         attacks.forEach((attack, index) => {
             const formattedAttack = creature.combat.formatAttackResult(attack);
-            console.log(`Formatted Attack ${index + 1}:`, formattedAttack);
             attacksText += `${formattedAttack}<br>`;
         });
+        let featsText = "";
+        for (const featInstance of feats) {
+            const featId = featInstance.feat;
+            const params = featInstance.params;
+            featsText += `${featId}`;
+            if (params) {
+                if (params.weapon) {
+                    featsText += `: ${params.weapon}`;
+                }
+            }
+            featsText += `<br>`;
+        }
         this.element.innerHTML = `
       <h2>${creature.getName()}</h2>
       <p>HP: ${creature.stats.getHP()}/${creature.stats.getMaxHP()}</p>
       <p>AC: ${ac.full} / Flat-footed: ${ac.flatFooted} / Touch: ${ac.touch}</p>
+			<p>Initiative: ${initiativeBonus >= 0 ? "+" : ""}${initiativeBonus}</p>
 			<h3>Attributes</h3>
       <div class="attributes">
         <p>STR: ${attributes.strength} (${mods.strength >= 0 ? "+" : ""}${mods.strength})</p>
@@ -52,7 +65,7 @@ class CreatureSheet {
         <p>Reflex: ${saves.reflex}</p>
         <p>Will: ${saves.will}</p>
       </div>
-      <p>Feats: ${creature.getFeats().join(", ")}</p>
+      <p>Feats: ${featsText}</p>
 			<p>BAB: ${creature.combat.getBaseAttackBonus()}</p>
       <p>Attacks:</p>
       <p>${attacksText}</p>

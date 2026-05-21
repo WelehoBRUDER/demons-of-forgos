@@ -1,15 +1,29 @@
 interface FeatData {
 	id: string;
+	requiredParams?: [keyof FeatParams];
 	modifiers: Modifier[];
+}
+
+interface FeatParams {
+	weapon?: string;
+	armor?: string;
+	skill?: string;
+}
+
+interface FeatInstance {
+	feat: string;
+	params?: FeatParams;
 }
 
 class Feat implements ModifierProvider {
 	private id: string;
 	private modifiers: Modifier[];
+	private requiredParams: [keyof FeatParams] | undefined;
 
 	constructor(data: FeatData) {
 		this.id = data.id;
 		this.modifiers = data.modifiers;
+		this.requiredParams = data.requiredParams;
 	}
 
 	getId(): string {
@@ -18,6 +32,10 @@ class Feat implements ModifierProvider {
 
 	getModifiers(): Modifier[] {
 		return this.modifiers;
+	}
+
+	getRequiredParams(): [keyof FeatParams] | undefined {
+		return this.requiredParams;
 	}
 }
 

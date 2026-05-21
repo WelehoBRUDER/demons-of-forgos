@@ -63,7 +63,7 @@ class Creature implements ICreature {
 
 	initiative: number = -Infinity; // Initiative score for turn order in combat, can be set based on stats or randomly
 	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
-	feats: string[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
+	feats: FeatInstance[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
 	inventory: CreatureInventory; // Inventory to hold items the creature is carrying, separate from equipped items
 	combat: CreatureCombat; // Combat-related data and methods for the creature
 	ai: CreatureAI; // AI-related data and methods for the creature
@@ -108,24 +108,29 @@ class Creature implements ICreature {
 		this.setPosition(data.x, data.y);
 	}
 
-	addFeat(featId: string) {
-		this.feats.push(featId);
+	addFeat(featId: string, params?: FeatParams) {
+		this.feats.push({ feat: featId, params });
 		this.providersNeedUpdate = true; // Mark providers as needing update since feats can change modifiers
 	}
 
-	getFeats(): string[] {
+	getFeats(): FeatInstance[] {
 		return this.feats;
 	}
 
 	getFeatProviders(): ModifierProvider[] {
 		const providers: ModifierProvider[] = [];
-		for (const featId of this.feats) {
-			const feat = featManager.getFeat(featId);
+		for (const featInstance of this.feats) {
+			const feat = featManager.getFeat(featInstance.feat);
 			if (feat) {
 				providers.push(feat);
 			}
 		}
 		return providers;
+	}
+
+	getFeatParams(featId: string): FeatParams | undefined {
+		const featInstance = this.feats.find((f) => f.feat === featId);
+		return featInstance ? featInstance.params : undefined;
 	}
 
 	getUID(): string {

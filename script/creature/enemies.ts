@@ -37,7 +37,7 @@ entityManager.addEnemyTemplate(
 			offhand: itemManager.getItem("scrap_shield")! as Armor,
 			armor: itemManager.getItem("leather_armor")! as Armor,
 		},
-		feats: ["improved_initiative"],
+		feats: [{ feat: "improved_initiative" }],
 		bab: 1,
 	}),
 );
@@ -75,7 +75,7 @@ entityManager.addEnemyTemplate(
 				type: ModifierType.armor,
 			},
 		],
-		feats: ["toughness"],
+		feats: [{ feat: "toughness" }],
 		bab: 3,
 	}),
 );
@@ -113,7 +113,7 @@ entityManager.addEnemyTemplate(
 				type: ModifierType.naturalArmor,
 			},
 		],
-		feats: ["improved_initiative"],
+		feats: [{ feat: "improved_initiative" }],
 		bab: 0,
 	}),
 );

@@ -113,4 +113,22 @@ featManager.addFeat(new Feat({
         },
     ],
 }));
+featManager.addFeat(new Feat({
+    id: "weapon_focus",
+    requiredParams: ["weapon"],
+    modifiers: [
+        {
+            id: "weapon_focus_bonus",
+            target: AttackBonusType.WEAPON,
+            operation: Operation.add,
+            evaluate: (creature, ctx) => {
+                if (ctx.weapon && ctx.weapon.getId() === creature.getFeatParams("weapon_focus")?.weapon) {
+                    return 1;
+                }
+                return 0;
+            },
+            type: ModifierType.untyped,
+        },
+    ],
+}));
 //# sourceMappingURL=feats.js.map

@@ -5,7 +5,7 @@ interface ICreature {
 	map?: string;
 	uid?: string;
 	initiative?: number;
-	feats?: string[];
+	feats?: FeatInstance[];
 	bab?: number;
 	stats?: ICreatureStats;
 	inventory?: CreatureInventory;

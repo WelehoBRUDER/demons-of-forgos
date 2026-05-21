@@ -10,6 +10,7 @@
 body {
 	margin: 0;
 	padding: 0;
+	overflow: hidden;
 }
 
 main.game {
@@ -20,6 +21,7 @@ main.game {
 	height: 100vh;
 	padding: 0;
 	margin: 0;
+	overflow: hidden;
 
 	.paused {
 		position: absolute;
@@ -333,6 +335,11 @@ main.game {
 		h2 {
 			color: white;
 			font-size: 3rem;
+		}
+
+		h3 {
+			color: white;
+			font-size: 2.4rem;
 		}
 
 		p {

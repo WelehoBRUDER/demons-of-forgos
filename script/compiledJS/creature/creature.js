@@ -99,8 +99,8 @@ class Creature {
         this.setUID(data.u);
         this.setPosition(data.x, data.y);
     }
-    addFeat(featId) {
-        this.feats.push(featId);
+    addFeat(featId, params) {
+        this.feats.push({ feat: featId, params });
         this.providersNeedUpdate = true; // Mark providers as needing update since feats can change modifiers
     }
     getFeats() {
@@ -108,13 +108,17 @@ class Creature {
     }
     getFeatProviders() {
         const providers = [];
-        for (const featId of this.feats) {
-            const feat = featManager.getFeat(featId);
+        for (const featInstance of this.feats) {
+            const feat = featManager.getFeat(featInstance.feat);
             if (feat) {
                 providers.push(feat);
             }
         }
         return providers;
+    }
+    getFeatParams(featId) {
+        const featInstance = this.feats.find((f) => f.feat === featId);
+        return featInstance ? featInstance.params : undefined;
     }
     getUID() {
         return this.uid;

@@ -2,15 +2,20 @@
 class Feat {
     id;
     modifiers;
+    requiredParams;
     constructor(data) {
         this.id = data.id;
         this.modifiers = data.modifiers;
+        this.requiredParams = data.requiredParams;
     }
     getId() {
         return this.id;
     }
     getModifiers() {
         return this.modifiers;
+    }
+    getRequiredParams() {
+        return this.requiredParams;
     }
 }
 class FeatManager {

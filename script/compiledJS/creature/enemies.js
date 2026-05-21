@@ -37,7 +37,7 @@ entityManager.addEnemyTemplate(new NPCCreature({
         offhand: itemManager.getItem("scrap_shield"),
         armor: itemManager.getItem("leather_armor"),
     },
-    feats: ["improved_initiative"],
+    feats: [{ feat: "improved_initiative" }],
     bab: 1,
 }));
 entityManager.addEnemyTemplate(new NPCCreature({
@@ -73,7 +73,7 @@ entityManager.addEnemyTemplate(new NPCCreature({
             type: ModifierType.armor,
         },
     ],
-    feats: ["toughness"],
+    feats: [{ feat: "toughness" }],
     bab: 3,
 }));
 entityManager.addEnemyTemplate(new NPCCreature({
@@ -109,7 +109,7 @@ entityManager.addEnemyTemplate(new NPCCreature({
             type: ModifierType.naturalArmor,
         },
     ],
-    feats: ["improved_initiative"],
+    feats: [{ feat: "improved_initiative" }],
     bab: 0,
 }));
 //# sourceMappingURL=enemies.js.map

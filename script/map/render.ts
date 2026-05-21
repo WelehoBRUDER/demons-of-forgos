@@ -579,7 +579,7 @@ const devInit = () => {
 		species: "human",
 		bodyType: BodyType.A,
 		uid: "player_character:001", // Unique identifier for the player character
-		feats: ["two_weapon_fighting"],
+		feats: [{ feat: "two_weapon_fighting" }, { feat: "weapon_focus", params: { weapon: "shortsword" } }],
 		stats: {
 			abilityScores: {
 				strength: 16,
