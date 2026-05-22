@@ -109,5 +109,9 @@ var AttackBonusType;
     AttackBonusType["MELEE_DAMAGE"] = "melee_damage";
     AttackBonusType["RANGED_DAMAGE"] = "ranged_damage";
     AttackBonusType["WEAPON_DAMAGE"] = "weapon_damage";
+    AttackBonusType["MELEE_PENALTY_ATTACKER"] = "melee_penalty_attacker";
+    AttackBonusType["RANGED_PENALTY_ATTACKER"] = "ranged_penalty_attacker";
+    AttackBonusType["WEAPON_PENALTY_ATTACKER"] = "weapon_penalty_attacker";
+    AttackBonusType["ATTACK_PENALTY_ATTACKER"] = "attack_penalty_attacker";
 })(AttackBonusType || (AttackBonusType = {}));
 //# sourceMappingURL=creature_interfaces.js.map

@@ -28,12 +28,27 @@ const creatureDefaultModifiers = {
                 target: AttackBonusType.MELEE,
                 operation: Operation.add,
                 evaluate: (creature, ctx) => {
-                    if (!ctx.targetCreature)
+                    if (!ctx.targetCreature || !ctx.canBeFlanked)
                         return 0;
                     const threateningCreatures = entityManager.getThreateningCreatures(ctx.targetCreature);
-                    console.log(`Calculating flanking bonus for creature ${creature.id}, found ${threateningCreatures.length} threatening creatures:`, threateningCreatures);
                     if (threateningCreatures.length >= 2) {
                         return 2; // +2 to attack rolls when flanking
+                    }
+                    return 0;
+                },
+                type: ModifierType.untyped,
+            },
+            {
+                id: "dual_wielding_penalty",
+                target: AttackBonusType.MELEE,
+                operation: Operation.add,
+                evaluate: (creature, ctx) => {
+                    if (ctx.isDualWielding) {
+                        let penalty = ctx.isPrimary ? -6 : -10;
+                        if (ctx.offhandIsLight) {
+                            penalty += 2; // Reduce off-hand penalty by 2 if the off-hand weapon is light
+                        }
+                        return penalty;
                     }
                     return 0;
                 },

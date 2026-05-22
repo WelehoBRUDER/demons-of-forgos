@@ -13,6 +13,10 @@ body {
 	overflow: hidden;
 }
 
+.drag-area {
+	cursor: move;
+}
+
 main.game {
 	display: flex;
 	justify-content: center;

@@ -99,6 +99,27 @@ class ModifierManager {
 		}
 		return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 0);
 	}
+
+	getTotalModifierFromMultipleSources(
+		target: string[],
+		creature: Creature,
+		context: any,
+		options?: { groupedByType?: boolean },
+	): number | { [key in ModifierType]?: number } {
+		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => target.includes(mod.target));
+		if (options?.groupedByType) {
+			const grouped: GroupedModifiers = {};
+			for (const mod of mods) {
+				if (!grouped[mod.type]) {
+					grouped[mod.type] = mod.evaluate(creature, context);
+				} else {
+					grouped[mod.type]! += mod.evaluate(creature, context);
+				}
+			}
+			return grouped;
+		}
+		return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 0);
+	}
 }
 
 const modifierManager = new ModifierManager();

@@ -10,6 +10,7 @@ class MovableWindow {
         const topBar = document.createElement("div");
         const closeButton = document.createElement("button");
         topBar.classList.add("window-top-bar");
+        topBar.classList.add("drag-area");
         closeButton.classList.add("window-close-button");
         closeButton.textContent = "X";
         closeButton.addEventListener("click", () => this.hide());

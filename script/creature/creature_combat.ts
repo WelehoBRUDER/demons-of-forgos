@@ -43,6 +43,7 @@ class CreatureCombat implements ICreatureCombat {
 
 		if (targetCreature) {
 			ctx.targetCreature = targetCreature;
+			ctx.canBeFlanked = targetCreature.combat.canBeFlanked();
 		}
 
 		const damageDice = this.handleDamageDieProgression(weapon.getDamage());
@@ -93,34 +94,39 @@ class CreatureCombat implements ICreatureCombat {
 		const weapon = ctx.weapon;
 		const weaponType = weapon.getWeaponType();
 		const attackType = weaponType === WeaponType.MELEE ? AttackBonusType.MELEE : AttackBonusType.RANGED;
+		const abilityModifiers = this.owner.stats.getAbilityScoreModifiers();
 
 		// BAB
 		const baseAttackBonus = this.getBaseAttackBonus();
 		// Ability modifier
 		const abilityModifier = weapon.isFinesse()
-			? Math.max(this.owner.stats.getAbilityScoreModifiers().strength, this.owner.stats.getAbilityScoreModifiers().dexterity)
-			: this.owner.stats.getAbilityScoreModifiers().strength;
+			? Math.max(abilityModifiers.strength, abilityModifiers.dexterity)
+			: abilityModifiers.strength;
 
-		let penalty = 0;
-		if (ctx.isDualWielding) {
-			penalty = ctx.isPrimary ? -6 : -10;
-			if (ctx.offhandIsLight) {
-				penalty += 2; // Light off-hand weapons reduce the dual-wielding penalty by 2
-			}
-		}
+		const penalties: string[] = [
+			attackType + "_PENALTY_ATTACKER",
+			AttackBonusType.ATTACK_PENALTY_ATTACKER,
+			AttackBonusType.WEAPON_PENALTY_ATTACKER,
+		];
+		const penaltyFromTarget: number = ctx.targetCreature
+			? (modifierManager.getTotalModifierFromMultipleSources(penalties, ctx.targetCreature, ctx) as number)
+			: 0;
 
 		// Modifiers from feats, equipment, buffs, etc.
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
 		const weaponBonuses: number = modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx) as number;
 
+		console.log(
+			"WEAPON BONUSES",
+			modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx, { groupedByType: true }) as number,
+		);
 		console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
 		console.log("IS DUAL WIELDING:", ctx.isDualWielding);
-		console.log(
-			`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}, Penalty: ${penalty}`,
-		);
+		console.log(`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}`);
 		console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
 		console.log(`Weapon Bonuses: ${weaponBonuses}`);
-		return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penalty;
+		console.log(`Penalty from Target: ${penaltyFromTarget}`);
+		return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penaltyFromTarget;
 	}
 
 	calculateBaseDamage(dice: DamageDieInfo, ctx: AttackContext): number[] {
@@ -204,6 +210,10 @@ class CreatureCombat implements ICreatureCombat {
 		let base: number = this.owner.stats.getAbilityScoreModifiers().dexterity;
 		const bonuses: number = modifierManager.getTotalModifier("initiative", this.owner, {}) as number;
 		return base + bonuses;
+	}
+
+	canBeFlanked(): boolean {
+		return !modifierManager.getTotalModifier("cannotBeFlanked", this.owner, {}) && this.owner.stats.isAlive();
 	}
 
 	rollInitiative(): number {

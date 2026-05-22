@@ -168,6 +168,7 @@ interface AttackContext {
 	isDualWielding: boolean;
 	offhandIsLight?: boolean;
 	targetCreature?: Creature;
+	canBeFlanked?: boolean;
 }
 
 interface AttackResult {
@@ -292,4 +293,8 @@ enum AttackBonusType {
 	MELEE_DAMAGE = "melee_damage",
 	RANGED_DAMAGE = "ranged_damage",
 	WEAPON_DAMAGE = "weapon_damage",
+	MELEE_PENALTY_ATTACKER = "melee_penalty_attacker",
+	RANGED_PENALTY_ATTACKER = "ranged_penalty_attacker",
+	WEAPON_PENALTY_ATTACKER = "weapon_penalty_attacker",
+	ATTACK_PENALTY_ATTACKER = "attack_penalty_attacker",
 }

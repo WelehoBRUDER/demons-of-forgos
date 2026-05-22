@@ -38,6 +38,7 @@ class CreatureCombat {
         const weapon = ctx.weapon;
         if (targetCreature) {
             ctx.targetCreature = targetCreature;
+            ctx.canBeFlanked = targetCreature.combat.canBeFlanked();
         }
         const damageDice = this.handleDamageDieProgression(weapon.getDamage());
         const attackBonus = this.getWeaponAttackBonus(ctx);
@@ -76,28 +77,32 @@ class CreatureCombat {
         const weapon = ctx.weapon;
         const weaponType = weapon.getWeaponType();
         const attackType = weaponType === WeaponType.MELEE ? AttackBonusType.MELEE : AttackBonusType.RANGED;
+        const abilityModifiers = this.owner.stats.getAbilityScoreModifiers();
         // BAB
         const baseAttackBonus = this.getBaseAttackBonus();
         // Ability modifier
         const abilityModifier = weapon.isFinesse()
-            ? Math.max(this.owner.stats.getAbilityScoreModifiers().strength, this.owner.stats.getAbilityScoreModifiers().dexterity)
-            : this.owner.stats.getAbilityScoreModifiers().strength;
-        let penalty = 0;
-        if (ctx.isDualWielding) {
-            penalty = ctx.isPrimary ? -6 : -10;
-            if (ctx.offhandIsLight) {
-                penalty += 2; // Light off-hand weapons reduce the dual-wielding penalty by 2
-            }
-        }
+            ? Math.max(abilityModifiers.strength, abilityModifiers.dexterity)
+            : abilityModifiers.strength;
+        const penalties = [
+            attackType + "_PENALTY_ATTACKER",
+            AttackBonusType.ATTACK_PENALTY_ATTACKER,
+            AttackBonusType.WEAPON_PENALTY_ATTACKER,
+        ];
+        const penaltyFromTarget = ctx.targetCreature
+            ? modifierManager.getTotalModifierFromMultipleSources(penalties, ctx.targetCreature, ctx)
+            : 0;
         // Modifiers from feats, equipment, buffs, etc.
         const modBonuses = modifierManager.getTotalModifier(attackType, this.owner, ctx);
         const weaponBonuses = modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx);
+        console.log("WEAPON BONUSES", modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx, { groupedByType: true }));
         console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
         console.log("IS DUAL WIELDING:", ctx.isDualWielding);
-        console.log(`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}, Penalty: ${penalty}`);
+        console.log(`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}`);
         console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
         console.log(`Weapon Bonuses: ${weaponBonuses}`);
-        return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penalty;
+        console.log(`Penalty from Target: ${penaltyFromTarget}`);
+        return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penaltyFromTarget;
     }
     calculateBaseDamage(dice, ctx) {
         const minDamage = dice.count; // Minimum damage is the number of dice (e.g. 2d6 has a minimum of 2)
@@ -170,6 +175,9 @@ class CreatureCombat {
         let base = this.owner.stats.getAbilityScoreModifiers().dexterity;
         const bonuses = modifierManager.getTotalModifier("initiative", this.owner, {});
         return base + bonuses;
+    }
+    canBeFlanked() {
+        return !modifierManager.getTotalModifier("cannotBeFlanked", this.owner, {}) && this.owner.stats.isAlive();
     }
     rollInitiative() {
         const roll = DiceRoller.roll(Dice.d20)[0];

@@ -9,16 +9,18 @@ class Drag {
     element = null;
     snapContainers = [];
     add(elem, snapContainers, onClick, onRelease) {
-        const dragTimeout = snapContainers ? 200 : 0;
+        const dragTimeout = snapContainers?.length > 0 ? 200 : 0;
+        console.log("Adding drag to element:", elem, "with snap containers:", snapContainers, "drag timeout:", dragTimeout);
         this.snapContainers = snapContainers || [];
-        elem.addEventListener("mousedown", (e) => {
+        const dragArea = elem.querySelector(".drag-area") ? elem.querySelector(".drag-area") : elem;
+        dragArea.addEventListener("mousedown", (e) => {
             this.click = true;
             clearTimeout(this.mouseHeldTimeout);
             this.element = elem;
             this.snapContainers = snapContainers || [];
             this.mouseHeldTimeout = setTimeout(() => this.dragMouse(), dragTimeout);
         });
-        elem.addEventListener("mouseup", () => {
+        dragArea.addEventListener("mouseup", () => {
             clearTimeout(this.mouseHeldTimeout);
             this.element = null;
         });
