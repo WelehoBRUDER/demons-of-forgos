@@ -245,6 +245,7 @@ class CreatureCombat implements ICreatureCombat {
 		}
 		if (this.movement < 0 && this.actions[Action.STANDARD] > 0) {
 			this.movement += this.owner.getMoveSpeed();
+			this.owner.statusEffects.addStatusEffect("dashing", StandardDuration.ROUND);
 			this.spendAction(Action.STANDARD); // The creature must dash if it tries to move beyond its movement speed, which means it cannot take a standard action after moving its full movement
 		}
 		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
@@ -280,42 +281,40 @@ class CreatureCombat implements ICreatureCombat {
 
 	async attack(target: Creature, tile: { x: number; y: number }) {
 		if (this.actions[Action.FULL_ROUND] > 0) {
+			// Full-round action attack (iterative attacks based on BAB, dual wielding off-hand attacks, etc.)
 			this.spendAction(Action.FULL_ROUND);
 			const attackIterations = this.getAttackIterations();
 
-			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY]; i++) {
-				if (!target) break;
-				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
-				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
-				if (!this.checkIfAttackTargetValid(target)) {
-					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-					tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
-				}
-			}
+			// First perform any primary attacks that benefit from full BAB
+			await this.performAttackSequence(0, attackIterations[AttackIteration.PRIMARY_FULL], target, tile, AttackIteration.PRIMARY_FULL);
 
-			for (let i = 0; i < attackIterations[AttackIteration.PRIMARY_FULL]; i++) {
-				if (!target) break;
-				const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
-				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
-				if (!this.checkIfAttackTargetValid(target)) {
-					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-					tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
-				}
-			}
+			// Second regular primary attack iterations (full, -5, -10 etc. attacks that don't benefit from full BAB but are still performed as part of a full attack)
+			await this.performAttackSequence(0, attackIterations[AttackIteration.PRIMARY], target, tile, AttackIteration.PRIMARY);
 
-			for (let i = 0; i < attackIterations[AttackIteration.OFFHAND]; i++) {
-				if (!target) break;
-				const ctx = this.owner.inventory.getEquippedWeapons()[1]; // Assuming the second equipped weapon is the off-hand weapon, this can be improved by checking which weapon is actually being used for the attack
-				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
-				if (!this.checkIfAttackTargetValid(target)) {
-					target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-					tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
-				}
-			}
+			// And third, perform off-hand attacks if dual wielding
+			await this.performAttackSequence(1, attackIterations[AttackIteration.OFFHAND], target, tile, AttackIteration.OFFHAND);
 		} else if (this.actions[Action.STANDARD] > 0) {
+			// Standard action attack (only one attack, no iterative attacks)
 			this.spendAction(Action.STANDARD);
-			const ctx = this.owner.inventory.getEquippedWeapons()[0]; // Assuming the first equipped weapon is the primary weapon, this can be improved by checking which weapon is actually being used for the attack
+			this.performAttackSequence(0, 1, target, tile, AttackIteration.PRIMARY); // For a standard action attack, only perform one primary attack.
+		}
+	}
+
+	async performAttackSequence(
+		weaponIndex: number,
+		iterations: number,
+		target: Creature,
+		tile: { x: number; y: number },
+		iterationType: AttackIteration,
+	) {
+		const ctx = this.owner.inventory.getEquippedWeapons()[weaponIndex];
+		for (let i = 0; i < iterations; i++) {
+			if (!target) break;
 			await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+			if (!this.checkIfAttackTargetValid(target)) {
+				target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
+				tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
+			}
 		}
 	}
 

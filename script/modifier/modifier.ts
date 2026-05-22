@@ -85,7 +85,9 @@ class ModifierManager {
 		context: any,
 		options?: { groupedByType?: boolean },
 	): number | { [key in ModifierType]?: number } {
-		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => mod.target === target);
+		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => {
+			return mod.target === target && mod.operation === Operation.add;
+		});
 		if (options?.groupedByType) {
 			const grouped: GroupedModifiers = {};
 			for (const mod of mods) {
@@ -100,13 +102,22 @@ class ModifierManager {
 		return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 0);
 	}
 
+	getMultiplicationModifier(target: string, creature: Creature, context: any): number {
+		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => {
+			return mod.target === target && mod.operation === Operation.multiply;
+		});
+		return mods.reduce((total, mod) => total + mod.evaluate(creature, context), 1);
+	}
+
 	getTotalModifierFromMultipleSources(
 		target: string[],
 		creature: Creature,
 		context: any,
 		options?: { groupedByType?: boolean },
 	): number | { [key in ModifierType]?: number } {
-		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => target.includes(mod.target));
+		const mods: Modifier[] = this.collectModifiers(creature, context).filter((mod) => {
+			return target.includes(mod.target) && mod.operation === Operation.add;
+		});
 		if (options?.groupedByType) {
 			const grouped: GroupedModifiers = {};
 			for (const mod of mods) {

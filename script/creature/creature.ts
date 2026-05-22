@@ -27,6 +27,7 @@ const creatureDefaultModifiers: ModifierProvider = {
 				target: AttackBonusType.MELEE,
 				operation: Operation.add,
 				evaluate: (creature: Creature, ctx: any) => {
+					// Owlcat style flanking: adjacency is all that is needed.
 					if (!ctx.targetCreature || !ctx.canBeFlanked) return 0;
 					const threateningCreatures = entityManager.getThreateningCreatures(ctx.targetCreature);
 					if (threateningCreatures.length >= 2) {
@@ -92,12 +93,12 @@ class Creature implements ICreature {
 	bab: number = 0; // Base Attack Bonus, can be calculated based on class levels for player characters or set as a static value for enemies
 
 	initiative: number = -Infinity; // Initiative score for turn order in combat, can be set based on stats or randomly
-	statusEffects: string[] = []; // List of status effect identifiers currently affecting the creature, such as "poisoned", "stunned", etc.
 	feats: FeatInstance[] = []; // List of feat identifiers that grant special abilities or modifiers to the creature
 	inventory: CreatureInventory; // Inventory to hold items the creature is carrying, separate from equipped items
 	combat: CreatureCombat; // Combat-related data and methods for the creature
 	ai: CreatureAI; // AI-related data and methods for the creature
 	turn: CreatureTurnController; // Turn controller to manage the creature's turn in combat
+	statusEffects: CreatureStatusEffectManager; // Manager for handling status effects on the creature
 
 	// Animation states
 	isMoving: boolean = false; // Flag to indicate if the creature is currently moving
@@ -121,6 +122,7 @@ class Creature implements ICreature {
 		this.bab = data.bab ?? 0;
 		this.ai = new CreatureAI(this); // Initialize AI, can be populated with data.ai if provided
 		this.turn = new CreatureTurnController(this); // Initialize turn controller, can be populated with data.turn if provided
+		this.statusEffects = new CreatureStatusEffectManager(this); // Initialize status effect manager
 
 		//this.setHP(data.hp ?? this.getMaxHP()); // Set HP to provided value or max HP if not provided
 	}
@@ -210,6 +212,7 @@ class Creature implements ICreature {
 		updatedProviders.push(...this.inventory.getAllEquippedItems().map((eq) => eq.item));
 		updatedProviders.push(this.stats.getSizeProvider());
 		updatedProviders.push(...this.getFeatProviders());
+		updatedProviders.push(...this.statusEffects.getProviders()); // Status effects can provide modifiers, so we need to include the status effect manager as a provider
 
 		if (this instanceof DynamicCreature) {
 			updatedProviders.push(dynamicCreatureDefaultModifiers);
@@ -358,8 +361,9 @@ class Creature implements ICreature {
 	}
 
 	getMoveSpeed(): number {
-		const bonusSpeed = modifierManager.getTotalModifier("movementSpeed", this, {}) as number;
-		return 6 + bonusSpeed; // Default movement is 6 tiles per action.
+		const bonusSpeed = modifierManager.getTotalModifier(CreatureModifiers.MOVEMENT_SPEED, this, {}) as number;
+		const speedMulti = modifierManager.getMultiplicationModifier(CreatureModifiers.MOVEMENT_SPEED, this, {}) as number;
+		return (6 + bonusSpeed) * speedMulti; // Default movement is 6 tiles per action.
 	}
 
 	getFlySpeed(): number {
@@ -574,6 +578,10 @@ class Creature implements ICreature {
 
 		if (this.hasFinishedMoving()) {
 			this.isMoving = false; // Clear moving flag when movement is finished
+		}
+
+		if (game.getState() !== GameState.COMBAT) {
+			this.statusEffects.updateEffects(dt);
 		}
 	}
 

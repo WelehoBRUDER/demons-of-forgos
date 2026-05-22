@@ -12,6 +12,7 @@ interface ICreature {
 	combat?: ICreatureCombat;
 	ai?: CreatureAI;
 	turn?: CreatureTurnController;
+	statusEffects?: CreatureStatusEffectManager;
 }
 
 interface ICreatureStats {
