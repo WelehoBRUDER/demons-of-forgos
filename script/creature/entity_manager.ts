@@ -40,6 +40,8 @@ class EntityManager {
 			// }
 		}
 
+		_creature.setMap(map);
+
 		// console.log(
 		// 	`Adding creature ${_creature.id} of type ${type} to map ${map} at position (${x}, ${y}) with spawn point UID: ${spawnPointUID}`,
 		// );
@@ -70,7 +72,6 @@ class EntityManager {
 			_creature.setUID(creature.getUID()); // Preserve UID if already set (e.g. when loading from map data)
 		}
 
-		_creature.setMap(map);
 		this.creatures.set(_creature.getUID().toString(), _creature);
 		return _creature;
 	}

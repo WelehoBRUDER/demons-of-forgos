@@ -8,6 +8,7 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 	mouth: number;
 	classes: CreatureClasses;
 	name: string = "Player Character";
+	renderVersion: number = 0;
 
 	constructor(data: IDynamicCreature) {
 		super(data);
@@ -62,8 +63,8 @@ class DynamicCreature extends Creature implements IDynamicCreature {
 		return speciesManager.getSpeciesById(this.species)?.size.toString() || "medium";
 	}
 
-	renderSprite(): void {
-		atlas.drawDynamicSprite(this);
+	async renderSprite(): Promise<void> {
+		await atlas.drawDynamicSprite(this);
 	}
 }
 

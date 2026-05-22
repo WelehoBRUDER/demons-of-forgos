@@ -9,6 +9,7 @@ class DynamicCreature extends Creature {
     mouth;
     classes;
     name = "Player Character";
+    renderVersion = 0;
     constructor(data) {
         super(data);
         this._id = DynamicCreature.nextId++; // Assign the current value of nextId to _id, then increment nextId
@@ -55,8 +56,8 @@ class DynamicCreature extends Creature {
     getSizeCategoryId() {
         return speciesManager.getSpeciesById(this.species)?.size.toString() || "medium";
     }
-    renderSprite() {
-        atlas.drawDynamicSprite(this);
+    async renderSprite() {
+        await atlas.drawDynamicSprite(this);
     }
 }
 class DynamicCreatureStats extends CreatureStats {

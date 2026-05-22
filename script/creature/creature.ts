@@ -386,7 +386,10 @@ class Creature implements ICreature {
 		if (game.getState() === GameState.COMBAT) return; // Don't trigger combat if we're already in combat
 
 		const playerCharacters: Creature[] = entityManager.getCreaturesByFaction([Faction.PLAYER], { map: this.map });
+		const friendlyCreatures: Creature[] = entityManager.getCreaturesByFaction([Faction.FRIENDLY], { map: this.map });
 		const hostileCreatures: Creature[] = entityManager.getCreaturesByFaction([Faction.HOSTILE], { map: this.map });
+
+		const allPlayerCreatures = playerCharacters.concat(friendlyCreatures);
 
 		console.log(playerCharacters, hostileCreatures);
 		for (const pc of playerCharacters) {
@@ -396,7 +399,7 @@ class Creature implements ICreature {
 				const dist = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: pc.x, y: pc.y });
 				if (dist <= creature.getAggroRange()) {
 					game.setState(GameState.COMBAT);
-					combatManager.startCombat(playerCharacters.concat(hostileCreatures));
+					combatManager.startCombat(allPlayerCreatures.concat(hostileCreatures));
 					return;
 				}
 			}

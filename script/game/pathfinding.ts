@@ -164,7 +164,6 @@ class Pathfinding {
 			return diffA - diffB;
 		});
 
-		console.log(expandedGoals);
 		return expandedGoals;
 	}
 

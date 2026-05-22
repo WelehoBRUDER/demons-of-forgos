@@ -187,7 +187,7 @@ class Atlas {
         });
     }
     async drawDynamicSprite(dynamicCreature) {
-        const currentRender = ++this.renderVersion; // Increment render version for each draw call
+        const currentRender = ++dynamicCreature.renderVersion; // Increment render version for each draw call
         const ctx = this.dynamicSpriteCtx;
         const spriteSize = this.getSpriteSize();
         const { x, y } = this.getDynamicSpriteTexturePosition(dynamicCreature);
@@ -209,7 +209,7 @@ class Atlas {
             await img.decode();
             return img;
         }));
-        if (currentRender !== this.renderVersion) {
+        if (currentRender !== dynamicCreature.renderVersion) {
             console.warn("A newer render call has been made, aborting this one to prevent outdated sprite rendering.");
             return; // A newer render call has been made, so we should abort this one to prevent outdated sprite rendering.
         }
@@ -247,6 +247,7 @@ class Atlas {
             ctx.restore();
         });
         portraitManager.generateAllPortraits();
+        return new Promise((resolve) => resolve()); // Return a resolved promise to maintain the async signature, even though all rendering is done synchronously at this point.
     }
     getDynamicSpriteTexturePosition(dynamicCreature) {
         const index = dynamicCreature.getIndex();

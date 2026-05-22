@@ -8,7 +8,9 @@ class CreatureAI {
         // Placeholder for AI decision-making logic
         // For now, just find nearest hostile creature and move towards it
         let hostiles = [];
-        hostiles = entityManager.getCreaturesByFaction(this.owner.stats.getHostileFactions(), { map: this.owner.getMap() });
+        hostiles = entityManager
+            .getCreaturesByFaction(this.owner.stats.getHostileFactions(), { map: this.owner.getMap() })
+            .filter((c) => c.stats.isAlive());
         // if (this.owner.stats.getFaction() !== Faction.HOSTILE) {
         // 	hostiles = entityManager.getCreaturesByFaction([Faction.HOSTILE], { map: this.owner.getMap() });
         // } else {

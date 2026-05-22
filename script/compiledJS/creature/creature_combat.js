@@ -81,9 +81,13 @@ class CreatureCombat {
         // BAB
         const baseAttackBonus = this.getBaseAttackBonus();
         // Ability modifier
-        const abilityModifier = weapon.isFinesse()
-            ? Math.max(abilityModifiers.strength, abilityModifiers.dexterity)
-            : abilityModifiers.strength;
+        let abilityModifier = abilityModifiers.strength; // Default to strength for melee attacks
+        if (attackType === AttackBonusType.RANGED) {
+            abilityModifier = abilityModifiers.dexterity; // Dexterity is used for ranged attacks
+        }
+        else if (weapon.isFinesse()) {
+            abilityModifier = Math.max(abilityModifiers.strength, abilityModifiers.dexterity);
+        }
         const penalties = [
             attackType + "_PENALTY_ATTACKER",
             AttackBonusType.ATTACK_PENALTY_ATTACKER,
@@ -241,7 +245,7 @@ class CreatureCombat {
                 await this.owner.playMeleeAttackAnimation(target, tile, ctx);
                 if (!this.checkIfAttackTargetValid(target)) {
                     target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-                    tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+                    tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
                 }
             }
             for (let i = 0; i < attackIterations[AttackIteration.PRIMARY_FULL]; i++) {
@@ -251,7 +255,7 @@ class CreatureCombat {
                 await this.owner.playMeleeAttackAnimation(target, tile, ctx);
                 if (!this.checkIfAttackTargetValid(target)) {
                     target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-                    tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+                    tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
                 }
             }
             for (let i = 0; i < attackIterations[AttackIteration.OFFHAND]; i++) {
@@ -261,7 +265,7 @@ class CreatureCombat {
                 await this.owner.playMeleeAttackAnimation(target, tile, ctx);
                 if (!this.checkIfAttackTargetValid(target)) {
                     target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
-                    tile = { x: target.x, y: target.y }; // Update the target tile to the new target's position
+                    tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
                 }
             }
         }

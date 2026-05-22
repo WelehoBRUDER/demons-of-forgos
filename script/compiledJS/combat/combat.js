@@ -70,9 +70,13 @@ class CombatManager {
             this.advanceTurn();
             return;
         }
+        const isAI = creature.isAI();
+        if (!isAI) {
+            game.setControlledCreatureId(creature.getUID()); // Set the current creature as the controlled creature for player input
+        }
         combatEvents.emit(CombatEventId.TURN_STARTED, { creatureUID: creature?.getUID(), round: this.round });
         await creature.turn.beginTurn();
-        if (creature.isAI()) {
+        if (isAI) {
             await creature.ai.makeDecision();
         }
         else {

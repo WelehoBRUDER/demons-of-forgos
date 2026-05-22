@@ -134,7 +134,6 @@ class Pathfinding {
             const diffB = Math.abs(distB - preferredDistance);
             return diffA - diffB;
         });
-        console.log(expandedGoals);
         return expandedGoals;
     }
     heuristic(a, b) {

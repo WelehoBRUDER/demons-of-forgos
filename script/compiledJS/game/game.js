@@ -500,7 +500,6 @@ window.addEventListener("mouseup", (e) => {
     if (!(e.target instanceof HTMLCanvasElement))
         return;
     game.moveControlledCreature();
-    console.log(e.button);
     if (e.button === 1) {
         game.openCreatureSheet();
     }

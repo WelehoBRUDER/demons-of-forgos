@@ -462,12 +462,12 @@ const uiCanvas = canvasLayers.querySelector(".ui-layer"); // Currently only for 
 // Initialize map renderer
 const mapRenderer = new MapRenderer(tileCanvas, propCanvas, objectCanvas, creatureCanvas, effectCanvas, uiCanvas);
 //const randomWorldMap = generateRandomMap(100, 100);
-const devInit = () => {
+const addPlayerPartyMember = (id, index, bodyType) => {
     const testPlayer = new DynamicCreature({
-        id: "test_player",
+        id: id,
         species: "human",
-        bodyType: BodyType.A,
-        uid: "player_character:001", // Unique identifier for the player character
+        bodyType: bodyType,
+        uid: `player_character:${index}`, // Unique identifier for the player character
         feats: [{ feat: "two_weapon_fighting" }, { feat: "weapon_focus", params: { weapon: "shortsword" } }],
         stats: {
             abilityScores: {
@@ -481,16 +481,27 @@ const devInit = () => {
         },
     });
     testPlayer.stats.setFaction(Faction.PLAYER);
+    return testPlayer;
+};
+const devInit = () => {
+    const testPlayer = addPlayerPartyMember("test_player_1", 1, BodyType.A);
+    const testPlayer2 = addPlayerPartyMember("test_player_2", 2, BodyType.B);
     testPlayer.classes.addClassLevel(classManager.getClass("fighter"), 1);
+    testPlayer2.classes.addClassLevel(classManager.getClass("fighter"), 1);
     mapRenderer.setMapData(mapManager.getMap("dev_testing_area"));
+    testPlayer.stats.resetHP();
+    testPlayer2.stats.resetHP();
+    testPlayer2.stats.setFaction(Faction.FRIENDLY);
     const creature = entityManager.addCreature(testPlayer, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
+    const creature2 = entityManager.addCreature(testPlayer2, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
     creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
+    creature2.inventory.equipItem(itemManager.getItem("longsword"), EquipmentSlot.WEAPON);
+    creature2.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
     game.setControlledCreatureId(creature.getUID());
     mapRenderer.renderVisibleMap(camera);
     mapRenderer.renderTileHighlight();
-    creature.stats.resetHP();
     setTimeout(() => {
         creature.combatStartCheck();
     }, 300); // Delay combat check to ensure everything is rendered first
