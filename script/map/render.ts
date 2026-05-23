@@ -16,7 +16,7 @@ class MapRenderer {
 	private map: WorldMap;
 	private highlightedTile: { x: number; y: number; _id: number; _propId?: number };
 	private selectedTile: { x: number; y: number } | null = null;
-	private pathTiles: { x: number; y: number }[] = [];
+	private pathTiles: PathTile[] = [];
 
 	constructor(
 		canvas: HTMLCanvasElement,
@@ -382,8 +382,9 @@ class MapRenderer {
 	renderTileHighlight() {
 		if (this.highlightedTile.x === -1 || this.highlightedTile.y === -1) return; // No tile to highlight
 		this.uiCtx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
-		if ((game.isMouseHeldDown() && !game.isInEditorMode() && game.getState() !== GameState.COMBAT) || game.isControlledCreatureTurn())
+		if ((game.isMouseHeldDown() && !game.isInEditorMode() && game.getState() !== GameState.COMBAT) || game.isControlledCreatureTurn()) {
 			this.drawPathPrediction();
+		}
 
 		const { cameraX, cameraY } = this.getScreenProperties(camera);
 		const zoom = camera.getZoom();
@@ -463,23 +464,44 @@ class MapRenderer {
 	}
 
 	drawPathPrediction() {
-		if (game.isInEditorMode()) return; // Disable path prediction in editor mode
-		if (game.mouseHeldDownDuration() < 200) return; // Don't show path prediction for quick clicks, only for holds
+		if (game.isInEditorMode()) return; // Dsable path prediction in editor mode
+		if (game.mouseHeldDownDuration() < 200 && !game.isControlledCreatureTurn()) return; // Don't show path prediction for quick clicks, only for holds
+
 		if (this.pathTiles.length === 0) {
 			this.pathTiles =
-				pathfinder.AStar({ x: 0, y: 0 }, [this.highlightedTile], this.map, new Creature({ id: "test_creature", stats: {} })) || [];
+				pathfinder.AStar(game.getPlayerPosition(), [this.highlightedTile], this.map, new Creature({ id: "test_creature", stats: {} })) ||
+				[];
 		}
 		const zoom = camera.getZoom();
 		const size = this.tileSize * zoom;
 		const { cameraX, cameraY } = this.getScreenProperties(camera);
-		this.uiCtx.fillStyle = "rgba(255, 0, 255, 0.5)";
+		if (game.isControlledCreatureTurn()) {
+			this.colorPathPredictionTiles();
+		}
 		// Skip the first tile since it's the starting position
 		for (let i = 1; i < this.pathTiles.length; i++) {
 			const tile = this.pathTiles[i];
 			const screenX = (tile.x * this.tileSize - cameraX) * zoom;
 			const screenY = (tile.y * this.tileSize - cameraY) * zoom;
+			this.uiCtx.fillStyle = tile.color || "rgba(255, 0, 255, 0.5)";
 			this.uiCtx.fillRect(screenX, screenY, size, size);
 		}
+	}
+
+	colorPathPredictionTiles() {
+		const normalMovement: number = game.getControlledCreature().getMoveSpeed();
+		const usedMovement: number = game.getControlledCreature().combat.movement;
+		let budget = normalMovement - (normalMovement - usedMovement);
+		this.pathTiles.forEach((tile) => {
+			budget -= tile.cost;
+			if (budget >= 0) {
+				tile.color = "rgba(0, 255, 0, 0.5)"; // Within move range
+			} else if (budget >= -normalMovement && game.getControlledCreature().combat.actions[Action.STANDARD] > 0) {
+				tile.color = "rgba(250, 255, 100, 0.5)"; // Beyond move range
+			} else {
+				tile.color = "rgba(255, 0, 0, 0.5)"; // Far beyond move range
+			}
+		});
 	}
 
 	getTileCordsByWorldPosition(worldPos: { x: number; y: number }): { tileX: number; tileY: number } {
@@ -493,8 +515,8 @@ class MapRenderer {
 		if (tileX < 0 || tileX >= this.map.width || tileY < 0 || tileY >= this.map.height) return; // Mouse is outside the map bounds
 
 		if (game.isMouseHeldDown() && !game.isInEditorMode()) {
-			const prevGoal: { x: number; y: number } | null = this.getPathPredictionGoal();
-			const currentGoal: { x: number; y: number } = { x: tileX, y: tileY };
+			const prevGoal: PathTile | null = this.getPathPredictionGoal();
+			const currentGoal: PathTile = { x: tileX, y: tileY, cost: 0 };
 			if (prevGoal && currentGoal.x === prevGoal.x && currentGoal.y === prevGoal.y) return; // No change in goal tile
 			const start: { x: number; y: number } = game.getPlayerPosition();
 			if (!start) return; // No controlled creature position available
@@ -503,6 +525,9 @@ class MapRenderer {
 		}
 
 		if (!this.highlightHasChanged(worldPos)) return;
+		if (game.isControlledCreatureTurn()) {
+			this.pathTiles = [];
+		}
 		this.setHighlightedTile(
 			tileX,
 			tileY,
@@ -512,15 +537,15 @@ class MapRenderer {
 		this.renderTileHighlight();
 	}
 
-	setPathPrediction(path: { x: number; y: number }[]) {
+	setPathPrediction(path: PathTile[]) {
 		this.pathTiles = path;
 	}
 
-	getPathPredictionTiles(): { x: number; y: number }[] {
+	getPathPredictionTiles(): PathTile[] {
 		return this.pathTiles;
 	}
 
-	getPathPredictionGoal(): { x: number; y: number } | null {
+	getPathPredictionGoal(): PathTile | null {
 		if (this.pathTiles.length === 0) return null;
 		return this.pathTiles[this.pathTiles.length - 1];
 	}
@@ -579,11 +604,11 @@ const addPlayerPartyMember = (id: string, index: number, bodyType: BodyType) => 
 		species: "human",
 		bodyType: bodyType,
 		uid: `player_character:${index}`, // Unique identifier for the player character
-		feats: [{ feat: "two_weapon_fighting" }, { feat: "weapon_focus", params: { weapon: "shortsword" } }],
+		feats: [{ feat: "two_weapon_fighting" }, { feat: "weapon_focus", params: { weapon: "shortsword" } }, { feat: "improved_initiative" }],
 		stats: {
 			abilityScores: {
 				strength: 16,
-				dexterity: 14,
+				dexterity: 30,
 				constitution: 12,
 				intelligence: 10,
 				wisdom: 10,

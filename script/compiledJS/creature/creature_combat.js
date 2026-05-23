@@ -34,6 +34,7 @@ class CreatureCombat {
     getBaseAttackBonus() {
         return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
     }
+    provokeOpportunityAttacks() { }
     buildAttack(ctx, targetCreature) {
         const weapon = ctx.weapon;
         if (targetCreature) {

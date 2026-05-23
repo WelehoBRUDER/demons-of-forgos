@@ -2,6 +2,7 @@ interface StatusEffectData {
 	id: string;
 	modifiers: Modifier[];
 	remainingDuration?: number;
+	onExpire?: (creature: Creature, ctx: any) => void; // Optional callback function to execute when the status effect expires
 	owner?: Creature; // Optional reference to the creature that has this status effect, can be set when the effect is applied to a creature
 }
 
@@ -22,6 +23,19 @@ enum StandardDuration {
 
 enum CreatureModifiers {
 	MOVEMENT_SPEED = "movementSpeed",
+	AC = "ac",
+	AC_DEX_BONUS = "acDexBonus",
+}
+
+enum Condition {
+	PRONE = "prone",
+	BLINDED = "blinded",
+	STUNNED = "stunned",
+	POISONED = "poisoned",
+	CHARMED = "charmed",
+	FEARED = "feared",
+	FATIGUED = "fatigued",
+	EXHAUSTED = "exhausted",
 }
 
 class StatusEffect implements IStatusEffect {
@@ -29,12 +43,14 @@ class StatusEffect implements IStatusEffect {
 	owner: Creature | null;
 	modifiers: Modifier[];
 	remainingDuration: number; // Remaining duration in seconds
+	onExpire?: (creature: Creature, ctx: any) => void;
 
 	constructor(data: StatusEffectData) {
 		this.id = data.id;
 		this.modifiers = data.modifiers;
 		this.remainingDuration = data.remainingDuration ?? 0;
 		this.owner = data.owner ?? null;
+		this.onExpire = data.onExpire ?? undefined;
 	}
 
 	getId(): string {
@@ -51,6 +67,7 @@ class StatusEffect implements IStatusEffect {
 
 	update(dt: number) {
 		this.remainingDuration -= dt;
+		console.log(`Updating status effect ${this.id}, remaining duration: ${this.remainingDuration.toFixed(2)} seconds`);
 		if (this.remainingDuration <= 0) {
 			this.expire();
 		}
@@ -59,6 +76,9 @@ class StatusEffect implements IStatusEffect {
 	expire() {
 		if (this.owner) {
 			this.owner.statusEffects.expire(this.id);
+		}
+		if (this.onExpire) {
+			this.onExpire(this.owner, {});
 		}
 	}
 }

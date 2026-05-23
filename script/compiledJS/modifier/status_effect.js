@@ -9,17 +9,32 @@ var StandardDuration;
 var CreatureModifiers;
 (function (CreatureModifiers) {
     CreatureModifiers["MOVEMENT_SPEED"] = "movementSpeed";
+    CreatureModifiers["AC"] = "ac";
+    CreatureModifiers["AC_DEX_BONUS"] = "acDexBonus";
 })(CreatureModifiers || (CreatureModifiers = {}));
+var Condition;
+(function (Condition) {
+    Condition["PRONE"] = "prone";
+    Condition["BLINDED"] = "blinded";
+    Condition["STUNNED"] = "stunned";
+    Condition["POISONED"] = "poisoned";
+    Condition["CHARMED"] = "charmed";
+    Condition["FEARED"] = "feared";
+    Condition["FATIGUED"] = "fatigued";
+    Condition["EXHAUSTED"] = "exhausted";
+})(Condition || (Condition = {}));
 class StatusEffect {
     id;
     owner;
     modifiers;
     remainingDuration; // Remaining duration in seconds
+    onExpire;
     constructor(data) {
         this.id = data.id;
         this.modifiers = data.modifiers;
         this.remainingDuration = data.remainingDuration ?? 0;
         this.owner = data.owner ?? null;
+        this.onExpire = data.onExpire ?? undefined;
     }
     getId() {
         return this.id;
@@ -32,6 +47,7 @@ class StatusEffect {
     }
     update(dt) {
         this.remainingDuration -= dt;
+        console.log(`Updating status effect ${this.id}, remaining duration: ${this.remainingDuration.toFixed(2)} seconds`);
         if (this.remainingDuration <= 0) {
             this.expire();
         }
@@ -39,6 +55,9 @@ class StatusEffect {
     expire() {
         if (this.owner) {
             this.owner.statusEffects.expire(this.id);
+        }
+        if (this.onExpire) {
+            this.onExpire(this.owner, {});
         }
     }
 }

@@ -18,6 +18,13 @@ interface TileFlags {
 	coverLevel: number; // 0 for no cover, 1 for half cover, 2 for 3/4 cover (full cover can be represented by a wall tile with isWall: true)
 }
 
+interface PathTile {
+	x: number;
+	y: number;
+	cost: number;
+	color?: string; // Optional color property for path prediction tiles, can be set based on movement cost or other factors
+}
+
 let tileIndex = 0;
 class Tile {
 	private _id: number;

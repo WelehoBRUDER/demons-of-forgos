@@ -5,8 +5,8 @@ class CreatureTurnController {
         this.owner = owner;
     }
     async beginTurn() {
-        this.owner.combat.resetActions();
         this.owner.statusEffects.updateEffects(StandardDuration.ROUND); // Update status effects at the beginning of the turn
+        this.owner.combat.resetActions();
         return new Promise((resolve) => {
             // Simulate turn processing time (e.g., for animations, effects, etc.)
             setTimeout(() => {

@@ -12,6 +12,7 @@ class CreatureStatusEffectManager {
 			const effect = new StatusEffect({ ...baseEffect, remainingDuration: duration, owner: this.owner });
 			this.effects.set(effectId, effect);
 			this.owner.providersNeedUpdate = true;
+			combatEvents.emit("statChanged", { creatureUID: this.owner.getUID() });
 		}
 	}
 
@@ -32,5 +33,6 @@ class CreatureStatusEffectManager {
 	expire(effectId: string) {
 		this.effects.delete(effectId);
 		this.owner.providersNeedUpdate = true;
+		combatEvents.emit("statChanged", { creatureUID: this.owner.getUID() });
 	}
 }

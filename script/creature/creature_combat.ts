@@ -38,6 +38,8 @@ class CreatureCombat implements ICreatureCombat {
 		return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
 	}
 
+	provokeOpportunityAttacks(): void {}
+
 	buildAttack(ctx: AttackContext, targetCreature?: Creature): AttackResult {
 		const weapon = ctx.weapon;
 
