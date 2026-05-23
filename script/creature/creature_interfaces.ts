@@ -299,4 +299,5 @@ enum AttackBonusType {
 	RANGED_PENALTY_ATTACKER = "ranged_penalty_attacker",
 	WEAPON_PENALTY_ATTACKER = "weapon_penalty_attacker",
 	ATTACK_PENALTY_ATTACKER = "attack_penalty_attacker",
+	OPPORTUNITY_ATTACK_COUNT = "opportunity_attack_count",
 }

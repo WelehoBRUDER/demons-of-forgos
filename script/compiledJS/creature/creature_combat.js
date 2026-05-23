@@ -36,8 +36,8 @@ class CreatureCombat {
     getBaseAttackBonus() {
         return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
     }
-    async provokeOpportunityAttacks() {
-        const nearbyHostiles = entityManager.getThreateningCreatures(this.owner);
+    async provokeOpportunityAttacks(hostiles) {
+        const nearbyHostiles = hostiles || entityManager.getThreateningCreatures(this.owner);
         if (nearbyHostiles.length === 0)
             return; // No hostiles nearby, so no opportunity attacks to provoke
         console.log(`Creature ${this.owner.getUID()} is provoking opportunity attacks from ${nearbyHostiles.length} nearby hostile creatures.`);
@@ -68,9 +68,17 @@ class CreatureCombat {
             criticalMultiplier: critMultiplier,
         };
     }
+    combatStartUpdate() {
+        this.owner.statusEffects.addStatusEffect("flatFooted", StandardDuration.ROUND);
+        console.log(`Creature ${this.owner.getUID()} is flat-footed at the start of combat, granting it the flat-footed condition for the first round. This will be removed at the end of its first turn.`);
+        console.log(this.owner.statusEffects);
+        this.opportunityAttacksLeft = this.getNumberOfOpportunityAttacks();
+        this.owner.providersNeedUpdate = true; // Update providers to ensure opportunity attack count is correct for the first round of combat
+    }
     getNumberOfOpportunityAttacks() {
-        const bonusAttacks = modifierManager.getTotalModifier("opportunityAttackCount", this.owner, {});
-        return 1 + bonusAttacks;
+        const bonusAttacks = modifierManager.getTotalModifier(AttackBonusType.OPPORTUNITY_ATTACK_COUNT, this.owner, {});
+        const bonusAttacksMulti = modifierManager.getMultiplicationModifier(AttackBonusType.OPPORTUNITY_ATTACK_COUNT, this.owner, {});
+        return (1 + bonusAttacks) * bonusAttacksMulti;
     }
     hasPerformedAction() {
         return false;
@@ -233,8 +241,13 @@ class CreatureCombat {
             return; // No threatening creatures nearby, so no opportunity attacks to provoke
         const threateningCreaturesInNewTile = entityManager.getThreateningCreatures(creature, { overridePosition: targetTile });
         const includesSameThreats = threateningCreatures.every((threat) => threateningCreaturesInNewTile.map((t) => t.getUID()).includes(threat.getUID()));
+        console.log(threateningCreatures, threateningCreaturesInNewTile, includesSameThreats);
         if (!includesSameThreats) {
-            await this.provokeOpportunityAttacks();
+            // Find which creatures are not in the new list
+            const provokingCreatures = threateningCreatures.filter((threat) => !threateningCreaturesInNewTile.map((t) => t.getUID()).includes(threat.getUID()));
+            console.log(`Creature ${creature.getUID()} is provoking opportunity attacks from ${provokingCreatures.length} nearby hostile creatures due to movement.`);
+            console.log("Provoking creatures:", provokingCreatures);
+            await this.provokeOpportunityAttacks(provokingCreatures);
         }
         return Promise.resolve();
     }
@@ -326,7 +339,7 @@ class CreatureCombat {
     async executeAttack(target, ctx) {
         const attackResult = this.buildAttack(ctx, target);
         const attackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
-        console.log(`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${target.stats.getAC().full}`);
+        console.log(`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${attackRollResult.ac}, Hit: ${attackRollResult.isHit}, Critical Threat: ${attackRollResult.isCritical} | CREATURE: ${this.owner.getUID()} TARGET: ${target.getUID()}`);
         const randomVariance = DiceRoller.rollBetween(-40, 40); // Add some random variance to the screen position of the floating text to prevent it from stacking perfectly when multiple attacks hit at the same time
         if (attackRollResult.isHit) {
             const damage = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);

@@ -31,6 +31,7 @@ class CreatureSheet implements WindowContent {
 		const ac = creature.stats.getAC();
 		const attacks = creature.combat.getAttackResults();
 		const initiativeBonus = creature.combat.getInitiativeBonus();
+		const statusEffects = creature.statusEffects.getActiveEffects();
 		const feats = creature.getFeats();
 		let attacksText = "";
 		attacks.forEach((attack, index) => {
@@ -73,6 +74,7 @@ class CreatureSheet implements WindowContent {
 			<p>BAB: ${creature.combat.getBaseAttackBonus()}</p>
       <p>Attacks:</p>
       <p>${attacksText}</p>
+			<p>Status Effects: ${statusEffects.map((effect) => effect.id).join(", ")}</p>
     `;
 	}
 }

@@ -35,7 +35,8 @@ class DiceRoller {
         const d20Roll = this.roll(Dice.d20)[0];
         const attackBonus = ctx.attackBonus;
         const totalRoll = d20Roll + attackBonus;
-        const targetAC = target.stats.getAC().full; // Should consider touch and flat-footed but development first, will add later
+        const ac = target.stats.getAC();
+        const targetAC = target.statusEffects.hasCondition(Condition.FLAT_FOOTED) ? ac.flatFooted : ac.full; // Should consider touch and flat-footed but development first, will add later
         const isCriticalThreat = d20Roll >= ctx.weapon.getCritRange();
         let criticalThreatResult = {
             isCriticalThreat: isCriticalThreat,
@@ -52,6 +53,7 @@ class DiceRoller {
             totalRoll: totalRoll,
             isHit: totalRoll >= targetAC,
             isCritical: criticalThreatResult,
+            ac: targetAC,
         };
     }
     static critConfirmationRoll(attacker, target, ctx) {

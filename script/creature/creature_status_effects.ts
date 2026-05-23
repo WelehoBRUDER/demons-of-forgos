@@ -8,12 +8,24 @@ class CreatureStatusEffectManager {
 
 	addStatusEffect(effectId: string, duration: number) {
 		const baseEffect = statusEffectManager.getEffect(effectId);
+
+		console.log(`Adding status effect ${effectId} to creature ${this.owner.getUID()} with duration ${duration} seconds`);
+		console.log(`Base effect details:`, baseEffect);
 		if (baseEffect) {
 			const effect = new StatusEffect({ ...baseEffect, remainingDuration: duration, owner: this.owner });
 			this.effects.set(effectId, effect);
 			this.owner.providersNeedUpdate = true;
 			combatEvents.emit("statChanged", { creatureUID: this.owner.getUID() });
 		}
+	}
+
+	hasCondition(condition: Condition): boolean {
+		const conditionCount = modifierManager.getTotalModifier(condition, this.owner, {}) as number;
+		return conditionCount > 0;
+	}
+
+	getActiveEffects(): StatusEffect[] {
+		return Array.from(this.effects.values());
 	}
 
 	getProviders(): ModifierProvider[] {

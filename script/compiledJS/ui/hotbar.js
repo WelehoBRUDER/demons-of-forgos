@@ -41,7 +41,7 @@ class HotbarManager {
     }
     update() {
         const controlledCreature = game.getControlledCreature();
-        if (!controlledCreature)
+        if (!controlledCreature || !this.movementElement)
             return;
         const movementText = `Movement: ${controlledCreature.combat.movement} / ${controlledCreature.getMoveSpeed()}`;
         this.movementElement.textContent = movementText;

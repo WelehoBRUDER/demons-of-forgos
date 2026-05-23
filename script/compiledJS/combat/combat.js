@@ -43,6 +43,7 @@ class CombatManager {
         this.activeTurnContext = null;
         creatures.map((creature) => {
             this.addToCombat(creature);
+            creature.combat.combatStartUpdate();
         });
         this.activeTurnContext = new TurnContext(this.initiativeOrder[0].uid); // Set active turn context to the first creature in initiative order
         //this.getCurrentTurnCreature().ai.makeDecision(); // Trigger AI decision for the first creature in combat immediately

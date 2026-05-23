@@ -113,5 +113,6 @@ var AttackBonusType;
     AttackBonusType["RANGED_PENALTY_ATTACKER"] = "ranged_penalty_attacker";
     AttackBonusType["WEAPON_PENALTY_ATTACKER"] = "weapon_penalty_attacker";
     AttackBonusType["ATTACK_PENALTY_ATTACKER"] = "attack_penalty_attacker";
+    AttackBonusType["OPPORTUNITY_ATTACK_COUNT"] = "opportunity_attack_count";
 })(AttackBonusType || (AttackBonusType = {}));
 //# sourceMappingURL=creature_interfaces.js.map

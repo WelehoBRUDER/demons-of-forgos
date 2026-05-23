@@ -22,6 +22,7 @@ var Condition;
     Condition["FEARED"] = "feared";
     Condition["FATIGUED"] = "fatigued";
     Condition["EXHAUSTED"] = "exhausted";
+    Condition["FLAT_FOOTED"] = "flatFooted";
 })(Condition || (Condition = {}));
 class StatusEffect {
     id;
@@ -64,9 +65,12 @@ class StatusEffect {
 class StatusEffectManager {
     effects = new Map();
     addEffect(effect) {
+        console.log(`${DebugColor.GREEN}Adding status effect to manager: ${effect.id}`);
         this.effects.set(effect.getId(), new StatusEffect(effect));
     }
     getEffect(id) {
+        console.log(`${DebugColor.BLUE}Retrieving status effect with ID: ${id}`);
+        console.log(`Available status effects: ${Array.from(this.effects.keys()).join(", ")}`);
         return this.effects.get(id);
     }
 }

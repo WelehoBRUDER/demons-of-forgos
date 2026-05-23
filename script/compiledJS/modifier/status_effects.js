@@ -81,6 +81,32 @@ statusEffectManager.addEffect(new StatusEffect({
     ],
 }));
 statusEffectManager.addEffect(new StatusEffect({
+    id: "flatFooted",
+    modifiers: [
+        {
+            id: "flatFooted_opportunity_attacks_disabled",
+            target: AttackBonusType.OPPORTUNITY_ATTACK_COUNT,
+            operation: Operation.multiply,
+            evaluate: (creature, ctx) => {
+                if (ctx.immuneToOpportunityAttackDisable) {
+                    return 0;
+                }
+                return -1; // flat-footed creatures cannot make opportunity attacks
+            },
+            type: ModifierType.untyped,
+        },
+        {
+            id: "flatFooted_condition",
+            target: Condition.FLAT_FOOTED,
+            operation: Operation.add,
+            evaluate: (creature, ctx) => {
+                return 1; // Apply flat-footed condition
+            },
+            type: ModifierType.untyped,
+        },
+    ],
+}));
+statusEffectManager.addEffect(new StatusEffect({
     id: "haste",
     modifiers: [
         {

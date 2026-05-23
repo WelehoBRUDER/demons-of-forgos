@@ -36,6 +36,7 @@ enum Condition {
 	FEARED = "feared",
 	FATIGUED = "fatigued",
 	EXHAUSTED = "exhausted",
+	FLAT_FOOTED = "flatFooted",
 }
 
 class StatusEffect implements IStatusEffect {
@@ -87,10 +88,13 @@ class StatusEffectManager {
 	private effects: Map<string, StatusEffect> = new Map();
 
 	addEffect(effect: StatusEffect) {
+		console.log(`${DebugColor.GREEN}Adding status effect to manager: ${effect.id}`);
 		this.effects.set(effect.getId(), new StatusEffect(effect));
 	}
 
 	getEffect(id: string): StatusEffect | undefined {
+		console.log(`${DebugColor.BLUE}Retrieving status effect with ID: ${id}`);
+		console.log(`Available status effects: ${Array.from(this.effects.keys()).join(", ")}`);
 		return this.effects.get(id);
 	}
 }
