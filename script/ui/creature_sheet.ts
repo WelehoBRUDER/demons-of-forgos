@@ -50,6 +50,7 @@ class CreatureSheet implements WindowContent {
 			}
 			featsText += `<br>`;
 		}
+		const cmb = creature.combat.getCMB();
 		this.element.innerHTML = `
       <h2>${creature.getName()}</h2>
       <p>HP: ${creature.stats.getHP()}/${creature.stats.getMaxHP()}</p>
@@ -64,6 +65,9 @@ class CreatureSheet implements WindowContent {
         <p>WIS: ${attributes.wisdom} (${mods.wisdom >= 0 ? "+" : ""}${mods.wisdom})</p>
         <p>CHA: ${attributes.charisma} (${mods.charisma >= 0 ? "+" : ""}${mods.charisma})</p>
       </div>
+			<p>Size: ${SizeCategory[creature.stats.getSizeCategory()]}</p>
+			<p>CMB: ${cmb > 0 ? "+" : ""}${cmb}</p>
+			<p>CMD: ${creature.combat.getCMD()}</p>
 			<h3>Saves</h3>
       <div class="saves">
         <p>Fortitude: ${saves.fortitude}</p>

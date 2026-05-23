@@ -53,6 +53,29 @@ const creatureDefaultModifiers: ModifierProvider = {
 				},
 				type: ModifierType.untyped,
 			},
+			{
+				id: "cmb_ability_score",
+				target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					const abilityMods = creature.stats.getAbilityScoreModifiers();
+					if (creature.stats.getSizeCategory() <= SizeCategory.SMALL) {
+						return abilityMods.dexterity; // Use Dexterity modifier for CMB if creature is Small or smaller
+					}
+					return abilityMods.strength; // Use Strength modifier for CMB if creature is Medium or larger
+				},
+				type: ModifierType.untyped,
+			},
+			{
+				id: "cmd_ability_score",
+				target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					const abilityMods = creature.stats.getAbilityScoreModifiers();
+					return abilityMods.strength + abilityMods.dexterity; // CMD uses both Strength and Dexterity modifiers
+				},
+				type: ModifierType.untyped,
+			},
 		];
 	},
 };
@@ -327,7 +350,7 @@ class Creature implements ICreature {
 	}
 
 	async move(newX: number, newY: number) {
-		await this.combat.checkIfShouldProvokeOpportunityAttacks(this, { x: newX, y: newY }); // Check for opportunity attacks before moving, since moving is what provokes them
+		await this.combat.checkIfShouldProvokeOpportunityAttacks(this, { x: this.x, y: this.y }, { x: newX, y: newY }); // Check for opportunity attacks before moving, since moving is what provokes them
 		this.x = newX;
 		this.y = newY;
 		this.combatStartCheck();
@@ -411,7 +434,7 @@ class Creature implements ICreature {
 		}
 	}
 
-	moveOnPath(dt: number) {
+	async moveOnPath(dt: number) {
 		this.handleMovementAnimation(dt);
 		if (this.currentPath.length === 0) {
 			this.isMoving = false;
@@ -441,7 +464,7 @@ class Creature implements ICreature {
 				}
 			}
 
-			this.move(nextTile.x, nextTile.y);
+			await this.move(nextTile.x, nextTile.y);
 		} else {
 			this.isMoving = false; // Clear moving flag when we have reached the end of the path
 		}

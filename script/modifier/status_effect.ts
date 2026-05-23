@@ -25,6 +25,8 @@ enum CreatureModifiers {
 	MOVEMENT_SPEED = "movementSpeed",
 	AC = "ac",
 	AC_DEX_BONUS = "acDexBonus",
+	COMBAT_MANEUVER_BONUS = "combatManeuverBonus",
+	COMBAT_MANEUVER_DEFENSE = "combatManeuverDefense",
 }
 
 enum Condition {

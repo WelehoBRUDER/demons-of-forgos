@@ -11,6 +11,8 @@ var CreatureModifiers;
     CreatureModifiers["MOVEMENT_SPEED"] = "movementSpeed";
     CreatureModifiers["AC"] = "ac";
     CreatureModifiers["AC_DEX_BONUS"] = "acDexBonus";
+    CreatureModifiers["COMBAT_MANEUVER_BONUS"] = "combatManeuverBonus";
+    CreatureModifiers["COMBAT_MANEUVER_DEFENSE"] = "combatManeuverDefense";
 })(CreatureModifiers || (CreatureModifiers = {}));
 var Condition;
 (function (Condition) {

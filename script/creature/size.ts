@@ -23,6 +23,20 @@ const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 			evaluate: () => 2,
 			type: ModifierType.size,
 		},
+		{
+			id: "tiny_size_modifier_cmb",
+			target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+			operation: Operation.add,
+			evaluate: () => -2, // Grant -2 to combat maneuver bonus for tiny creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "tiny_size_modifier_cmd",
+			target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+			operation: Operation.add,
+			evaluate: () => -2, // Grant -2 to combat maneuver defense for tiny creatures
+			type: ModifierType.size,
+		},
 	],
 	SMALL: [
 		{
@@ -37,6 +51,20 @@ const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 			target: AttackBonusType.MELEE,
 			operation: Operation.add,
 			evaluate: () => 1,
+			type: ModifierType.size,
+		},
+		{
+			id: "small_size_modifier_cmb",
+			target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+			operation: Operation.add,
+			evaluate: () => -1, // Grant -1 to combat maneuver bonus for small creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "small_size_modifier_cmd",
+			target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+			operation: Operation.add,
+			evaluate: () => -1, // Grant -1 to combat maneuver defense for small creatures
 			type: ModifierType.size,
 		},
 	],
@@ -71,6 +99,20 @@ const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 			evaluate: () => 1, // Grant 1 cell of reach for large creatures
 			type: ModifierType.size,
 		},
+		{
+			id: "large_size_modifier_cmb",
+			target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+			operation: Operation.add,
+			evaluate: () => 1, // Grant 1 to combat maneuver bonus for large creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "large_size_modifier_cmd",
+			target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+			operation: Operation.add,
+			evaluate: () => 1, // Grant 1 to combat maneuver defense for large creatures
+			type: ModifierType.size,
+		},
 	],
 	HUGE: [
 		{
@@ -94,6 +136,20 @@ const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 			evaluate: () => 2, // Grant 2 cells of reach for huge creatures
 			type: ModifierType.size,
 		},
+		{
+			id: "huge_size_modifier_cmb",
+			target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+			operation: Operation.add,
+			evaluate: () => 2, // Grant 2 to combat maneuver bonus for huge creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "huge_size_modifier_cmd",
+			target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+			operation: Operation.add,
+			evaluate: () => 2, // Grant 2 to combat maneuver defense for huge creatures
+			type: ModifierType.size,
+		},
 	],
 	GARGANTUAN: [
 		{
@@ -115,6 +171,20 @@ const sizeCategoryModifiers: { [key: string]: Modifier[] } = {
 			target: AttackBonusType.MELEE_REACH,
 			operation: Operation.add,
 			evaluate: () => 3, // Grant 3 cells of reach for gargantuan creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "gargantuan_size_modifier_cmb",
+			target: CreatureModifiers.COMBAT_MANEUVER_BONUS,
+			operation: Operation.add,
+			evaluate: () => 4, // Grant 4 to combat maneuver bonus for gargantuan creatures
+			type: ModifierType.size,
+		},
+		{
+			id: "gargantuan_size_modifier_cmd",
+			target: CreatureModifiers.COMBAT_MANEUVER_DEFENSE,
+			operation: Operation.add,
+			evaluate: () => 4, // Grant 4 to combat maneuver defense for gargantuan creatures
 			type: ModifierType.size,
 		},
 	],

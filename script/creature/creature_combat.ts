@@ -68,9 +68,9 @@ class CreatureCombat implements ICreatureCombat {
 		const critRange = weapon.getCritRange();
 		const critMultiplier = weapon.getCritMultiplier();
 
-		console.log(
-			`BUILDING ATTACK: Weapon: ${weapon.getId()}, Attack Bonus: ${attackBonus}, Damage: ${damageMin}-${damageMax} ${weapon.getDamageType()}, Crit Range: ${critRange}-20, Crit Multiplier: x${critMultiplier} | CREATURE: ${this.owner.getUID()}`,
-		);
+		// console.log(
+		// 	`BUILDING ATTACK: Weapon: ${weapon.getId()}, Attack Bonus: ${attackBonus}, Damage: ${damageMin}-${damageMax} ${weapon.getDamageType()}, Crit Range: ${critRange}-20, Crit Multiplier: x${critMultiplier} | CREATURE: ${this.owner.getUID()}`,
+		// );
 
 		return {
 			weapon,
@@ -89,7 +89,7 @@ class CreatureCombat implements ICreatureCombat {
 		console.log(
 			`Creature ${this.owner.getUID()} is flat-footed at the start of combat, granting it the flat-footed condition for the first round. This will be removed at the end of its first turn.`,
 		);
-		console.log(this.owner.statusEffects);
+		//console.log(this.owner.statusEffects);
 		this.opportunityAttacksLeft = this.getNumberOfOpportunityAttacks();
 		this.owner.providersNeedUpdate = true; // Update providers to ensure opportunity attack count is correct for the first round of combat
 	}
@@ -149,16 +149,16 @@ class CreatureCombat implements ICreatureCombat {
 		const modBonuses: number = modifierManager.getTotalModifier(attackType, this.owner, ctx) as number;
 		const weaponBonuses: number = modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx) as number;
 
-		console.log(
-			"WEAPON BONUSES",
-			modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx, { groupedByType: true }) as number,
-		);
-		console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
-		console.log("IS DUAL WIELDING:", ctx.isDualWielding);
-		console.log(`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}`);
-		console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
-		console.log(`Weapon Bonuses: ${weaponBonuses}`);
-		console.log(`Penalty from Target: ${penaltyFromTarget}`);
+		// console.log(
+		// 	"WEAPON BONUSES",
+		// 	modifierManager.getTotalModifier(AttackBonusType.WEAPON, this.owner, ctx, { groupedByType: true }) as number,
+		// );
+		// console.log(`---------------- CREATURE ${this.owner.getUID()} ATTACK CALCULATION ----------------`);
+		// console.log("IS DUAL WIELDING:", ctx.isDualWielding);
+		// console.log(`Attack Type: ${attackType}, Base Attack Bonus: ${baseAttackBonus}, Ability Modifier: ${abilityModifier}`);
+		// console.log(`Modifiers: ${modBonuses} (from feats, equipment, buffs, etc.)`);
+		// console.log(`Weapon Bonuses: ${weaponBonuses}`);
+		// console.log(`Penalty from Target: ${penaltyFromTarget}`);
 		return baseAttackBonus + abilityModifier + modBonuses + weaponBonuses + penaltyFromTarget;
 	}
 
@@ -217,9 +217,9 @@ class CreatureCombat implements ICreatureCombat {
 
 		const bab = this.getBaseAttackBonus();
 		const iterations = Math.max(Math.floor((bab - 1) / 5) + 1, 1); // One attack at BAB +0, and an additional attack for every 5 BAB
-		console.log(`Base Attack Bonus: ${bab}, Primary Attacks: ${iterations}`);
+		//console.log(`Base Attack Bonus: ${bab}, Primary Attacks: ${iterations}`);
 		const offhand = this.owner.inventory.getWeaponInSlot(EquipmentSlot.OFFHAND);
-		console.log(`Off-hand weapon: ${offhand ? offhand.getId() : "None"}`);
+		//console.log(`Off-hand weapon: ${offhand ? offhand.getId() : "None"}`);
 		if (offhand) {
 			const maxOffhandIterations = modifierManager.getTotalModifier(AttackIteration.OFFHAND, this.owner, {}) as number;
 			attackCount[AttackIteration.OFFHAND] = maxOffhandIterations + 1;
@@ -280,9 +280,9 @@ class CreatureCombat implements ICreatureCombat {
 		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
 	}
 
-	async checkIfShouldProvokeOpportunityAttacks(creature: Creature, targetTile: Coordinate): Promise<void> {
+	async checkIfShouldProvokeOpportunityAttacks(creature: Creature, currentTile: Coordinate, targetTile: Coordinate): Promise<void> {
 		if (!creature.stats.isAlive()) return;
-		const threateningCreatures = entityManager.getThreateningCreatures(creature);
+		const threateningCreatures = entityManager.getThreateningCreatures(creature, { overridePosition: currentTile });
 		if (threateningCreatures.length === 0) return; // No threatening creatures nearby, so no opportunity attacks to provoke
 		const threateningCreaturesInNewTile = entityManager.getThreateningCreatures(creature, { overridePosition: targetTile });
 
@@ -399,27 +399,53 @@ class CreatureCombat implements ICreatureCombat {
 		return nearestHostile;
 	}
 
-	async makeOpportunityAttack(target: Creature) {
+	async makeOpportunityAttack(target: Creature): Promise<void> {
 		if (this.opportunityAttacksLeft > 0) {
 			this.opportunityAttacksLeft--;
 			const ctx = this.owner.inventory.getEquippedWeapons()[0]; // For simplicity, opportunity attacks will use the main hand weapon. This can be expanded to allow off-hand attacks if desired.
 			ctx.isOpportunityAttack = true; // Set a flag in the attack context to indicate this is an opportunity attack, which can be used for feats or other effects that modify opportunity attacks
 			await this.owner.playMeleeAttackAnimation(target, { x: target.x, y: target.y }, ctx);
 		}
+		return Promise.resolve();
+	}
+
+	canTakeOpportunityAttack() {
+		return this.opportunityAttacksLeft > 0;
+	}
+
+	threatensAnyTileInArea(area: Coordinate[]): boolean {
+		const attackRange = this.getThreatRange();
+		if (attackRange <= 0) return false;
+		return area.some((tile) => {
+			const dist = pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, tile);
+			return dist <= attackRange;
+		});
+	}
+
+	getCMB() {
+		const baseCMB = this.getBaseAttackBonus();
+		const bonusCMB = modifierManager.getTotalModifier(CreatureModifiers.COMBAT_MANEUVER_BONUS, this.owner, {}) as number;
+		return baseCMB + bonusCMB;
+	}
+
+	getCMD() {
+		const baseCMD = 10 + this.getBaseAttackBonus();
+		const bonusCMD = modifierManager.getTotalModifier(CreatureModifiers.COMBAT_MANEUVER_DEFENSE, this.owner, {}) as number;
+		return baseCMD + bonusCMD;
 	}
 
 	async executeAttack(target: Creature, ctx: AttackContext) {
 		const attackResult: AttackResult = this.buildAttack(ctx, target);
 		const attackRollResult: AttackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
-		console.log(
-			`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${attackRollResult.ac}, Hit: ${attackRollResult.isHit}, Critical Threat: ${attackRollResult.isCritical} | CREATURE: ${this.owner.getUID()} TARGET: ${target.getUID()}`,
-		);
+		// console.log(
+		// 	`Attack made! Roll: ${attackRollResult.attackRoll}, Total: ${attackRollResult.totalRoll}, Target AC: ${attackRollResult.ac}, Hit: ${attackRollResult.isHit}, Critical Threat: ${attackRollResult.isCritical} | CREATURE: ${this.owner.getUID()} TARGET: ${target.getUID()}`,
+		// );
 
 		const randomVariance = DiceRoller.rollBetween(-40, 40); // Add some random variance to the screen position of the floating text to prevent it from stacking perfectly when multiple attacks hit at the same time
 
 		if (attackRollResult.isHit) {
 			const damage: number = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);
-			console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
+			//console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
 			await target.takeDamage(damage);
 			effectManager.addEffect(
 				new CustomFloatingText(`Hit! -${damage}`, target.screenX + randomVariance, target.screenY + randomVariance, 24, "red", 1500, 50),
