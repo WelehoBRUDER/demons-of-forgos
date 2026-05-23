@@ -170,6 +170,7 @@ interface AttackContext {
 	offhandIsLight?: boolean;
 	targetCreature?: Creature;
 	canBeFlanked?: boolean;
+	isOpportunityAttack?: boolean; // Flag to indicate if this attack is an opportunity attack, which can be used for feats or other effects that modify opportunity attacks
 }
 
 interface AttackResult {

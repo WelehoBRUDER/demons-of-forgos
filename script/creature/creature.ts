@@ -326,7 +326,8 @@ class Creature implements ICreature {
 		return { x: this.x, y: this.y };
 	}
 
-	move(newX: number, newY: number) {
+	async move(newX: number, newY: number) {
+		await this.combat.checkIfShouldProvokeOpportunityAttacks(this, { x: newX, y: newY }); // Check for opportunity attacks before moving, since moving is what provokes them
 		this.x = newX;
 		this.y = newY;
 		this.combatStartCheck();

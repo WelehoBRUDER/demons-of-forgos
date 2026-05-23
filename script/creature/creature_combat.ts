@@ -4,6 +4,7 @@ class CreatureCombat implements ICreatureCombat {
 	initiative: number;
 	actions: Actions;
 	turnEnd: boolean; // This is used by the player to indicate they have finished their turn
+	opportunityAttacksLeft: number; // This is used to track the number of opportunity attacks a creature can still make in a turn, which can be modified by feats, buffs, etc.
 	movement: number = 0;
 
 	constructor(owner: Creature, combatData: ICreatureCombat) {
@@ -17,6 +18,7 @@ class CreatureCombat implements ICreatureCombat {
 			[Action.SWIFT]: 1,
 		};
 		this.turnEnd = false; // This is used by the player
+		this.opportunityAttacksLeft = 0; // This is used to track the number of opportunity attacks a creature can still make in a turn, which can be modified by feats, buffs, etc.
 		this.movement = this.owner.getMoveSpeed();
 	}
 
@@ -38,7 +40,16 @@ class CreatureCombat implements ICreatureCombat {
 		return this.bab; // This should be calculated based on class levels for player characters or set as a static value for enemies
 	}
 
-	provokeOpportunityAttacks(): void {}
+	async provokeOpportunityAttacks(): Promise<void> {
+		const nearbyHostiles = entityManager.getThreateningCreatures(this.owner);
+		if (nearbyHostiles.length === 0) return; // No hostiles nearby, so no opportunity attacks to provoke
+		console.log(`Creature ${this.owner.getUID()} is provoking opportunity attacks from ${nearbyHostiles.length} nearby hostile creatures.`);
+		await Promise.all(
+			nearbyHostiles.map(async (hostile) => {
+				await hostile.combat.makeOpportunityAttack(this.owner);
+			}),
+		);
+	}
 
 	buildAttack(ctx: AttackContext, targetCreature?: Creature): AttackResult {
 		const weapon = ctx.weapon;
@@ -71,6 +82,11 @@ class CreatureCombat implements ICreatureCombat {
 			criticalThreatRange: critRange,
 			criticalMultiplier: critMultiplier,
 		};
+	}
+
+	getNumberOfOpportunityAttacks() {
+		const bonusAttacks = modifierManager.getTotalModifier("opportunityAttackCount", this.owner, {}) as number;
+		return 1 + bonusAttacks;
 	}
 
 	hasPerformedAction() {
@@ -253,6 +269,23 @@ class CreatureCombat implements ICreatureCombat {
 		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
 	}
 
+	async checkIfShouldProvokeOpportunityAttacks(creature: Creature, targetTile: Coordinate): Promise<void> {
+		if (!creature.stats.isAlive()) return;
+		const threateningCreatures = entityManager.getThreateningCreatures(creature);
+		if (threateningCreatures.length === 0) return; // No threatening creatures nearby, so no opportunity attacks to provoke
+		const threateningCreaturesInNewTile = entityManager.getThreateningCreatures(creature, { overridePosition: targetTile });
+
+		const includesSameThreats = threateningCreatures.every((threat) =>
+			threateningCreaturesInNewTile.map((t) => t.getUID()).includes(threat.getUID()),
+		);
+
+		if (!includesSameThreats) {
+			await this.provokeOpportunityAttacks();
+		}
+
+		return Promise.resolve();
+	}
+
 	resetActions(): void {
 		this.actions = {
 			[Action.STANDARD]: 1,
@@ -260,6 +293,7 @@ class CreatureCombat implements ICreatureCombat {
 			[Action.FULL_ROUND]: 1,
 			[Action.SWIFT]: 1,
 		};
+		this.opportunityAttacksLeft = this.getNumberOfOpportunityAttacks();
 		this.movement = this.owner.getMoveSpeed();
 		combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.owner.getUID() }); // Emit stat changed event to update UI
 		this.turnEnd = false; // Reset turn end status at the start of the turn
@@ -344,7 +378,16 @@ class CreatureCombat implements ICreatureCombat {
 		return nearestHostile;
 	}
 
-	executeAttack(target: Creature, ctx: AttackContext) {
+	async makeOpportunityAttack(target: Creature) {
+		if (this.opportunityAttacksLeft > 0) {
+			this.opportunityAttacksLeft--;
+			const ctx = this.owner.inventory.getEquippedWeapons()[0]; // For simplicity, opportunity attacks will use the main hand weapon. This can be expanded to allow off-hand attacks if desired.
+			ctx.isOpportunityAttack = true; // Set a flag in the attack context to indicate this is an opportunity attack, which can be used for feats or other effects that modify opportunity attacks
+			await this.owner.playMeleeAttackAnimation(target, { x: target.x, y: target.y }, ctx);
+		}
+	}
+
+	async executeAttack(target: Creature, ctx: AttackContext) {
 		const attackResult: AttackResult = this.buildAttack(ctx, target);
 		const attackRollResult: AttackRollResult = DiceRoller.attackRoll(this.owner, target, attackResult);
 		console.log(
@@ -356,7 +399,7 @@ class CreatureCombat implements ICreatureCombat {
 		if (attackRollResult.isHit) {
 			const damage: number = DiceRoller.rollBetween(attackResult.damageMin, attackResult.damageMax);
 			console.log(`Attack hits! Dealing ${damage} ${attackResult.damageType} damage.`);
-			target.takeDamage(damage);
+			await target.takeDamage(damage);
 			effectManager.addEffect(
 				new CustomFloatingText(`Hit! -${damage}`, target.screenX + randomVariance, target.screenY + randomVariance, 24, "red", 1500, 50),
 			);

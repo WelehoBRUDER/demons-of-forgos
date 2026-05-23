@@ -150,7 +150,7 @@ class EntityManager {
         return creaturesInFaction;
     }
     // Finds each creature threatening the target creature (i.e. any creature that has the target within its attack range). This is used for determining opportunity attacks when a creature tries to move away from an adjacent enemy or makes a ranged attack while adjacent to an enemy, as well as flanking.
-    getThreateningCreatures(target) {
+    getThreateningCreatures(target, options) {
         const threateningCreatures = [];
         const hostileFactions = target.stats.getHostileFactions();
         const hostiles = this.getCreaturesByFaction(hostileFactions, { map: target.getMap() });
@@ -160,7 +160,8 @@ class EntityManager {
             const threatRange = creature.combat.getThreatRange();
             if (threatRange <= 0)
                 continue; // If the creature has no melee attack, it can't threaten
-            const distanceToTarget = pathfinder.heuristic(creature.getPosition(), target.getPosition());
+            const targetPosition = options?.overridePosition ?? target.getPosition();
+            const distanceToTarget = pathfinder.heuristic(creature.getPosition(), targetPosition);
             if (distanceToTarget <= threatRange) {
                 threateningCreatures.push(creature);
             }

@@ -285,7 +285,8 @@ class Creature {
     getPosition() {
         return { x: this.x, y: this.y };
     }
-    move(newX, newY) {
+    async move(newX, newY) {
+        await this.combat.checkIfShouldProvokeOpportunityAttacks(this, { x: newX, y: newY }); // Check for opportunity attacks before moving, since moving is what provokes them
         this.x = newX;
         this.y = newY;
         this.combatStartCheck();
