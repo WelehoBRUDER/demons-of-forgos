@@ -493,7 +493,13 @@ const addPlayerPartyMember = (id, index, bodyType) => {
         species: "human",
         bodyType: bodyType,
         uid: `player_character:${index}`, // Unique identifier for the player character
-        feats: [{ feat: "two_weapon_fighting" }, { feat: "weapon_focus", params: { weapon: "shortsword" } }, { feat: "improved_initiative" }],
+        feats: [
+            { feat: "two_weapon_fighting" },
+            { feat: "weapon_focus", params: { weapon: "shortsword" } },
+            { feat: "improved_initiative" },
+            { feat: "improved_two_weapon_fighting" },
+            { feat: "greater_two_weapon_fighting" },
+        ],
         stats: {
             abilityScores: {
                 strength: 16,
@@ -511,7 +517,7 @@ const addPlayerPartyMember = (id, index, bodyType) => {
 const devInit = () => {
     const testPlayer = addPlayerPartyMember("test_player_1", 1, BodyType.A);
     const testPlayer2 = addPlayerPartyMember("test_player_2", 2, BodyType.B);
-    testPlayer.classes.addClassLevel(classManager.getClass("fighter"), 1);
+    testPlayer.classes.addClassLevel(classManager.getClass("fighter"), 19);
     testPlayer2.classes.addClassLevel(classManager.getClass("fighter"), 1);
     mapRenderer.setMapData(mapManager.getMap("dev_testing_area"));
     testPlayer.stats.resetHP();
@@ -522,7 +528,7 @@ const devInit = () => {
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
     creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
-    creature2.inventory.equipItem(itemManager.getItem("longsword"), EquipmentSlot.WEAPON);
+    //creature2.inventory.equipItem(itemManager.getItem("longsword"), EquipmentSlot.WEAPON);
     creature2.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);
     game.setControlledCreatureId(creature.getUID());
     mapRenderer.renderVisibleMap(camera);

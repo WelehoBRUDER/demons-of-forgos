@@ -58,7 +58,6 @@ class ModifierManager {
 	// Groups all modifiers that are actually applied, since it is possible to have non-stacking modifiers that are overridden by higher values.
 	collectModifiers(creature: Creature, context: any): Modifier[] {
 		const modifiers: Modifier[] = [];
-
 		// Loop through each provider and collect their modifiers, applying stacking rules
 		for (const provider of creature.getAllProviders()) {
 			const providedModifiers = provider.getModifiers(creature, context);

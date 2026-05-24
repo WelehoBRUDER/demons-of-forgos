@@ -22,6 +22,8 @@ class CreatureCombat {
         this.movement = this.owner.getMoveSpeed();
     }
     getAttackRange(weapon) {
+        if (!weapon)
+            return 1;
         const weaponRange = weapon.getRange();
         if (weapon.getWeaponType() === WeaponType.RANGED) {
             return weaponRange;
@@ -52,13 +54,19 @@ class CreatureCombat {
             ctx.canBeFlanked = targetCreature.combat.canBeFlanked();
         }
         const damageDice = this.handleDamageDieProgression(weapon.getDamage());
-        const attackBonus = this.getWeaponAttackBonus(ctx);
+        let attackBonus = this.getWeaponAttackBonus(ctx);
         const [damageMin, damageMax] = this.calculateBaseDamage(damageDice, ctx);
         const critRange = weapon.getCritRange();
         const critMultiplier = weapon.getCritMultiplier();
         // console.log(
         // 	`BUILDING ATTACK: Weapon: ${weapon.getId()}, Attack Bonus: ${attackBonus}, Damage: ${damageMin}-${damageMax} ${weapon.getDamageType()}, Crit Range: ${critRange}-20, Crit Multiplier: x${critMultiplier} | CREATURE: ${this.owner.getUID()}`,
         // );
+        if (ctx.iteration) {
+            if (ctx.iteration.type !== AttackIteration.PRIMARY_FULL) {
+                const penalty = ctx.iteration.count * -5; // Starts at 0 for the first attack, then -5 for the second, etc.
+                attackBonus += penalty;
+            }
+        }
         return {
             weapon,
             attackBonus,
@@ -90,6 +98,35 @@ class CreatureCombat {
     }
     getAttackResults() {
         return this.owner.inventory.getEquippedWeapons().map((ctx) => this.buildAttack(ctx));
+    }
+    getAttackResultGroups() {
+        const attackIterations = this.getAttackIterations();
+        const normalPrimaryAttacks = this.iterateAttacks(AttackIteration.PRIMARY, attackIterations[AttackIteration.PRIMARY]);
+        const fullBABPrimaryAttacks = this.iterateAttacks(AttackIteration.PRIMARY_FULL, attackIterations[AttackIteration.PRIMARY_FULL]);
+        const offhandAttacks = this.iterateAttacks(AttackIteration.OFFHAND, attackIterations[AttackIteration.OFFHAND]);
+        const primaryAttacks = [...fullBABPrimaryAttacks, ...normalPrimaryAttacks]; // Full BAB primary attacks are listed before regular primary attacks since they have a higher attack bonus
+        primaryAttacks.sort((a, b) => b.attackBonus - a.attackBonus); // Sort primary attacks by attack bonus in descending order
+        return {
+            primary: primaryAttacks,
+            offhand: offhandAttacks,
+        };
+    }
+    iterateAttacks(attackType, iterations) {
+        const weaponIndex = attackType === AttackIteration.OFFHAND ? 1 : 0; // Off-hand attacks use the second weapon slot
+        const ctx = this.owner.inventory.getEquippedWeapons()[weaponIndex];
+        const attackResults = [];
+        for (let i = 0; i < iterations; i++) {
+            if (!ctx.weapon)
+                break; // If there is no weapon equipped in the relevant slot, stop iterating
+            let penalty = 0;
+            if (attackType !== AttackIteration.PRIMARY_FULL) {
+                penalty = i * -5; // Starts at 0, then -5 etc
+            }
+            const attackResult = this.buildAttack(ctx);
+            attackResult.attackBonus += penalty; // Apply iterative attack penalty to the attack bonus
+            attackResults.push(attackResult);
+        }
+        return attackResults;
     }
     formatAttackResult(attackResult) {
         if (!attackResult)
@@ -188,7 +225,10 @@ class CreatureCombat {
         const offhand = this.owner.inventory.getWeaponInSlot(EquipmentSlot.OFFHAND);
         //console.log(`Off-hand weapon: ${offhand ? offhand.getId() : "None"}`);
         if (offhand) {
-            const maxOffhandIterations = modifierManager.getTotalModifier(AttackIteration.OFFHAND, this.owner, {});
+            const maxOffhandIterations = modifierManager.getTotalModifier(AttackIteration.OFFHAND, this.owner, {
+                isDualWielding: true,
+            });
+            console.log(`${DebugColor.YELLOW}Max off-hand iterations from modifiers: ${maxOffhandIterations}`);
             attackCount[AttackIteration.OFFHAND] = maxOffhandIterations + 1;
         }
         const primaryFullIterations = modifierManager.getTotalModifier(AttackIteration.PRIMARY_FULL, this.owner, {});
@@ -303,6 +343,7 @@ class CreatureCombat {
     async performAttackSequence(weaponIndex, iterations, target, tile, iterationType) {
         const ctx = this.owner.inventory.getEquippedWeapons()[weaponIndex];
         for (let i = 0; i < iterations; i++) {
+            ctx.iteration = { type: iterationType, count: i }; // Set the attack iteration in the context so that it can be used for calculating attack bonuses, damage bonuses, etc. based on the iteration (e.g. iterative attack penalties)
             if (!target)
                 break;
             await this.owner.playMeleeAttackAnimation(target, tile, ctx);
@@ -331,6 +372,8 @@ class CreatureCombat {
                 nearestHostile = hostile;
             }
         }
+        console.log(`${DebugColor.CYAN}Nearest hostile within range ${range}:`, nearestHostile);
+        console.log(`${DebugColor.RED}Is the hostile alive?:`, nearestHostile?.stats?.isAlive());
         return nearestHostile;
     }
     async makeOpportunityAttack(target) {

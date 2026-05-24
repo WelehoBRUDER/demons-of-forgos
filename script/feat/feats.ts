@@ -95,6 +95,7 @@ featManager.addFeat(
 				target: AttackIteration.OFFHAND,
 				operation: Operation.add,
 				evaluate: (creature: Creature, ctx: AttackContext) => {
+					console.log("Evaluating Improved Two-Weapon Fighting Bonus with context:", ctx);
 					if (ctx.isDualWielding) {
 						return 1; // Extra off-hand attack iteration
 					}

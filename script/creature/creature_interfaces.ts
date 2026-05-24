@@ -171,6 +171,7 @@ interface AttackContext {
 	targetCreature?: Creature;
 	canBeFlanked?: boolean;
 	isOpportunityAttack?: boolean; // Flag to indicate if this attack is an opportunity attack, which can be used for feats or other effects that modify opportunity attacks
+	iteration?: { type: AttackIteration; count: number };
 }
 
 interface AttackResult {

@@ -29,15 +29,22 @@ class CreatureSheet implements WindowContent {
 		const mods = creature.stats.getAbilityScoreModifiers();
 		const saves = creature.stats.getSaves();
 		const ac = creature.stats.getAC();
-		const attacks = creature.combat.getAttackResults();
+		const attacks = creature.combat.getAttackResultGroups();
 		const initiativeBonus = creature.combat.getInitiativeBonus();
 		const statusEffects = creature.statusEffects.getActiveEffects();
 		const feats = creature.getFeats();
-		let attacksText = "";
-		attacks.forEach((attack, index) => {
+		let attacksText = "Primary Attacks:<br>";
+		attacks.primary.forEach((attack, index) => {
 			const formattedAttack = creature.combat.formatAttackResult(attack);
 			attacksText += `${formattedAttack}<br>`;
 		});
+		if (attacks.offhand.length > 0) {
+			attacksText += "Off-hand Attacks:<br>";
+			attacks.offhand.forEach((attack, index) => {
+				const formattedAttack = creature.combat.formatAttackResult(attack);
+				attacksText += `${formattedAttack}<br>`;
+			});
+		}
 		let featsText = "";
 		for (const featInstance of feats) {
 			const featId = featInstance.feat;
