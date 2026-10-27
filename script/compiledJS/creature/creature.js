@@ -322,6 +322,7 @@ class Creature {
         }
         combatEvents.emit(CombatEventId.STAT_CHANGED, { creatureUID: this.getUID() }); // Emit stat changed event to update UI
         if (!this.stats.isAlive()) {
+            pathfinder.invalidateCache(); // Invalidate the pathfinding cache when a creature dies, since it may have been blocking movement
             combatEvents.emit(CombatEventId.CREATURE_DIED, { creatureUID: this.getUID() }); // Emit creature died event for any additional logic that needs to happen on death
             effectManager.addEffect(new CustomFloatingText(`💀`, this.screenX, this.screenY + 100, 24, "red", 1500, 50)); // Show damage taken as floating text
         }
@@ -391,6 +392,7 @@ class Creature {
         if (!this.hasFinishedMoving())
             return;
         const nextTile = this.currentPath.shift();
+        pathfinder.invalidateCache(); // Invalidate the pathfinding cache each time we move, since the map state may have changed
         if (nextTile) {
             const cost = pathfinder.costToEnter(nextTile.x, nextTile.y, mapRenderer.getMap(), this, this.stats.getSizeCategory());
             /* Something is blocking the path */

@@ -1,10 +1,24 @@
 "use strict";
 class Pathfinding {
-    constructor() { }
+    unreachableCache; // startKey, goalKey -> stateVersion, to cache unreachable paths for performance
+    stateVersion = 0;
+    constructor() {
+        this.stateVersion = 0;
+        this.unreachableCache = new Map();
+    }
+    invalidateCache() {
+        this.stateVersion++;
+        this.unreachableCache.clear();
+    }
     // A* pathfinding algorithm
     AStar(start, goal, map, creature, maxTolerance = 0, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
-    preferredDistance = 0) {
+    preferredDistance = 0, // If same as tolerance, essentially means "prefer to stop immediately at tolerance limit" instead of going as close as possible,
+    isForPreview = false) {
         if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
+            return [];
+        }
+        const cacheKey = `${start.x},${start.y},${goal[0].x},${goal[0].y}`;
+        if (this.unreachableCache.has(cacheKey) && this.unreachableCache.get(cacheKey) === this.stateVersion) {
             return [];
         }
         const path = [];
@@ -25,12 +39,14 @@ class Pathfinding {
         openSet.add(startKey);
         gScore.set(startKey, 0);
         fScore.set(startKey, this.closestGoalHeuristic(start, expandedGoals));
-        const MAXIMUM_ITERATIONS = 10 ** 4; // Safety limit to prevent infinite loops
+        const MAXIMUM_ITERATIONS = isForPreview ? 300 : 1000; // Safety limit to prevent infinite loops
         let iterationCount = 0;
         while (openSet.size > 0) {
             iterationCount++;
             if (iterationCount > MAXIMUM_ITERATIONS) {
                 console.warn("Maximum iterations reached in A* pathfinding");
+                const unreachableKey = `${goal[0].x},${goal[0].y}`;
+                this.unreachableCache.set(`${startKey},${unreachableKey}`, this.stateVersion);
                 return [];
             }
             // Get the node in openSet with the lowest fScore
@@ -83,8 +99,10 @@ class Pathfinding {
                     if (closedSet.has(neighborKey))
                         continue; // Skip already evaluated nodes
                     if (isDiagonal) {
-                        const side1Cost = this.costToEnter(currentX + dx, currentY, map, creature, size);
-                        const side2Cost = this.costToEnter(currentX, currentY + dy, map, creature, size);
+                        // Check if the diagonal move is blocked by impassable tiles in the cardinal directions
+                        // This check ignores objects and creatures, so that diagonal movement is only blocked by terrain, not by other entities.
+                        const side1Cost = this.costToEnter(currentX + dx, currentY, map, creature, size, true);
+                        const side2Cost = this.costToEnter(currentX, currentY + dy, map, creature, size, true);
                         if (side1Cost === Infinity && side2Cost === Infinity) {
                             continue;
                         }
@@ -153,7 +171,7 @@ class Pathfinding {
         return closestDistance;
     }
     // Returns the movement cost to enter a tile, considering terrain and entities. Returns Infinity if the tile is impassable.
-    costToEnter(tx, ty, map, creature, size) {
+    costToEnter(tx, ty, map, creature, size, considerOnlyWalls = false) {
         if (!map)
             return Infinity;
         if (size > map.getClearanceAt(tx, ty))
@@ -166,16 +184,24 @@ class Pathfinding {
             for (let dy = 0; dy < size; dy++) {
                 const x = tx + dx;
                 const y = ty + dy;
-                const terrainCost = this.costFromTerrain(x, y, map, propertyInteractions);
-                if (terrainCost === Infinity)
-                    return Infinity; // If any tile in the occupied area is impassable, the whole area is impassable
-                const objectCost = this.costFromObjects(x, y, map, propertyInteractions);
-                if (objectCost === Infinity)
-                    return Infinity; // If any tile in the occupied area is impassable due to an object, the whole area is impassable
-                const entityCost = this.costFromEntities(x, y, map, creature);
-                if (entityCost === Infinity)
-                    return Infinity; // If any tile in the occupied area is blocked by an entity, the whole area is impassable
-                cost = Math.max(cost, terrainCost, entityCost, objectCost); // Use the highest cost among the tiles in the occupied area to ensure we account for difficult terrain and entities properly
+                if (considerOnlyWalls) {
+                    const terrainCost = this.costFromTerrain(x, y, map, propertyInteractions);
+                    if (terrainCost === Infinity)
+                        return Infinity; // If any tile in the occupied area is impassable, the whole area is impassable
+                    cost = Math.max(cost, terrainCost); // Use the highest cost among the tiles in the occupied area to ensure we account for difficult terrain properly
+                }
+                else {
+                    const terrainCost = this.costFromTerrain(x, y, map, propertyInteractions);
+                    if (terrainCost === Infinity)
+                        return Infinity; // If any tile in the occupied area is impassable, the whole area is impassable
+                    const objectCost = this.costFromObjects(x, y, map, propertyInteractions);
+                    if (objectCost === Infinity)
+                        return Infinity; // If any tile in the occupied area is impassable due to an object, the whole area is impassable
+                    const entityCost = this.costFromEntities(x, y, map, creature);
+                    if (entityCost === Infinity)
+                        return Infinity; // If any tile in the occupied area is blocked by an entity, the whole area is impassable
+                    cost = Math.max(cost, terrainCost, entityCost, objectCost); // Use the highest cost among the tiles in the occupied area to ensure we account for difficult terrain and entities properly
+                }
                 tilesChecked++;
             }
         }
@@ -183,6 +209,7 @@ class Pathfinding {
     }
     costFromObjects(x, y, map, interactions) {
         const objects = map.getBoundingObjectsAt(x, y);
+        let cost = 1; // Default cost for normal movement
         for (const obj of objects) {
             const properties = obj.getTileProperties();
             if (properties.isWall)
@@ -194,10 +221,9 @@ class Pathfinding {
             if (properties.isDrop && interactions.isDrop === MovementType.BLOCKED)
                 return Infinity; // Impassable drop (can be flown or hovered over)
             if (properties.isDifficultTerrain && interactions.isDifficultTerrain === MovementType.BLOCKED)
-                return 2; // Difficult terrain, double movement cost
-            return 1; // Normal movement cost
+                cost = 2; // Difficult terrain, double movement cost
         }
-        return 1; // No objects, normal movement cost
+        return cost; // No objects, normal movement cost
     }
     // When it comes to static properties, they fall into three categories: impassable (infinite cost), normal (1 cost), and difficult terrain (2 cost).
     // Dynamic obstacles caused by spells or abilities use the same categories unless they explicitly state a different cost (eg wall of thorns has 4 cost).

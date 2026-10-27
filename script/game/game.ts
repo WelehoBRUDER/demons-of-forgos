@@ -154,7 +154,7 @@ class Game {
 				break; // Stop processing if we've exceeded our time budget for this frame
 			}
 			const request = this.pathRequestQueue.shift()!;
-			const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap()!, request.creature);
+			const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap()!, request.creature, 0, 0, request.forHighlight);
 			if (path) {
 				if (request.forHighlight) {
 					mapRenderer.clearPathPrediction();
