@@ -555,11 +555,8 @@ class MapRenderer {
 	}
 
 	getTotalMapSize() {
-		const zoom = camera.getZoom();
 		const { width: mapWidth, height: mapHeight } = this.getMapBounds();
-		const fullWidth: number = mapWidth * zoom;
-		const fullHeight: number = mapHeight * zoom;
-		return { fullWidth, fullHeight };
+		return { fullWidth: mapWidth, fullHeight: mapHeight };
 	}
 
 	getViewportSize() {

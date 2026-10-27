@@ -450,11 +450,8 @@ class MapRenderer {
         this.pathTiles = [];
     }
     getTotalMapSize() {
-        const zoom = camera.getZoom();
         const { width: mapWidth, height: mapHeight } = this.getMapBounds();
-        const fullWidth = mapWidth * zoom;
-        const fullHeight = mapHeight * zoom;
-        return { fullWidth, fullHeight };
+        return { fullWidth: mapWidth, fullHeight: mapHeight };
     }
     getViewportSize() {
         const zoom = camera.getZoom();
