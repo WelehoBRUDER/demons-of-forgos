@@ -286,7 +286,7 @@ class CreatureCombat {
             return; // No threatening creatures nearby, so no opportunity attacks to provoke
         const threateningCreaturesInNewTile = entityManager.getThreateningCreatures(creature, { overridePosition: targetTile });
         const includesSameThreats = threateningCreatures.every((threat) => threateningCreaturesInNewTile.map((t) => t.getUID()).includes(threat.getUID()));
-        console.log(threateningCreatures, threateningCreaturesInNewTile, includesSameThreats);
+        //console.log(threateningCreatures, threateningCreaturesInNewTile, includesSameThreats);
         if (!includesSameThreats) {
             // Find which creatures are not in the new list
             const provokingCreatures = threateningCreatures.filter((threat) => !threateningCreaturesInNewTile.map((t) => t.getUID()).includes(threat.getUID()));
@@ -346,10 +346,12 @@ class CreatureCombat {
             ctx.iteration = { type: iterationType, count: i }; // Set the attack iteration in the context so that it can be used for calculating attack bonuses, damage bonuses, etc. based on the iteration (e.g. iterative attack penalties)
             if (!target)
                 break;
-            await this.owner.playMeleeAttackAnimation(target, tile, ctx);
             if (!this.checkIfAttackTargetValid(target)) {
                 target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
                 tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
+            }
+            else {
+                await this.owner.playMeleeAttackAnimation(target, tile, ctx);
             }
         }
     }
@@ -372,8 +374,8 @@ class CreatureCombat {
                 nearestHostile = hostile;
             }
         }
-        console.log(`${DebugColor.CYAN}Nearest hostile within range ${range}:`, nearestHostile);
-        console.log(`${DebugColor.RED}Is the hostile alive?:`, nearestHostile?.stats?.isAlive());
+        // console.log(`${DebugColor.CYAN}Nearest hostile within range ${range}:`, nearestHostile);
+        // console.log(`${DebugColor.RED}Is the hostile alive?:`, nearestHostile?.stats?.isAlive());
         return nearestHostile;
     }
     async makeOpportunityAttack(target) {

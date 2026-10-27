@@ -10,7 +10,9 @@ class CustomFloatingText {
     duration;
     speed;
     constructor(text, x, y, fontSize = 20, color = "white", duration = 2000, speed = 50) {
-        console.log(`Creating CustomFloatingText with text: "${text}", position: (${x}, ${y}), fontSize: ${fontSize}, color: ${color}, duration: ${duration}, speed: ${speed}`);
+        // console.log(
+        // 	`Creating CustomFloatingText with text: "${text}", position: (${x}, ${y}), fontSize: ${fontSize}, color: ${color}, duration: ${duration}, speed: ${speed}`,
+        // );
         this.id = "cft";
         this.text = text;
         this.x = x;

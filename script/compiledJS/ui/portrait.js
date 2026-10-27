@@ -9,6 +9,8 @@ class PortraitManager {
         });
     }
     updatePortrait(creatureUID) {
+        if (!this.portraitContainer)
+            return;
         const portrait = this.portraits.get(creatureUID);
         if (portrait) {
             portrait.updatePortrait();
@@ -18,6 +20,8 @@ class PortraitManager {
         }
     }
     generateAllPortraits() {
+        if (!this.portraitContainer)
+            return;
         this.portraitContainer.innerHTML = "";
         const creatures = entityManager.getCreaturesByFaction([Faction.PLAYER]);
         creatures.forEach((creature) => {

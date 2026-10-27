@@ -111,7 +111,7 @@ class Camera {
             zoom = this.maxZoom;
         this.prevZoom = this.zoom;
         this.zoom = zoom;
-        console.log(`Zoom set to: ${this.zoom.toFixed(2)}`);
+        // console.log(`Zoom set to: ${this.zoom.toFixed(2)}`);
     }
     // Not working yet
     panTo(x, y) {

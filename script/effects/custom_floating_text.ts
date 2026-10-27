@@ -18,9 +18,9 @@ class CustomFloatingText implements Effect {
 		duration: number = 2000,
 		speed: number = 50,
 	) {
-		console.log(
-			`Creating CustomFloatingText with text: "${text}", position: (${x}, ${y}), fontSize: ${fontSize}, color: ${color}, duration: ${duration}, speed: ${speed}`,
-		);
+		// console.log(
+		// 	`Creating CustomFloatingText with text: "${text}", position: (${x}, ${y}), fontSize: ${fontSize}, color: ${color}, duration: ${duration}, speed: ${speed}`,
+		// );
 		this.id = "cft";
 		this.text = text;
 		this.x = x;

@@ -173,6 +173,7 @@ class EntityManager {
 		const hostiles = this.getCreaturesByFaction(hostileFactions, { map: target.getMap() });
 		for (const creature of hostiles) {
 			if (creature.getMap() !== target.getMap()) continue; // A creature can't threaten itself or creatures on other maps
+			if (!creature.stats.isAlive()) continue; // Dead creatures can't threaten
 			const threatRange = creature.combat.getThreatRange();
 			if (threatRange <= 0) continue; // If the creature has no melee attack, it can't threaten
 			const targetPosition = options?.overridePosition ?? target.getPosition();
