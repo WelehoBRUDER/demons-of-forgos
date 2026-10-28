@@ -521,7 +521,7 @@ class MapRenderer {
 			if (prevGoal && currentGoal.x === prevGoal.x && currentGoal.y === prevGoal.y) return; // No change in goal tile
 			const start: { x: number; y: number } = game.getPlayerPosition();
 			if (!start) return; // No controlled creature position available
-			game.requestPath(start, [currentGoal], game.getControlledCreature(), true);
+			game.requestPath(start, [currentGoal], game.getControlledCreature(), { isForPreview: true });
 			this.renderTileHighlight();
 		}
 

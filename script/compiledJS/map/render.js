@@ -425,7 +425,7 @@ class MapRenderer {
             const start = game.getPlayerPosition();
             if (!start)
                 return; // No controlled creature position available
-            game.requestPath(start, [currentGoal], game.getControlledCreature(), true);
+            game.requestPath(start, [currentGoal], game.getControlledCreature(), { isForPreview: true });
             this.renderTileHighlight();
         }
         if (!this.highlightHasChanged(worldPos))

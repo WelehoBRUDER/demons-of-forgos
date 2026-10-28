@@ -28,7 +28,8 @@ class CreatureAI {
         for (const hostile of hostiles) {
             const dist = pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: hostile.x, y: hostile.y });
             if (dist < nearestDistance) {
-                const path = pathfinder.AStar({ x: this.owner.x, y: this.owner.y }, [{ x: hostile.x, y: hostile.y }], mapManager.getMap(this.owner.getMap()), this.owner, attackRange, attackRange);
+                const path = pathfinder.AStar({ x: this.owner.x, y: this.owner.y }, [{ x: hostile.x, y: hostile.y }], mapManager.getMap(this.owner.getMap()), this.owner, attackRange, attackRange, // For now, treat preference the same as tolerance so it will prefer to stop at max attack range instead of trying to get closer
+                { requireLOS: true });
                 const pathCost = path ? pathfinder.totalPathCost(path) : Infinity;
                 if (pathCost < nearestDistance) {
                     bestPath = path;
@@ -40,7 +41,12 @@ class CreatureAI {
         this.owner.setPath(bestPath);
         await this.owner.animationFinished(); // Wait for movement to finish before ending the turn
         await sleep(200); // Small delay before attacking
-        if (pathfinder.heuristic({ x: this.owner.x, y: this.owner.y }, { x: nearestHostile.x, y: nearestHostile.y }) <= attackRange) {
+        const map = mapManager.getMap(this.owner.getMap());
+        const targetPosition = { x: nearestHostile.x, y: nearestHostile.y };
+        const ownerPosition = { x: this.owner.x, y: this.owner.y };
+        const distanceToTarget = pathfinder.heuristic(ownerPosition, targetPosition);
+        const hasLineOfSight = pathfinder.hasLineOfSight(ownerPosition, targetPosition, map);
+        if (distanceToTarget <= attackRange && hasLineOfSight) {
             await this.owner.combat.attack(nearestHostile, { x: nearestHostile.x, y: nearestHostile.y });
             //nearestHostile!.takeDamage(10); // Placeholder damage value
         }

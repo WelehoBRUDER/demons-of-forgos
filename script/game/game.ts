@@ -27,6 +27,7 @@ class Game {
 		goal: { x: number; y: number }[];
 		creature: Creature;
 		forHighlight: boolean;
+		requireLOS: boolean;
 	}[] = [];
 	private PATH_REQUEST_BUDGET_PER_FRAME: number = 4; // How many ms to spend on processing path requests each frame
 	private isEditorMode: boolean = false; // Flag to indicate if we're in editor mode, which can disable certain game mechanics for testing
@@ -154,7 +155,10 @@ class Game {
 				break; // Stop processing if we've exceeded our time budget for this frame
 			}
 			const request = this.pathRequestQueue.shift()!;
-			const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap()!, request.creature, 0, 0, request.forHighlight);
+			const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap()!, request.creature, 0, 0, {
+				isForPreview: request.forHighlight,
+				requireLOS: request.requireLOS,
+			});
 			if (path) {
 				if (request.forHighlight) {
 					mapRenderer.clearPathPrediction();
@@ -191,7 +195,12 @@ class Game {
 		});
 	}
 
-	requestPath(start: { x: number; y: number }, goal: { x: number; y: number }[], creature: Creature, forHighlight: boolean = false): void {
+	requestPath(
+		start: { x: number; y: number },
+		goal: { x: number; y: number }[],
+		creature: Creature,
+		options?: { isForPreview?: boolean; requireLOS?: boolean },
+	): void {
 		if (this.isInEditorMode()) return; // Don't allow pathfinding requests in editor mode, as it can interfere with testing and cause unintended consequences
 		const creatureId = creature.getIndex();
 		if (this.pathRequestQueue.some((req) => req.creature.getIndex() === creatureId)) {
@@ -202,7 +211,13 @@ class Game {
 			console.warn("Creature is not on a valid map");
 			return;
 		}
-		this.pathRequestQueue.push({ start, goal, creature, forHighlight });
+		this.pathRequestQueue.push({
+			start,
+			goal,
+			creature,
+			forHighlight: options?.isForPreview ?? false,
+			requireLOS: options?.requireLOS ?? false,
+		});
 	}
 
 	updateCreatureVisualPositions(dt: number) {
@@ -458,13 +473,20 @@ class Game {
 		const creature = this.getControlledCreature();
 		if (!creature || this.state !== GameState.COMBAT) return;
 		if (!combatManager.isCreatureTurn(creature)) return; // Can only attack if it's the creature's turn in combat
+		const distanceToHighlightedTile = pathfinder.heuristic(
+			{ x: creature.x, y: creature.y },
+			{ x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y },
+		);
+		const lineOfSightCheck = pathfinder.hasLineOfSight(
+			{ x: creature.x, y: creature.y },
+			{ x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y },
+			mapRenderer.getMap()!,
+		);
 		if (
-			pathfinder.heuristic(
-				{ x: creature.x, y: creature.y },
-				{ x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y },
-			) > 1
+			distanceToHighlightedTile > creature.combat.getAttackRange(creature.inventory.getWeaponInSlot(EquipmentSlot.WEAPON)) ||
+			!lineOfSightCheck
 		) {
-			return; // Can only attack adjacent tiles
+			return; // Can only attack adjacent tiles with line of sight
 		}
 
 		const goalTile: { x: number; y: number } | null = mapRenderer.getHighlightedTile();

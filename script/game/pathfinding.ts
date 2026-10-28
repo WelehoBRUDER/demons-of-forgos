@@ -24,7 +24,7 @@ class Pathfinding {
 		creature: Creature,
 		maxTolerance: number = 0, // If the creature can't reach the goal directly, allow it to path to a tile adjacent to the goal within this tolerance
 		preferredDistance: number = 0, // If same as tolerance, essentially means "prefer to stop immediately at tolerance limit" instead of going as close as possible,
-		isForPreview: boolean = false, // This happens when the player is hovering a tile and the game shows a preview of the path. This caps max iterations to prevent the game from freezing if the player hovers a tile that is unreachable.
+		options?: { isForPreview?: boolean; requireLOS?: boolean }, // Options for the pathfinding algorithm
 	): { x: number; y: number; cost: number }[] | null {
 		if (!map?.inBounds(start.x, start.y) || !map?.inBounds(goal[0].x, goal[0].y)) {
 			return [];
@@ -44,7 +44,7 @@ class Pathfinding {
 		const enterCost = new Map<string, number>();
 		const size = creature.stats.getSizeCategory();
 
-		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, maxTolerance, preferredDistance);
+		const expandedGoals = this.findExpandedGoalNodes(goal, map, creature, maxTolerance, preferredDistance, options?.requireLOS ?? false);
 		if (expandedGoals.length === 0) {
 			return [];
 		}
@@ -56,7 +56,7 @@ class Pathfinding {
 		gScore.set(startKey, 0);
 		fScore.set(startKey, this.closestGoalHeuristic(start, expandedGoals));
 
-		const MAXIMUM_ITERATIONS = isForPreview ? 300 : 1000; // Safety limit to prevent infinite loops
+		const MAXIMUM_ITERATIONS = options?.isForPreview ? 300 : 1000; // Safety limit to prevent infinite loops
 		let iterationCount = 0;
 		while (openSet.size > 0) {
 			iterationCount++;
@@ -153,6 +153,7 @@ class Pathfinding {
 		creature: Creature,
 		maxTolerance: number,
 		preferredDistance: number,
+		requireLOS: boolean = false,
 	): { x: number; y: number }[] {
 		const size = creature.stats.getSizeCategory();
 		const expandedGoals: { x: number; y: number }[] = [];
@@ -177,6 +178,8 @@ class Pathfinding {
 					}
 
 					if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity) continue;
+
+					if (requireLOS && !this.hasLineOfSight({ x: expandedX, y: expandedY }, { x: g.x, y: g.y }, map)) continue;
 
 					expandedGoals.push({ x: expandedX, y: expandedY });
 				}
@@ -348,6 +351,30 @@ class Pathfinding {
 			}
 		}
 		return points;
+	}
+
+	hasLineOfSight(start: Coordinate, end: Coordinate, map: WorldMap): boolean {
+		// Get all tile coordinates between start and end using your pathfinder's line function
+		const points = pathfinder.line(start, end);
+
+		// Check every tile along the line (excluding the attacker's own tile at index 0)
+		for (let i = 1; i < points.length; i++) {
+			const { x, y } = points[i];
+
+			// If we hit a wall or opaque terrain before reaching the target, LOS is blocked
+			const properties = map.getTileProperties(x, y);
+			if (properties.isWall) {
+				return false;
+			}
+
+			// Optional: If you also want objects like closed doors or pillars to block LOS, check them here:
+			const objects = map.getBoundingObjectsAt(x, y);
+			if (objects.some((obj) => obj.getTileProperties().isWall)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
 

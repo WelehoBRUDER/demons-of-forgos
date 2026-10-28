@@ -130,7 +130,10 @@ class Game {
                 break; // Stop processing if we've exceeded our time budget for this frame
             }
             const request = this.pathRequestQueue.shift();
-            const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap(), request.creature, 0, 0, request.forHighlight);
+            const path = pathfinder.AStar(request.start, request.goal, mapRenderer.getMap(), request.creature, 0, 0, {
+                isForPreview: request.forHighlight,
+                requireLOS: request.requireLOS,
+            });
             if (path) {
                 if (request.forHighlight) {
                     mapRenderer.clearPathPrediction();
@@ -162,7 +165,7 @@ class Game {
             this.loop();
         });
     }
-    requestPath(start, goal, creature, forHighlight = false) {
+    requestPath(start, goal, creature, options) {
         if (this.isInEditorMode())
             return; // Don't allow pathfinding requests in editor mode, as it can interfere with testing and cause unintended consequences
         const creatureId = creature.getIndex();
@@ -174,7 +177,13 @@ class Game {
             console.warn("Creature is not on a valid map");
             return;
         }
-        this.pathRequestQueue.push({ start, goal, creature, forHighlight });
+        this.pathRequestQueue.push({
+            start,
+            goal,
+            creature,
+            forHighlight: options?.isForPreview ?? false,
+            requireLOS: options?.requireLOS ?? false,
+        });
     }
     updateCreatureVisualPositions(dt) {
         const map = mapRenderer.getMap();
@@ -417,8 +426,11 @@ class Game {
             return;
         if (!combatManager.isCreatureTurn(creature))
             return; // Can only attack if it's the creature's turn in combat
-        if (pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y }) > 1) {
-            return; // Can only attack adjacent tiles
+        const distanceToHighlightedTile = pathfinder.heuristic({ x: creature.x, y: creature.y }, { x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y });
+        const lineOfSightCheck = pathfinder.hasLineOfSight({ x: creature.x, y: creature.y }, { x: mapRenderer.getHighlightedTile().x, y: mapRenderer.getHighlightedTile().y }, mapRenderer.getMap());
+        if (distanceToHighlightedTile > creature.combat.getAttackRange(creature.inventory.getWeaponInSlot(EquipmentSlot.WEAPON)) ||
+            !lineOfSightCheck) {
+            return; // Can only attack adjacent tiles with line of sight
         }
         const goalTile = mapRenderer.getHighlightedTile();
         const targetCreature = entityManager
