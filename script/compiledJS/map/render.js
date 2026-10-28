@@ -370,10 +370,11 @@ class MapRenderer {
             return; // Dsable path prediction in editor mode
         if (game.mouseHeldDownDuration() < 200 && !game.isControlledCreatureTurn())
             return; // Don't show path prediction for quick clicks, only for holds
+        const playerCreature = game.getControlledCreature();
+        if (!playerCreature)
+            return; // No controlled creature, can't predict path
         if (this.pathTiles.length === 0) {
-            this.pathTiles =
-                pathfinder.AStar(game.getPlayerPosition(), [this.highlightedTile], this.map, new Creature({ id: "test_creature", stats: {} })) ||
-                    [];
+            this.pathTiles = pathfinder.AStar(game.getPlayerPosition(), [this.highlightedTile], this.map, playerCreature) || [];
         }
         const zoom = camera.getZoom();
         const size = this.tileSize * zoom;

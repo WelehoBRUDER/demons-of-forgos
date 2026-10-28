@@ -26,7 +26,7 @@ class Pathfinding {
 		preferredDistance: number = 0, // If same as tolerance, essentially means "prefer to stop immediately at tolerance limit" instead of going as close as possible,
 		isForPreview: boolean = false, // This happens when the player is hovering a tile and the game shows a preview of the path. This caps max iterations to prevent the game from freezing if the player hovers a tile that is unreachable.
 	): { x: number; y: number; cost: number }[] | null {
-		if (!map.inBounds(start.x, start.y) || !map.inBounds(goal[0].x, goal[0].y)) {
+		if (!map?.inBounds(start.x, start.y) || !map?.inBounds(goal[0].x, goal[0].y)) {
 			return [];
 		}
 
@@ -157,15 +157,25 @@ class Pathfinding {
 		const size = creature.stats.getSizeCategory();
 		const expandedGoals: { x: number; y: number }[] = [];
 
+		const effectiveTolerance = Math.max(maxTolerance, preferredDistance, size > SizeCategory.MEDIUM ? size - 1 : 0); // Ensure we expand enough to cover the preferred distance
+
 		for (const g of goal) {
-			for (let dx = -maxTolerance; dx <= maxTolerance; dx++) {
-				for (let dy = -maxTolerance; dy <= maxTolerance; dy++) {
+			// Use effectiveTolerance to allow anchors that position
+			// any part of the creature's footprint over or near the target tile.
+			for (let dx = -effectiveTolerance; dx <= maxTolerance; dx++) {
+				for (let dy = -effectiveTolerance; dy <= maxTolerance; dy++) {
 					const expandedX = g.x + dx;
 					const expandedY = g.y + dy;
 					if (!map.inBounds(expandedX, expandedY)) continue;
 
-					const currentDist = Math.max(Math.abs(dx), Math.abs(dy));
-					if (currentDist > maxTolerance) continue;
+					// If maxTolerance is 0, ensure the creature's footprint actually covers the target tile 'g'.
+					// For multi-tile creatures, the footprint spans from [expandedX, expandedX + size - 1].
+					if (maxTolerance === 0 && size > 1) {
+						const coversX = g.x >= expandedX && g.x < expandedX + size;
+						const coversY = g.y >= expandedY && g.y < expandedY + size;
+						if (!coversX || !coversY) continue;
+					}
+
 					if (this.costToEnter(expandedX, expandedY, map, creature, size) === Infinity) continue;
 
 					expandedGoals.push({ x: expandedX, y: expandedY });
@@ -276,6 +286,7 @@ class Pathfinding {
 
 		const creaturesBounding: Creature[] = entityManager.getCreaturesBoundingWithPosition(map.id, x, y);
 		for (const other of creaturesBounding) {
+			if (other._id === creature._id) continue; // Ignore self
 			// Tiny creatures don't occupy the tile they're on.
 			if (other._id !== creature._id && other.getOccupiedArea().length !== 0) {
 				return Infinity; // Tile is occupied by another creature, impassable
