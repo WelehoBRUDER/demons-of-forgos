@@ -56,8 +56,8 @@ class CombatManager {
             participant.isAlive = false; // Mark the participant as dead in the initiative order
         }
         const factionsInCombat = this.getFactionsInCombat();
-        console.log(factionsInCombat);
-        if (factionsInCombat.size <= 1) {
+        const hostilesRemain = this.checkIfAnyHostilesInCombat();
+        if (!hostilesRemain) {
             combatEvents.emit(CombatEventId.COMBAT_ENDED, { winningFaction: factionsInCombat.values().next().value });
             this.initiativeOrder = [];
             this.activeTurnContext = null;
@@ -129,6 +129,24 @@ class CombatManager {
             }
         });
         return factions;
+    }
+    checkIfAnyHostilesInCombat() {
+        let foundHostile = false;
+        const factionsInCombat = this.getFactionsInCombat();
+        this.initiativeOrder.forEach((p) => {
+            if (p.isAlive) {
+                const hostiles = entityManager.getCreatureByUID(p.uid)?.stats.getHostileFactions();
+                if (hostiles) {
+                    for (const hostileFaction of hostiles) {
+                        if (factionsInCombat.has(hostileFaction)) {
+                            foundHostile = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        return foundHostile;
     }
     removeFromCombat(creature) {
         const index = this.initiativeOrder.findIndex((p) => p.uid === creature.getUID());

@@ -8,12 +8,14 @@ class Atlas {
     sprites;
     dynamicSprites;
     itemSprites;
+    projectiles;
     tileCtx;
     propCtx;
     objectCtx;
     spriteCtx;
     dynamicSpriteCtx;
     itemSpriteCtx;
+    projectileCtx;
     renderVersion = 0;
     constructor(tileSize, texturesPerRow) {
         this.tileSize = tileSize;
@@ -26,11 +28,13 @@ class Atlas {
         // Dynamic sprites should realistically only ever take 4 slots due to there being at most 4 custom characters.
         this.dynamicSprites = new OffscreenCanvas(spriteSize * this.texturesPerRow, 2 * spriteSize);
         this.itemSprites = new OffscreenCanvas(spriteSize * this.texturesPerRow, spriteSize * Math.ceil(itemManager.getAllItems().length / this.texturesPerRow));
+        this.projectiles = new OffscreenCanvas(spriteSize * this.texturesPerRow, spriteSize * Math.ceil(projectileManager.getAllProjectileBases().length / this.texturesPerRow));
         this.tileCtx = this.tiles.getContext("2d");
         this.propCtx = this.props.getContext("2d");
         this.objectCtx = this.objects.getContext("2d");
         this.spriteCtx = this.sprites.getContext("2d");
         this.dynamicSpriteCtx = this.dynamicSprites.getContext("2d");
+        this.projectileCtx = this.projectiles.getContext("2d");
         this.itemSpriteCtx = this.itemSprites.getContext("2d");
         console.log(`Atlas initialized with tileSize: ${tileSize}, texturesPerRow: ${texturesPerRow}, spriteSize: ${spriteSize}`);
         console.log(`Tiles canvas size: ${this.tiles.width}x${this.tiles.height}`);
@@ -60,6 +64,9 @@ class Atlas {
     }
     getDynamicSpriteAtlas() {
         return this.dynamicSprites;
+    }
+    getProjectileAtlas() {
+        return this.projectiles;
     }
     loadTextures() {
         let loadTime = performance.now();
@@ -179,6 +186,23 @@ class Atlas {
                 console.log(`Loading item sprite: ${item.getTexturePath()}`);
                 img.src = item.getTexturePath();
             }
+        }
+        // Load projectile sprites into the projectile atlas
+        for (let i = 0; i < projectileManager.getAllProjectileBases().length; i++) {
+            const projectile = projectileManager.getAllProjectileBases()[i];
+            const img = new Image();
+            img.onload = () => {
+                const x = (i % this.texturesPerRow) * this.getSpriteSize();
+                const y = Math.floor(i / this.texturesPerRow) * this.getSpriteSize();
+                this.projectileCtx.drawImage(img, x, y, this.getSpriteSize(), this.getSpriteSize());
+                projectileManager.getAllProjectileBases()[i].setSpritePosition(x, y);
+                console.log(`Loaded projectile sprite: ${projectile.spritePath} at (${x}, ${y})`);
+            };
+            img.onerror = () => {
+                console.error(`Failed to load projectile sprite: ${projectile.spritePath}`);
+            };
+            console.log(`Loading projectile sprite: ${projectile.spritePath}`);
+            img.src = projectile.spritePath;
         }
         loadTime = performance.now() - loadTime;
         window.addEventListener("load", () => {

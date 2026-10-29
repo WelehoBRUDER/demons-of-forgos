@@ -43,6 +43,48 @@ entityManager.addEnemyTemplate(
 );
 entityManager.addEnemyTemplate(
 	new NPCCreature({
+		id: "goblin_archer",
+		species: "goblin",
+		spritePath: "assets/sprites/goblin_archer.png",
+		stats: {
+			faction: Faction.HOSTILE,
+			sizeCategory: SizeCategory.SMALL,
+			abilityScores: {
+				strength: 11,
+				dexterity: 15,
+				constitution: 12,
+				intelligence: 10,
+				wisdom: 9,
+				charisma: 6,
+			},
+		},
+		baseHitDice: [{ type: HitDice.D10, count: 1 }],
+		// modifiers: [
+		// 	{
+		// 		id: "goblin_armor",
+		// 		target: "ac",
+		// 		operation: Operation.add,
+		// 		evaluate: () => 2,
+		// 		type: ModifierType.armor,
+		// 	},
+		// 	{
+		// 		id: "goblin_shield",
+		// 		target: "ac",
+		// 		operation: Operation.add,
+		// 		evaluate: () => 1,
+		// 		type: ModifierType.shield,
+		// 	},
+		// ],
+		equipment: {
+			weapon: itemManager.getItem("shortbow")! as Weapon,
+			armor: itemManager.getItem("leather_armor")! as Armor,
+		},
+		feats: [{ feat: "improved_initiative" }],
+		bab: 1,
+	}),
+);
+entityManager.addEnemyTemplate(
+	new NPCCreature({
 		id: "ogre",
 		species: "ogre",
 		spritePath: "assets/sprites/ogre.png",

@@ -16,6 +16,6 @@
 		{ "i": "goblin", "u": "dev_testing_area:goblin:29:8", "x": 29, "y": 8 },
 		{ "i": "goblin", "u": "dev_testing_area:goblin:31:6", "x": 31, "y": 6 },
 		{ "i": "goblin", "u": "dev_testing_area:goblin:32:8", "x": 32, "y": 8 },
-		{ "i": "goblin", "u": "dev_testing_area:goblin:34:4", "x": 34, "y": 4 }
+		{ "i": "goblin_archer", "u": "dev_testing_area:goblin_archer:34:4", "x": 34, "y": 4 }
 	]
 }

@@ -7,12 +7,14 @@ class Atlas {
 	private sprites: OffscreenCanvas;
 	private dynamicSprites: OffscreenCanvas;
 	private itemSprites: OffscreenCanvas;
+	private projectiles: OffscreenCanvas;
 	private tileCtx: OffscreenCanvasRenderingContext2D;
 	private propCtx: OffscreenCanvasRenderingContext2D;
 	private objectCtx: OffscreenCanvasRenderingContext2D;
 	private spriteCtx: OffscreenCanvasRenderingContext2D;
 	private dynamicSpriteCtx: OffscreenCanvasRenderingContext2D;
 	private itemSpriteCtx: OffscreenCanvasRenderingContext2D;
+	private projectileCtx: OffscreenCanvasRenderingContext2D;
 	private renderVersion: number = 0;
 
 	constructor(tileSize: number, texturesPerRow: number) {
@@ -32,12 +34,17 @@ class Atlas {
 			spriteSize * this.texturesPerRow,
 			spriteSize * Math.ceil(itemManager.getAllItems().length / this.texturesPerRow),
 		);
+		this.projectiles = new OffscreenCanvas(
+			spriteSize * this.texturesPerRow,
+			spriteSize * Math.ceil(projectileManager.getAllProjectileBases().length / this.texturesPerRow),
+		);
 
 		this.tileCtx = this.tiles.getContext("2d")!;
 		this.propCtx = this.props.getContext("2d")!;
 		this.objectCtx = this.objects.getContext("2d")!;
 		this.spriteCtx = this.sprites.getContext("2d")!;
 		this.dynamicSpriteCtx = this.dynamicSprites.getContext("2d")!;
+		this.projectileCtx = this.projectiles.getContext("2d")!;
 		this.itemSpriteCtx = this.itemSprites.getContext("2d")!;
 
 		console.log(`Atlas initialized with tileSize: ${tileSize}, texturesPerRow: ${texturesPerRow}, spriteSize: ${spriteSize}`);
@@ -77,6 +84,10 @@ class Atlas {
 
 	getDynamicSpriteAtlas(): OffscreenCanvas {
 		return this.dynamicSprites;
+	}
+
+	getProjectileAtlas(): OffscreenCanvas {
+		return this.projectiles;
 	}
 
 	loadTextures() {
@@ -201,6 +212,24 @@ class Atlas {
 				console.log(`Loading item sprite: ${item.getTexturePath()}`);
 				img.src = item.getTexturePath();
 			}
+		}
+
+		// Load projectile sprites into the projectile atlas
+		for (let i = 0; i < projectileManager.getAllProjectileBases().length; i++) {
+			const projectile = projectileManager.getAllProjectileBases()[i];
+			const img = new Image();
+			img.onload = () => {
+				const x = (i % this.texturesPerRow) * this.getSpriteSize();
+				const y = Math.floor(i / this.texturesPerRow) * this.getSpriteSize();
+				this.projectileCtx.drawImage(img, x, y, this.getSpriteSize(), this.getSpriteSize());
+				projectileManager.getAllProjectileBases()[i].setSpritePosition(x, y);
+				console.log(`Loaded projectile sprite: ${projectile.spritePath} at (${x}, ${y})`);
+			};
+			img.onerror = () => {
+				console.error(`Failed to load projectile sprite: ${projectile.spritePath}`);
+			};
+			console.log(`Loading projectile sprite: ${projectile.spritePath}`);
+			img.src = projectile.spritePath;
 		}
 
 		loadTime = performance.now() - loadTime;

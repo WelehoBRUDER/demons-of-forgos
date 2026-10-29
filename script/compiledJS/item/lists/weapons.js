@@ -16,7 +16,7 @@ itemManager.addItem(new Weapon({
 }));
 itemManager.addItem(new Weapon({
     id: "dagger",
-    spritePath: "assets/items/weapons/longsword.png",
+    spritePath: "assets/items/weapons/dagger.png",
     damage: { count: 1, type: Dice.d4 },
     weaponType: WeaponType.MELEE,
     damageType: DamageType.PIERCING,
@@ -26,12 +26,30 @@ itemManager.addItem(new Weapon({
 }));
 itemManager.addItem(new Weapon({
     id: "shortsword",
-    spritePath: "assets/items/weapons/longsword.png",
+    spritePath: "assets/items/weapons/shortsword.png",
     damage: { count: 1, type: Dice.d6 },
     weaponType: WeaponType.MELEE,
     damageType: DamageType.PIERCING,
     light: true,
     critRange: 19,
+}));
+itemManager.addItem(new Weapon({
+    id: "shortbow",
+    spritePath: "assets/items/weapons/shortbow.png",
+    damage: { count: 1, type: Dice.d6 },
+    weaponType: WeaponType.RANGED,
+    damageType: DamageType.PIERCING,
+    range: 12,
+    critMultiplier: 3,
+}));
+itemManager.addItem(new Weapon({
+    id: "longbow",
+    spritePath: "assets/items/weapons/longbow.png",
+    damage: { count: 1, type: Dice.d8 },
+    weaponType: WeaponType.RANGED,
+    damageType: DamageType.PIERCING,
+    range: 20,
+    critMultiplier: 3,
 }));
 itemManager.addItem(new Weapon({
     id: "greatsword",
