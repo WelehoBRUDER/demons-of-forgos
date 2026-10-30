@@ -517,6 +517,10 @@ const devInit = () => {
     testPlayer2.stats.setFaction(Faction.FRIENDLY);
     const creature = entityManager.addCreature(testPlayer, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
     const creature2 = entityManager.addCreature(testPlayer2, mapRenderer.getMap().id, -1, -1, "dev_testing_area:spawn_point:5:3");
+    testPlayer.statusEffects.addStatusEffect("haste", StandardDuration.MINUTE);
+    testPlayer.statusEffects.addStatusEffect("shield_of_faith", StandardDuration.MINUTE);
+    testPlayer.statusEffects.addStatusEffect("shield", StandardDuration.MINUTE);
+    testPlayer.statusEffects.addStatusEffect("bulls_strength", StandardDuration.MINUTE);
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
     creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
     creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);

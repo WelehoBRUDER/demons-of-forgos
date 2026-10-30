@@ -644,6 +644,11 @@ const devInit = () => {
 		"dev_testing_area:spawn_point:5:3",
 	) as DynamicCreature;
 
+	testPlayer.statusEffects.addStatusEffect("haste", StandardDuration.MINUTE);
+	testPlayer.statusEffects.addStatusEffect("shield_of_faith", StandardDuration.MINUTE);
+	testPlayer.statusEffects.addStatusEffect("shield", StandardDuration.MINUTE);
+	testPlayer.statusEffects.addStatusEffect("bulls_strength", StandardDuration.MINUTE);
+
 	creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.WEAPON);
 	creature.inventory.equipItem(itemManager.getItem("shortsword"), EquipmentSlot.OFFHAND);
 	creature.inventory.equipItem(itemManager.getItem("leather_armor"), EquipmentSlot.ARMOR);

@@ -165,3 +165,140 @@ statusEffectManager.addEffect(
 		],
 	}),
 );
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "shield_of_faith",
+		modifiers: [
+			{
+				id: "shield_of_faith_ac_bonus",
+				target: CreatureModifiers.AC,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 2 + (Math.floor(ctx?.casterLevel / 6) || 0); // +2 to AC, +1 for every 6 caster levels, to max +5 at 18th level
+				},
+				type: ModifierType.deflection,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "shield",
+		modifiers: [
+			{
+				id: "shield_ac_bonus",
+				target: CreatureModifiers.AC,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.shield,
+			},
+			{
+				id: "shield_immunity_to_magic_missile",
+				target: "magicMissileImmunity",
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 1; // Grants immunity to Magic Missile spell
+				},
+				type: ModifierType.untyped,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "bulls_strength",
+		modifiers: [
+			{
+				id: "bulls_strength_strength_bonus",
+				target: AbilityScore.STRENGTH,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "cats_grace",
+		modifiers: [
+			{
+				id: "cats_grace_dexterity_bonus",
+				target: AbilityScore.DEXTERITY,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "bears_endurance",
+		modifiers: [
+			{
+				id: "bears_endurance_constitution_bonus",
+				target: AbilityScore.CONSTITUTION,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "owls_wisdom",
+		modifiers: [
+			{
+				id: "owls_wisdom_wisdom_bonus",
+				target: AbilityScore.WISDOM,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "eagles_splendor",
+		modifiers: [
+			{
+				id: "eagles_splendor_charisma_bonus",
+				target: AbilityScore.CHARISMA,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);
+statusEffectManager.addEffect(
+	new StatusEffect({
+		id: "foxs_cunning",
+		modifiers: [
+			{
+				id: "foxs_cunning_intelligence_bonus",
+				target: AbilityScore.INTELLIGENCE,
+				operation: Operation.add,
+				evaluate: (creature: Creature, ctx: any) => {
+					return 4;
+				},
+				type: ModifierType.enhancement,
+			},
+		],
+	}),
+);

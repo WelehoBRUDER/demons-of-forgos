@@ -60,7 +60,8 @@ class CreatureCombat implements ICreatureCombat {
 			ctx.canBeFlanked = targetCreature.combat.canBeFlanked();
 		}
 
-		const damageDice = this.handleDamageDieProgression(weapon.getDamage());
+		const damageDice =
+			weapon.getWeaponType() === WeaponType.MELEE ? this.handleDamageDieProgression(weapon.getDamage()) : weapon.getDamage();
 
 		let attackBonus = this.getWeaponAttackBonus(ctx);
 
@@ -409,10 +410,15 @@ class CreatureCombat implements ICreatureCombat {
 		const ctx = this.owner.inventory.getEquippedWeapons()[weaponIndex];
 		for (let i = 0; i < iterations; i++) {
 			ctx.iteration = { type: iterationType, count: i }; // Set the attack iteration in the context so that it can be used for calculating attack bonuses, damage bonuses, etc. based on the iteration (e.g. iterative attack penalties)
+			// console.log("CURRENT TARGET:", target);
+			// console.log("PERFORMING ITERATION:", i + 1, "OF", iterations, "FOR ATTACK TYPE:", iterationType);
 			if (!target) break;
 			if (!this.checkIfAttackTargetValid(target)) {
 				target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
 				tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
+				if (target) {
+					await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				}
 			} else {
 				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
 			}
@@ -440,8 +446,8 @@ class CreatureCombat implements ICreatureCombat {
 				nearestHostile = hostile;
 			}
 		}
-		// console.log(`${DebugColor.CYAN}Nearest hostile within range ${range}:`, nearestHostile);
-		// console.log(`${DebugColor.RED}Is the hostile alive?:`, nearestHostile?.stats?.isAlive());
+		console.log(`${DebugColor.CYAN}Nearest hostile within range ${range}:`, nearestHostile);
+		console.log(`${DebugColor.RED}Is the hostile alive?:`, nearestHostile?.stats?.isAlive());
 		return nearestHostile;
 	}
 
