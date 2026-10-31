@@ -12,12 +12,14 @@ class MapRenderer {
     effectCtx;
     uiCanvas;
     uiCtx;
+    projectileCanvas;
+    projectileCtx;
     tileSize = atlas.getTileSize();
     map;
     highlightedTile;
     selectedTile = null;
     pathTiles = [];
-    constructor(canvas, propCanvas, objectCanvas, creatureCanvas, effectCanvas, uiCanvas) {
+    constructor(canvas, propCanvas, objectCanvas, creatureCanvas, effectCanvas, uiCanvas, projectileCanvas) {
         // Initialize canvas and contexts
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
@@ -37,6 +39,9 @@ class MapRenderer {
         this.uiCanvas = uiCanvas;
         this.uiCtx = this.uiCanvas.getContext("2d");
         this.uiCtx.imageSmoothingEnabled = false;
+        this.projectileCanvas = projectileCanvas;
+        this.projectileCtx = this.projectileCanvas.getContext("2d");
+        this.projectileCtx.imageSmoothingEnabled = false;
         this.highlightedTile = { x: -1, y: -1, _id: -1, _propId: -1 };
         this.selectedTile = null;
         this.map = placeholderMap; // Initialize with a placeholder map to avoid null checks
@@ -87,6 +92,8 @@ class MapRenderer {
         this.creatureCanvas.height = window.innerHeight;
         this.effectCanvas.width = window.innerWidth;
         this.effectCanvas.height = window.innerHeight;
+        this.projectileCanvas.width = window.innerWidth;
+        this.projectileCanvas.height = window.innerHeight;
         this.uiCanvas.width = window.innerWidth;
         this.uiCanvas.height = window.innerHeight;
         this.renderVisibleMap(camera);
@@ -166,6 +173,7 @@ class MapRenderer {
         }
         this.renderObjects(camera);
         this.renderCreatures(camera);
+        this.renderProjectiles(camera);
         this.renderTileHighlight();
         //console.log(`Rendered ${renderedTiles} tiles`);
     }
@@ -243,6 +251,33 @@ class MapRenderer {
             const { x: visualOffsetX, y: visualOffsetY } = creature.getVisualOffset();
             this.creatureCtx.drawImage(atlasToUse, atlasX, atlasY, spriteSize, spriteSize, creatureScreenX - offset - visualOffsetX * zoom, creatureScreenY - offset - visualOffsetY * zoom, creatureSize, creatureSize);
             this.drawCreatureHealthBar(creature, creatureScreenX, creatureScreenY, creatureSize, zoom, offset);
+        }
+    }
+    renderProjectiles(camera) {
+        const { cameraX, cameraY, zoom } = this.getScreenProperties(camera);
+        const projectiles = projectileManager.getAllSpawnedProjectiles();
+        const projectileAtlas = atlas.getProjectileAtlas();
+        const projectileSpriteSize = atlas.getSpriteSize();
+        const projectileVisualSize = (projectileSpriteSize * zoom) / 5; // Projectiles are rendered at 1/5 of their sprite size
+        this.clearProjectileLayer();
+        for (const projectile of projectiles) {
+            const { x, y } = projectile.position;
+            const projectileSprite = projectile.base?.getSpritePosition();
+            const { x: atlasX, y: atlasY } = projectileSprite ? { x: projectileSprite.x, y: projectileSprite.y } : { x: 0, y: 0 };
+            const screenX = (x - cameraX) * zoom;
+            const screenY = (y - cameraY) * zoom;
+            if (screenX + projectileVisualSize < 0 ||
+                screenX > this.canvas.width ||
+                screenY + projectileVisualSize < 0 ||
+                screenY > this.canvas.height) {
+                continue; // Skip rendering if projectile is outside the screen bounds
+            }
+            this.projectileCtx.save();
+            this.projectileCtx.translate(screenX + projectileVisualSize / 2, screenY + projectileVisualSize / 2);
+            this.projectileCtx.rotate(projectile.getRotation());
+            console.log(`Rendering projectile at (${x}, ${y}) with sprite position (${projectileSprite?.x}, ${projectileSprite?.y})`);
+            this.projectileCtx.drawImage(projectileAtlas, atlasX, atlasY, projectileSpriteSize, projectileSpriteSize, -projectileVisualSize / 2, -projectileVisualSize / 2, projectileVisualSize, projectileVisualSize);
+            this.projectileCtx.restore();
         }
     }
     drawCreaturePortrait(creature, ctx, size = 128) {
@@ -473,6 +508,9 @@ class MapRenderer {
     clearEffectLayer() {
         this.effectCtx.clearRect(0, 0, this.effectCanvas.width, this.effectCanvas.height);
     }
+    clearProjectileLayer() {
+        this.projectileCtx.clearRect(0, 0, this.projectileCanvas.width, this.projectileCanvas.height);
+    }
 }
 // Canvas layers
 const canvasLayers = document.querySelector(".canvas-layers");
@@ -481,9 +519,10 @@ const propCanvas = canvasLayers.querySelector(".prop-layer");
 const objectCanvas = canvasLayers.querySelector(".object-layer");
 const creatureCanvas = canvasLayers.querySelector(".creature-layer");
 const effectCanvas = canvasLayers.querySelector(".effect-layer");
+const projectileCanvas = canvasLayers.querySelector(".projectile-layer");
 const uiCanvas = canvasLayers.querySelector(".ui-layer"); // Currently only for cursor highlight
 // Initialize map renderer
-const mapRenderer = new MapRenderer(tileCanvas, propCanvas, objectCanvas, creatureCanvas, effectCanvas, uiCanvas);
+const mapRenderer = new MapRenderer(tileCanvas, propCanvas, objectCanvas, creatureCanvas, effectCanvas, uiCanvas, projectileCanvas);
 //const randomWorldMap = generateRandomMap(100, 100);
 const addPlayerPartyMember = (id, index, bodyType) => {
     const testPlayer = new DynamicCreature({

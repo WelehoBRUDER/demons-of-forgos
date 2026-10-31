@@ -149,6 +149,7 @@ class Game {
         this.update(dt);
         effectManager.updateEffects(dt);
         effectManager.renderEffects();
+        projectileManager.updateProjectiles(dt);
         camera.updateTracking(dt);
         while (this.frameCount.length > 0 && this.frameCount[0] <= this.time - 1000) {
             this.frameCount.shift();
@@ -355,6 +356,12 @@ class Game {
         const screenProperties = mapRenderer.getScreenProperties(camera);
         const worldX = screenProperties.cameraX + this.mouseX / camera.getZoom();
         const worldY = screenProperties.cameraY + this.mouseY / camera.getZoom();
+        return { x: worldX, y: worldY };
+    }
+    convertScreenToWorld(screenX, screenY) {
+        const screenProperties = mapRenderer.getScreenProperties(camera);
+        const worldX = screenProperties.cameraX + screenX / camera.getZoom();
+        const worldY = screenProperties.cameraY + screenY / camera.getZoom();
         return { x: worldX, y: worldY };
     }
     checkHotkeys(key) {

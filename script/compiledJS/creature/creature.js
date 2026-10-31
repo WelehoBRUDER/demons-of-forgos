@@ -444,6 +444,45 @@ class Creature {
             resolve();
         });
     }
+    async playRangedAttackAnimation(target, targetTile, ctx) {
+        this.isAttacking = true;
+        combatEvents.emit(CombatEventId.ACTION_STARTED, { creatureUID: this.getUID(), actionId: "ranged_attack" }); // Emit action started event to trigger UI updates
+        const projectileId = ctx.weapon.getProjectile();
+        if (!projectileId) {
+            console.warn(`No projectile defined for weapon ${ctx.weapon.getId()}. Using default projectile.`);
+        }
+        const shakePromise = this.playRandomShakeAnimation(7, 40, 12); // Shake the creature before the ranged attack for a more dynamic effect
+        const projectilePromise = projectileManager.spawnProjectile(this.getCenterScreenPosition(), target.getCenterScreenPosition(), projectileId || "arrow"); // Launch the projectile towards the target
+        // Check if a feat or status effect prevents opportunity attacks from being provoked by ranged attacks
+        const preventsOpportunityAttack = modifierManager.getTotalModifier(CreatureModifiers.RANGED_ATTACK_NOT_PROVOKE_OPPORTUNITY_ATTACK, this, ctx);
+        if (!preventsOpportunityAttack) {
+            await this.combat.provokeOpportunityAttacks(); // Check for opportunity attacks before executing the ranged attack
+        }
+        if (!this.stats.isAlive()) {
+            this.isAttacking = false;
+            return new Promise((resolve) => {
+                resolve();
+            });
+        }
+        await Promise.all([projectilePromise, shakePromise]); // Wait for both the projectile to reach the target and the shake animation to complete
+        this.combat.executeAttack(target, ctx);
+        this.isAttacking = false;
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    async playRandomShakeAnimation(points = 8, intensity = 50, speed = 16) {
+        for (let i = 0; i < points; i++) {
+            const intensityFade = 1 - (i / points) * 0.5; // Decrease intensity over time
+            const randomOffsetX = (Math.random() - 0.5) * intensity * camera.getZoom() * intensityFade; // Random offset between -25 and 25
+            const randomOffsetY = (Math.random() - 0.5) * intensity * camera.getZoom() * intensityFade; // Random offset between -25 and 25
+            await this.moveToOffset(randomOffsetX, randomOffsetY, speed); // Move to the random offset
+            await this.moveToOffset(-randomOffsetX, -randomOffsetY, speed * 1.5); // Move back to the original position after each shake, faster than the initial shake to create a snappy effect
+        }
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
     async moveTowardsTarget(targetTile, progress) {
         return new Promise((resolve) => {
             const startX = this.screenX;
@@ -457,6 +496,34 @@ class Creature {
             const animate = (currentTime) => {
                 const elapsedTime = currentTime - startTime;
                 const animationProgress = Math.min(elapsedTime / animationDuration, 1) * progress;
+                this.setScreenPosition(startX + deltaX * animationProgress, startY + deltaY * animationProgress);
+                if (elapsedTime < animationDuration) {
+                    requestAnimationFrame(animate);
+                }
+                else {
+                    resolve();
+                }
+            };
+            requestAnimationFrame(animate);
+        });
+    }
+    async moveToOffset(offsetX, offsetY, speed) {
+        if (speed <= 0) {
+            throw new Error("Animation speed must be greater than zero.");
+        }
+        return new Promise((resolve) => {
+            const startX = this.screenX;
+            const startY = this.screenY;
+            const targetScreenX = startX + offsetX;
+            const targetScreenY = startY + offsetY;
+            const deltaX = targetScreenX - startX;
+            const deltaY = targetScreenY - startY;
+            const animationDuration = game.getAnimationSpeed() / speed;
+            const startTime = performance.now();
+            const animate = (currentTime) => {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / animationDuration, 1);
+                const animationProgress = 1 - Math.pow(1 - progress, 3);
                 this.setScreenPosition(startX + deltaX * animationProgress, startY + deltaY * animationProgress);
                 if (elapsedTime < animationDuration) {
                     requestAnimationFrame(animate);

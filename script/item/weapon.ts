@@ -30,6 +30,7 @@ interface WeaponData extends EquipmentData {
 	light?: boolean;
 	heavy?: boolean;
 	range?: number; // Optional range for ranged weapons, defaults to 1 for most melee weapons
+	projectile?: string; // Optional projectile type for ranged weapons (e.g., "arrow", "bolt", etc.)
 	anchorPoint?: AnchorPointType; // Optional, defaults to "weapon" if not provided
 }
 
@@ -124,6 +125,7 @@ class Weapon extends Equipment {
 	composite: boolean;
 	enhancementBonus: number;
 	range?: number; // Optional range for ranged weapons, defaults to 1 for most melee weapons
+	projectile?: string; // Optional projectile type for ranged weapons (e.g., "arrow", "bolt", etc.)
 	constructor(data: WeaponData) {
 		super(data);
 		this.type = "Weapon";
@@ -139,6 +141,7 @@ class Weapon extends Equipment {
 		this.heavy = data.heavy || false;
 		this.composite = data.composite || false;
 		this.range = data.range ?? 1;
+		this.projectile = data.projectile; // Optional projectile type for ranged weapons
 	}
 
 	getDamage(): DamageDieInfo {
@@ -183,6 +186,10 @@ class Weapon extends Equipment {
 
 	getRange(): number {
 		return this.range;
+	}
+
+	getProjectile(): string | undefined {
+		return this.projectile;
 	}
 
 	getModifiers(ctx: any): Modifier[] {

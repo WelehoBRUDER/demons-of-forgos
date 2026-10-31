@@ -175,6 +175,8 @@ class Game {
 		effectManager.updateEffects(dt);
 		effectManager.renderEffects();
 
+		projectileManager.updateProjectiles(dt);
+
 		camera.updateTracking(dt);
 
 		while (this.frameCount.length > 0 && this.frameCount[0] <= this.time - 1000) {
@@ -404,6 +406,13 @@ class Game {
 		const screenProperties = mapRenderer.getScreenProperties(camera);
 		const worldX = screenProperties.cameraX + this.mouseX / camera.getZoom();
 		const worldY = screenProperties.cameraY + this.mouseY / camera.getZoom();
+		return { x: worldX, y: worldY };
+	}
+
+	convertScreenToWorld(screenX: number, screenY: number): { x: number; y: number } {
+		const screenProperties = mapRenderer.getScreenProperties(camera);
+		const worldX = screenProperties.cameraX + screenX / camera.getZoom();
+		const worldY = screenProperties.cameraY + screenY / camera.getZoom();
 		return { x: worldX, y: worldY };
 	}
 

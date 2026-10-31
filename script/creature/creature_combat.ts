@@ -417,10 +417,18 @@ class CreatureCombat implements ICreatureCombat {
 				target = this.findNearestHostileWithinRange(this.getAttackRange(ctx.weapon) || 1); // If the original target is no longer valid (e.g. killed by a previous attack), find a new target within range
 				tile = { x: target?.x, y: target?.y }; // Update the target tile to the new target's position
 				if (target) {
-					await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+					if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
+						await this.owner.playRangedAttackAnimation(target, tile, ctx);
+					} else {
+						await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+					}
 				}
 			} else {
-				await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				if (ctx.weapon.getWeaponType() === WeaponType.RANGED) {
+					await this.owner.playRangedAttackAnimation(target, tile, ctx);
+				} else {
+					await this.owner.playMeleeAttackAnimation(target, tile, ctx);
+				}
 			}
 		}
 	}

@@ -27,6 +27,7 @@ enum CreatureModifiers {
 	AC_DEX_BONUS = "acDexBonus",
 	COMBAT_MANEUVER_BONUS = "combatManeuverBonus",
 	COMBAT_MANEUVER_DEFENSE = "combatManeuverDefense",
+	RANGED_ATTACK_NOT_PROVOKE_OPPORTUNITY_ATTACK = "rangedAttackNotProvokeOpportunityAttack",
 }
 
 enum Condition {

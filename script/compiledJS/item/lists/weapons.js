@@ -41,6 +41,7 @@ itemManager.addItem(new Weapon({
     damageType: DamageType.PIERCING,
     range: 12,
     critMultiplier: 3,
+    projectile: "arrow",
 }));
 itemManager.addItem(new Weapon({
     id: "longbow",
@@ -50,6 +51,7 @@ itemManager.addItem(new Weapon({
     damageType: DamageType.PIERCING,
     range: 20,
     critMultiplier: 3,
+    projectile: "arrow",
 }));
 itemManager.addItem(new Weapon({
     id: "greatsword",

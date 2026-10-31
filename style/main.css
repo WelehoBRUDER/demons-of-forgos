@@ -106,9 +106,12 @@ main.game {
 		&.effect-layer {
 			z-index: 5;
 		}
+		&.projectile-layer {
+			z-index: 6;
+		}
 
 		&.ui-layer {
-			z-index: 6;
+			z-index: 7;
 		}
 	}
 }

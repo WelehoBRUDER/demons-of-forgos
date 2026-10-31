@@ -49,6 +49,7 @@ itemManager.addItem(
 		damageType: DamageType.PIERCING,
 		range: 12,
 		critMultiplier: 3,
+		projectile: "arrow",
 	}),
 );
 itemManager.addItem(
@@ -60,6 +61,7 @@ itemManager.addItem(
 		damageType: DamageType.PIERCING,
 		range: 20,
 		critMultiplier: 3,
+		projectile: "arrow",
 	}),
 );
 itemManager.addItem(
